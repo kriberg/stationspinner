@@ -1,0 +1,10 @@
+[database]
+host = localhost
+dbname = rubicon-1.1
+user = sde
+# password = sde
+# port = 5432
+
+[pricespinner]
+log = pricespinner.log
+systems = Jita, Dodixie, Rens, Amarr
