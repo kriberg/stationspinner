@@ -79,7 +79,12 @@ def marketitems():
             cache.set('marketitems', rv, timeout=15*60)
     return '%s' % rv
 
-
+if not app.debug:
+    import logging
+    from logging.handlers import RotatingFileHandler
+    file_handler = RotatingFileHandler(config.get('stationspinner', 'log'))
+    file_handler.setLevel(logging.WARNING)
+    app.logger.addHandler(file_handler)
 
 if __name__ == '__main__':
     app.debug = True

@@ -5,6 +5,9 @@ user = sde
 # password = sde
 # port = 5432
 
+[stationspinner]
+log = stationspinner.log
+
 [pricespinner]
 log = pricespinner.log
 systems = Jita, Dodixie, Rens, Amarr
