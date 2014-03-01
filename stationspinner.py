@@ -34,7 +34,7 @@ def marketitems():
         with pool.getconn() as conn:
             with conn.cursor() as cur:
                 cur.execute('''SELECT array_to_json(array_agg(row_to_json(t)))::text FROM
-                        (SELECT invtypes.typename,
+                        (SELECT invtypes.typename as item,
                           mapdenormalize.itemname AS "location",
                           (sell_min-buy_max) AS "profit",
                           CASE WHEN sell_min <> 0 AND buy_max <> 0 THEN
@@ -49,8 +49,8 @@ def marketitems():
                           marketdata.buy_max,
                           marketdata.buy_volume,
                           marketdata.sell_volume,
-                          invmarketgroups.marketgroupname,
-                          invcategories.categoryname
+                          invmarketgroups.marketgroupname as group,
+                          invcategories.categoryname as category
                         FROM
                           public.invmarketgroups,
                           public.invcategories,
