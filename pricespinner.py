@@ -5,10 +5,12 @@ import ConfigParser
 import httplib
 import json
 from evelink.thirdparty.eve_central import EVECentral
+from traceback import format_exc
+
+MARKET_ITEMS = 'SELECT typeid FROM invtypes WHERE published=1 AND marketgroupid IS NOT NULL AND marketgroupid != 350001'
 
 class PriceSpinner():
     BLOCK_SIZE = 100
-    MARKET_ITEMS = 'SELECT typeid FROM invtypes WHERE published=1 AND marketgroupid is not null'
     def __init__(self, configfile):
         self.config = ConfigParser.SafeConfigParser()
         self.config.readfp(open(configfile))
@@ -34,16 +36,32 @@ class PriceSpinner():
         res = cur.fetchall()
         return res
 
+    def get_region_ids(self):
+        region_names = map(lambda a: a.strip(), self.config.get('pricespinner', 'regions').split(','))
+        cur = self.cursor()
+        cur.execute('SELECT itemid, itemname FROM mapdenormalize WHERE itemname IN %s', (tuple(region_names),))
+        res = cur.fetchall()
+        return res
+
     def pull_prices(self):
         with self.cursor() as cur:
-            cur.execute(self.MARKET_ITEMS)
-            system_ids = self.get_system_ids()
+            cur.execute(MARKET_ITEMS)
+            systems = self.get_system_ids()
+            # regions = self.get_region_ids()
 
             block = cur.fetchmany(size=self.BLOCK_SIZE)
             while block:
                 typeids = map(lambda t: t[0], block)
-                for system in system_ids:
-                    yield system, self.ec.market_stats(typeids, system=system)
+                for system in systems:
+                    try:
+                        yield system, self.ec.market_stats(typeids, system=system[0])
+                    except Exception, ex:
+                        self.log.error('System: %s Error:\n%sTypes:\n%s' % (system[1], format_exc(ex), typeids))
+                # for region in regions:
+                #     try:
+                #         yield region, self.ec.market_stats(typeids, regions=region[0])
+                #     except Exception, ex:
+                #         self.log.error('Region: %s Error:\n%sTypes:\n%s' % (region[1], format_exc(ex), typeids))
                 block = cur.fetchmany(size=self.BLOCK_SIZE)
     def refresh_market_prices(self):
         with self.cursor() as cur:
@@ -114,7 +132,7 @@ class PriceSpinner():
                     %(sell_stddev)s, %(sell_median)s, %(sell_percentile)s
                     WHERE NOT EXISTS (SELECT * FROM upsert)''', tuple(price_data))
                 processed_items += cur.rowcount
-                self.log.debug('Block done, %d items for system %s' % (len(price_data), location[1]))
+                self.log.debug('Block done, %d items for location %s' % (len(price_data), location[1]))
         self.log.info('Processed %s items in total' % processed_items)
 
 
