@@ -12,3 +12,5 @@ log = stationspinner.log
 log = pricespinner.log
 systems = Jita, Dodixie, Rens, Amarr
 regions = The Forge, Heimatar, Domain, Sinq Laison
+history_threads = 10
+data_threads = 10
