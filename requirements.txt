@@ -1,0 +1,11 @@
+Django>=1.7
+psycopg2
+django-redis
+django-extensions
+djangorestframework
+pyyaml
+django-filter
+celery[redis]>=3.1
+django-grappelli
+django-hstore
+django-mptt

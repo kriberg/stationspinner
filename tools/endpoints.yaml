@@ -1,0 +1,655 @@
+API:
+  CallList:
+    cache_time: '6:00'
+    mask: None
+    name: Call List (Access Mask reference)
+    style: M-Short
+    url: https://api.eveonline.com/API/CallList.xml.aspx
+Account:
+  APIKeyInfo:
+    cache_time: 0:05
+    mask: None
+    name: API Key Info
+    style: Short
+    url: https://api.eveonline.com/Account/APIKeyInfo.xml.aspx
+  AccountStatus:
+    cache_time: '1:00'
+    mask: '33554432'
+    name: Account Status
+    style: Short
+    url: https://api.eveonline.com/Account/AccountStatus.xml.aspx
+  Characters:
+    cache_time: '1:00'
+    mask: None
+    name: List of Characters
+    style: Short
+    url: https://api.eveonline.com/Account/Characters.xml.aspx
+Char:
+  AccountBalance:
+    cache_time: 0:15
+    mask: '1'
+    name: Account Balance
+    style: Short
+    url: https://api.eveonline.com/Char/AccountBalance.xml.aspx
+    keys:
+        - characterID
+  AssetList:
+    cache_time: '6:00'
+    mask: '2'
+    name: Asset List
+    style: Short
+    url: https://api.eveonline.com/Char/AssetList.xml.aspx
+    keys:
+        - characterID
+  Blueprints:
+    cache_time: '24:00'
+    mask: '2'
+    name: Blueprints
+    style: Short
+    url: https://api.eveonline.com/Char/Blueprints.xml.aspx
+    keys: 
+        - characterID
+  CalendarEventAttendees:
+    cache_time: !!python/str "\_???"
+    mask: '4'
+    name: Calendar Event Attendees
+    style: M-Short
+    url: https://api.eveonline.com/Char/CalendarEventAttendees.xml.aspx
+    keys:
+        - eventIDs
+        - characterID
+  CharacterSheet:
+    cache_time: '1:00'
+    mask: '8'
+    name: Character Sheet
+    style: Short
+    url: https://api.eveonline.com/Char/CharacterSheet.xml.aspx
+    keys: 
+        - characterID
+  ContactList:
+    cache_time: 0:15
+    mask: '16'
+    name: Contact List
+    style: Short
+    url: https://api.eveonline.com/Char/ContactList.xml.aspx
+    keys: 
+        - characterID
+  ContactNotifications:
+    cache_time: 0:30
+    mask: '32'
+    name: Contact Notifications
+    style: Short
+    url: https://api.eveonline.com/Char/ContactNotifications.xml.aspx
+    keys: 
+        - characterID
+  ContractBids:
+    cache_time: 0:15
+    mask: '67108864'
+    name: ContractBids
+    style: Short
+    url: https://api.eveonline.com/Char/ContractBids.xml.aspx
+    keys: 
+        - characterID
+  ContractItems:
+    cache_time: !!python/str "\_???"
+    mask: '67108864'
+    name: ContractItems
+    style: M-Short
+    url: https://api.eveonline.com/Char/ContractItems.xml.aspx
+    keys: 
+        - contractID
+        - characterID
+  Contracts:
+    cache_time: 0:15
+    mask: '67108864'
+    name: Contracts
+    style: Short
+    url: https://api.eveonline.com/Char/Contracts.xml.aspx
+    keys: 
+        - characterID
+  FacWarStats:
+    cache_time: !!python/str "\_???"
+    mask: '64'
+    name: Factional Warfare Stats
+    style: Short
+    url: https://api.eveonline.com/Char/FacWarStats.xml.aspx
+    keys: 
+        - characterID
+  IndustryJobs:
+    cache_time: 0:15
+    mask: '128'
+    name: Industry Jobs
+    style: Short
+    url: https://api.eveonline.com/Char/IndustryJobs.xml.aspx
+    keys: 
+        - characterID
+  IndustryJobsHistory:
+    cache_time: '6:00'
+    mask: '128'
+    name: Industry Jobs History
+    style: Short
+    url: https://api.eveonline.com/Char/IndustryJobsHistory.xml.aspx
+    keys: 
+        - characterID
+  KillMails:
+    cache_time: 0:30
+    mask: '256'
+    name: Kill Mails
+    style: Short
+    url: https://api.eveonline.com/Char/KillMails.xml.aspx
+    keys: 
+        - characterID
+  Locations:
+    cache_time: '1:00'
+    mask: '134217728'
+    name: Locations
+    style: M-Short
+    url: https://api.eveonline.com/Char/Locations.xml.aspx
+    keys: 
+        - IDs
+        - characterID
+  MailBodies:
+    cache_time: '87600:00'
+    mask: '512'
+    name: Mail Bodies
+    style: M-Short
+    url: https://api.eveonline.com/Char/MailBodies.xml.aspx
+    keys:
+        - IDs
+        - characterID
+  MailMessages:
+    cache_time: 0:15
+    mask: '2048'
+    name: Mail Messages (Headers)
+    style: Short
+    url: https://api.eveonline.com/Char/MailMessages.xml.aspx
+    keys: 
+        - characterID
+  MailingLists:
+    cache_time: '6:00'
+    mask: '1024'
+    name: Mailing Lists
+    style: Short
+    url: https://api.eveonline.com/Char/MailingLists.xml.aspx
+    keys: 
+        - characterID
+  MarketOrders:
+    cache_time: '1:00'
+    mask: '4096'
+    name: Market Orders
+    style: Short
+    url: https://api.eveonline.com/Char/MarketOrders.xml.aspx
+    keys: 
+        - characterID
+  Medals:
+    cache_time: '6:00'
+    mask: '8192'
+    name: Medals
+    style: Short
+    url: https://api.eveonline.com/Char/Medals.xml.aspx
+    keys: 
+        - characterID
+  NotificationTexts:
+    cache_time: !!python/str "\_???"
+    mask: '32768'
+    name: NotificationTexts
+    style: M-Short
+    url: https://api.eveonline.com/Char/NotificationTexts.xml.aspx
+    keys: 
+        - IDs
+        - characterID
+  Notifications:
+    cache_time: '1:00'
+    mask: '16384'
+    name: Notifications
+    style: Short
+    url: https://api.eveonline.com/Char/Notifications.xml.aspx
+    keys: 
+        - characterID
+  PlanetaryColonies:
+    cache_time: ''
+    mask: '2'
+    name: PlanetaryColonies
+    style: on view
+    url: https://api.eveonline.com/Char/PlanetaryColonies.xml.aspx
+    keys: 
+        - characterID
+  PlanetaryLinks:
+    cache_time: ''
+    mask: '2'
+    name: PlanetaryLinks
+    style: on view
+    url: https://api.eveonline.com/Char/PlanetaryLinks.xml.aspx
+    keys: 
+        - planetID
+        - characterID
+  PlanetaryPins:
+    cache_time: ''
+    mask: '2'
+    name: PlanetaryPins
+    style: on view
+    url: https://api.eveonline.com/Char/PlanetaryPins.xml.aspx
+    keys: 
+        - planetID
+        - characterID
+  PlanetaryRoutes:
+    cache_time: ''
+    mask: '2'
+    name: PlanetaryRoutes
+    style: on view
+    url: https://api.eveonline.com/Char/PlanetaryRoutes.xml.aspx
+    keys: 
+        - planetID
+        - characterID
+  Research:
+    cache_time: 0:15
+    mask: '65536'
+    name: Research
+    style: Short
+    url: https://api.eveonline.com/Char/Research.xml.aspx
+    keys: 
+        - characterID
+  SkillInTraining:
+    cache_time: '1:00'
+    mask: '131072'
+    name: Skill in Training
+    style: Short
+    url: https://api.eveonline.com/Char/SkillInTraining.xml.aspx
+    keys: 
+        - characterID
+  SkillQueue:
+    cache_time: '1:00'
+    mask: '262144'
+    name: Skill Queue
+    style: Short
+    url: https://api.eveonline.com/Char/SkillQueue.xml.aspx
+    keys: 
+        - characterID
+  Standings:
+    cache_time: '3:00'
+    mask: '524288'
+    name: Standings (NPC)
+    style: Short
+    url: https://api.eveonline.com/Char/Standings.xml.aspx
+    keys: 
+        - characterID
+  UpcomingCalendarEvents:
+    cache_time: '1:00'
+    mask: '1048576'
+    name: Upcoming Calendar Events
+    style: Short
+    url: https://api.eveonline.com/Char/UpcomingCalendarEvents.xml.aspx
+    keys: 
+        - characterID
+  WalletJournal:
+    cache_time: 0:30
+    mask: '2097152'
+    name: Wallet Journal
+    style: Short
+    url: https://api.eveonline.com/Char/WalletJournal.xml.aspx
+    keys: 
+        - characterID
+  WalletTransactions:
+    cache_time: 0:30
+    mask: '4194304'
+    name: Wallet Transactions
+    style: Short
+    url: https://api.eveonline.com/Char/WalletTransactions.xml.aspx
+    keys: 
+        - characterID
+Corp:
+  AccountBalance:
+    cache_time: 0:15
+    mask: '1'
+    name: Account Balances
+    style: Short
+    url: https://api.eveonline.com/Corp/AccountBalance.xml.aspx
+    keys: 
+        - characterID
+  AssetList:
+    cache_time: '6:00'
+    mask: '2'
+    name: Asset List
+    style: Short
+    url: https://api.eveonline.com/Corp/AssetList.xml.aspx
+    keys: 
+        - characterID
+  Blueprints:
+    cache_time: '24:00'
+    mask: '2'
+    name: Blueprints
+    style: Short
+    url: https://api.eveonline.com/Corp/Blueprints.xml.aspx
+    keys: 
+        - characterID
+  ContactList:
+    cache_time: 0:15
+    mask: '16'
+    name: Contact List
+    style: Short
+    url: https://api.eveonline.com/Corp/ContactList.xml.aspx
+    keys: 
+        - characterID
+  ContainerLog:
+    cache_time: '3:00'
+    mask: '32'
+    name: Container Log
+    style: Short
+    url: https://api.eveonline.com/Corp/ContainerLog.xml.aspx
+    keys: 
+        - characterID
+  ContractBids:
+    cache_time: 0:15
+    mask: '8388608'
+    name: ContractBids
+    style: Short
+    url: https://api.eveonline.com/Corp/ContractBids.xml.aspx
+    keys: 
+        - characterID
+  ContractItems:
+    cache_time: '24:00'
+    mask: '8388608'
+    name: ContractItems
+    style: M-Short
+    url: https://api.eveonline.com/Corp/ContractItems.xml.aspx
+    keys: 
+        - characterID
+        - contractID
+  Contracts:
+    cache_time: 0:15
+    mask: '8388608'
+    name: Contracts
+    style: Short
+    url: https://api.eveonline.com/Corp/Contracts.xml.aspx
+    keys: 
+        - characterID
+  CorporationSheet:
+    cache_time: '1:00'
+    mask: '8'
+    name: Corporation Sheet
+    style: Short
+    url: https://api.eveonline.com/Corp/CorporationSheet.xml.aspx
+    keys: 
+        - characterID
+  FacWarStats:
+    cache_time: 0:15
+    mask: '64'
+    name: Factional Warfare Stats
+    style: Short
+    url: https://api.eveonline.com/Corp/FacWarStats.xml.aspx
+    keys: 
+        - characterID
+  Facilities:
+    cache_time: 0:15
+    mask: '128'
+    name: Facilities
+    style: Short
+    url: https://api.eveonline.com/Corp/Facilities.xml.aspx
+    keys: 
+        - characterID
+  IndustryJobs:
+    cache_time: 0:15
+    mask: '128'
+    name: Industry Jobs
+    style: Short
+    url: https://api.eveonline.com/Corp/IndustryJobs.xml.aspx
+    keys: 
+        - characterID
+  IndustryJobsHistory:
+    cache_time: '6:00'
+    mask: '128'
+    name: Industry Jobs History
+    style: Short
+    url: https://api.eveonline.com/Corp/IndustryJobsHistory.xml.aspx
+    keys: 
+        - characterID
+  KillMails:
+    cache_time: 0:30
+    mask: '256'
+    name: Kill Mails
+    style: Short
+    url: https://api.eveonline.com/Corp/KillMails.xml.aspx
+    keys: 
+        - characterID
+  Locations:
+    cache_time: '1:00'
+    mask: '16777216'
+    name: Locations
+    style: M-Short
+    url: https://api.eveonline.com/Corp/Locations.xml.aspx
+    keys: 
+        - characterID
+        - IDs
+  MarketOrders:
+    cache_time: '1:00'
+    mask: '4096'
+    name: Market Orders
+    style: Short
+    url: https://api.eveonline.com/Corp/MarketOrders.xml.aspx
+    keys: 
+        - characterID
+  Medals:
+    cache_time: '1:00'
+    mask: '8192'
+    name: Medals
+    style: M-Short
+    url: https://api.eveonline.com/Corp/Medals.xml.aspx
+    keys: 
+        - characterID
+  MemberMedals:
+    cache_time: '6:00'
+    mask: '4'
+    name: Member Medals
+    style: Short
+    url: https://api.eveonline.com/Corp/MemberMedals.xml.aspx
+    keys: 
+        - characterID
+  MemberSecurity:
+    cache_time: '1:00'
+    mask: '512'
+    name: Member Security
+    style: Short
+    url: https://api.eveonline.com/Corp/MemberSecurity.xml.aspx
+    keys: 
+        - characterID
+  MemberSecurityLog:
+    cache_time: '1:00'
+    mask: '1024'
+    name: Member Security Log
+    style: Short
+    url: https://api.eveonline.com/Corp/MemberSecurityLog.xml.aspx
+    keys: 
+        - characterID
+  MemberTracking:
+    cache_time: '6:00'
+    mask: '2048'
+    name: Member Tracking
+    style: Short
+    url: https://api.eveonline.com/Corp/MemberTracking.xml.aspx
+    keys: 
+        - extended
+  OutpostList:
+    cache_time: '1:00'
+    mask: '16384'
+    name: Outpost List
+    style: Short
+    url: https://api.eveonline.com/Corp/OutpostList.xml.aspx
+    keys: 
+        - characterID
+  OutpostServiceDetail:
+    cache_time: '1:00'
+    mask: '32768'
+    name: Outpost Service Detail
+    style: Short
+    url: https://api.eveonline.com/Corp/OutpostServiceDetail.xml.aspx
+    keys: 
+        - characterID
+        - itemID
+  Shareholders:
+    cache_time: '1:00'
+    mask: '65536'
+    name: Shareholders
+    style: Short
+    url: https://api.eveonline.com/Corp/Shareholders.xml.aspx
+    keys: 
+        - characterID
+  Standings:
+    cache_time: '3:00'
+    mask: '262144'
+    name: Standings (NPC)
+    style: Short
+    url: https://api.eveonline.com/Corp/Standings.xml.aspx
+    keys: 
+        - characterID
+  StarbaseDetail:
+    cache_time: '1:00'
+    mask: '131072'
+    name: Starbase Details (POS)
+    style: Short
+    url: https://api.eveonline.com/Corp/StarbaseDetail.xml.aspx
+    keys: 
+        - itemID
+  StarbaseList:
+    cache_time: '6:00'
+    mask: '524288'
+    name: Starbase List (POS)
+    style: Short
+    url: https://api.eveonline.com/Corp/StarbaseList.xml.aspx
+    keys: 
+        - characterID
+  Titles:
+    cache_time: '1:00'
+    mask: '4194304'
+    name: Titles
+    style: Short
+    url: https://api.eveonline.com/Corp/Titles.xml.aspx
+    keys: 
+        - characterID
+  WalletJournal:
+    cache_time: 0:30
+    mask: '1048576'
+    name: Wallet Journal
+    style: Short
+    url: https://api.eveonline.com/Corp/WalletJournal.xml.aspx
+    keys: 
+        - characterID
+  WalletTransactions:
+    cache_time: 0:30
+    mask: '2097152'
+    name: Wallet Transactions
+    style: Short
+    url: https://api.eveonline.com/Corp/WalletTransactions.xml.aspx
+    keys: 
+        - characterID
+EVE:
+  AllianceList:
+    cache_time: '1:00'
+    mask: None
+    name: Alliance List
+    style: M-Short
+    url: https://api.eveonline.com/EVE/AllianceList.xml.aspx
+  CertificateTree:
+    cache_time: 0:00
+    mask: None
+    name: Certificate Tree
+    style: M-Short
+    url: https://api.eveonline.com/EVE/CertificateTree.xml.aspx
+  CharacterAffiliation:
+    cache_time: '1:00'
+    mask: None
+    name: Character Affiliation
+    style: M-Short
+    url: https://api.eveonline.com/EVE/CharacterAffiliation.xml.aspx
+  CharacterID:
+    cache_time: '720:00'
+    mask: None
+    name: Character ID (Name to ID Conversion)
+    style: M-Short
+    url: https://api.eveonline.com/EVE/CharacterID.xml.aspx
+  CharacterInfo:
+    cache_time: '1:00'
+    mask: 8388608(Public) / 16777216(Private)
+    name: Character Info
+    style: Short
+    url: https://api.eveonline.com/EVE/CharacterInfo.xml.aspx
+  CharacterName:
+    cache_time: '720:00'
+    mask: None
+    name: Character Name (ID to Name Conversion)
+    style: M-Short
+    url: https://api.eveonline.com/EVE/CharacterName.xml.aspx
+  ConquerableStationList:
+    cache_time: '1:00'
+    mask: None
+    name: Conquerable Station List (Includes Outposts)
+    style: M-Short
+    url: https://api.eveonline.com/EVE/ConquerableStationList.xml.aspx
+  ErrorList:
+    cache_time: '1:00'
+    mask: None
+    name: Error List
+    style: M-Short
+    url: https://api.eveonline.com/EVE/ErrorList.xml.aspx
+  FacWarStats:
+    cache_time: '1:00'
+    mask: None
+    name: Factional Warfare Stats
+    style: Short
+    url: https://api.eveonline.com/EVE/FacWarStats.xml.aspx
+  FacWarTopStats:
+    cache_time: '1:00'
+    mask: None
+    name: Factional Warfare Top 100 Stats
+    style: Short
+    url: https://api.eveonline.com/EVE/FacWarTopStats.xml.aspx
+  RefTypes:
+    cache_time: '24:00'
+    mask: None
+    name: RefTypes List
+    style: M-Short
+    url: https://api.eveonline.com/EVE/RefTypes.xml.aspx
+  SkillTree:
+    cache_time: '86400:00'
+    mask: None
+    name: Skill Tree
+    style: Weird
+    url: https://api.eveonline.com/EVE/SkillTree.xml.aspx
+  TypeName:
+    cache_time: '1:00'
+    mask: None
+    name: Type Name
+    style: M-Short
+    url: https://api.eveonline.com/EVE/TypeName.xml.aspx
+Map:
+  FacWarSystems:
+    cache_time: '1:00'
+    mask: None
+    name: Factional Warfare Systems (Occupancy Map)
+    style: Short
+    url: https://api.eveonline.com/Map/FacWarSystems.xml.aspx
+  Jumps:
+    cache_time: '1:00'
+    mask: None
+    name: Jumps
+    style: Short
+    url: https://api.eveonline.com/Map/Jumps.xml.aspx
+  Kills:
+    cache_time: '1:00'
+    mask: None
+    name: Kills
+    style: Short
+    url: https://api.eveonline.com/Map/Kills.xml.aspx
+  Sovereignty:
+    cache_time: '1:00'
+    mask: None
+    name: Sovereignty
+    style: Short
+    url: https://api.eveonline.com/Map/Sovereignty.xml.aspx
+Server:
+  ServerStatus:
+    cache_time: 0:03
+    mask: None
+    name: Server Status
+    style: Short
+    url: https://api.eveonline.com/Server/ServerStatus.xml.aspx
+

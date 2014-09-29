@@ -1,0 +1,1 @@
+../stationspinner/libs/eveapi/eveapi.py

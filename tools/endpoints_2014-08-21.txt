@@ -1,0 +1,85 @@
+Account Status ;Account/AccountStatus ;33554432 ;Short ;1:00 
+API Key Info ;Account/APIKeyInfo ;None ;Short ;0:05 
+List of Characters ;Account/Characters ;None ;Short ;1:00 
+Account Balance ;Char/AccountBalance ;1 ;Short ;0:15 
+Asset List ;Char/AssetList ;2 ;Short ;6:00 
+Blueprints ;Char/Blueprints ;2 ;Short ;24:00 
+Calendar Event Attendees ;Char/CalendarEventAttendees ;4 ;M-Short ; ??? 
+Character Sheet ;Char/CharacterSheet ;8 ;Short ;1:00 
+Contact List ;Char/ContactList ;16 ;Short ;0:15 
+Contact Notifications ;Char/ContactNotifications ;32 ;Short ;0:30 
+Contracts ;Char/Contracts ;67108864 ;Short ;0:15 
+ContractItems ;Char/ContractItems ;67108864 ;M-Short ; ??? 
+ContractBids ;Char/ContractBids ;67108864 ;Short ;0:15 
+Factional Warfare Stats ;Char/FacWarStats ;64 ;Short ; ??? 
+Industry Jobs ;Char/IndustryJobs ;128 ;Short ;0:15 
+Industry Jobs History ;Char/IndustryJobsHistory ;128 ;Short ;6:00 
+Kill Mails ;Char/KillMails ;256 ;Short ;0:30 
+Locations ;Char/Locations ;134217728 ;M-Short ;1:00 
+Mail Bodies ;Char/MailBodies ;512 ;M-Short ;87600:00 
+Mailing Lists ;Char/MailingLists ;1024 ;Short ;6:00 
+Mail Messages (Headers) ;Char/MailMessages ;2048 ;Short ;0:15 
+Market Orders ;Char/MarketOrders ;4096 ;Short ;1:00 
+Medals ;Char/Medals ;8192 ;Short ;6:00 
+Notifications ;Char/Notifications ;16384 ;Short ;1:00 
+NotificationTexts ;Char/NotificationTexts ;32768 ;M-Short ; ??? 
+PlanetaryColonies ;Char/PlanetaryColonies ;2 ;on view ;
+PlanetaryPins ;Char/PlanetaryPins ;2 ;on view ;
+PlanetaryRoutes ;Char/PlanetaryRoutes ;2 ;on view ;
+PlanetaryLinks ;Char/PlanetaryLinks ;2 ;on view ;
+Research ;Char/Research ;65536 ;Short ;0:15 
+Skill in Training ;Char/SkillInTraining ;131072 ;Short ;1:00 
+Skill Queue ;Char/SkillQueue ;262144 ;Short ;1:00 
+Standings (NPC) ;Char/Standings ;524288 ;Short ;3:00 
+Upcoming Calendar Events ;Char/UpcomingCalendarEvents ;1048576 ;Short ;1:00 
+Wallet Journal ;Char/WalletJournal ;2097152 ;Short ;0:30 
+Wallet Transactions ;Char/WalletTransactions ;4194304 ;Short ;0:30 
+Account Balances ;Corp/AccountBalance ;1 ;Short ;0:15 
+Asset List ;Corp/AssetList ;2 ;Short ;6:00 
+Blueprints ;Corp/Blueprints ;2 ;Short ;24:00 
+Contact List ;Corp/ContactList ;16 ;Short ;0:15 
+Container Log ;Corp/ContainerLog ;32 ;Short ;3:00 
+Contracts ;Corp/Contracts ;8388608 ;Short ;0:15 
+ContractItems ;Corp/ContractItems ;8388608 ;M-Short ;24:00 
+ContractBids ;Corp/ContractBids ;8388608 ;Short ;0:15 
+Corporation Sheet ;Corp/CorporationSheet ;8 ;Short ;1:00 
+Facilities ;Corp/Facilities ;128 ;Short ;0:15 
+Factional Warfare Stats ;Corp/FacWarStats ;64 ;Short ;0:15 
+Industry Jobs ;Corp/IndustryJobs ;128 ;Short ;0:15 
+Industry Jobs History ;Corp/IndustryJobsHistory ;128 ;Short ;6:00 
+Kill Mails ;Corp/KillMails ;256 ;Short ;0:30 
+Locations ;Corp/Locations ;16777216 ;M-Short ;1:00 
+Market Orders ;Corp/MarketOrders ;4096 ;Short ;1:00 
+Medals ;Corp/Medals ;8192 ;M-Short ;1:00 
+Member Medals ;Corp/MemberMedals ;4 ;Short ;6:00 
+Member Security ;Corp/MemberSecurity ;512 ;Short ;1:00 
+Member Security Log ;Corp/MemberSecurityLog ;1024 ;Short ;1:00 
+Member Tracking ;Corp/MemberTracking ;2048 ;Short ;6:00 
+Outpost List ;Corp/OutpostList ;16384 ;Short ;1:00 
+Outpost Service Detail ;Corp/OutpostServiceDetail ;32768 ;Short ;1:00 
+Shareholders ;Corp/Shareholders ;65536 ;Short ;1:00 
+Standings (NPC) ;Corp/Standings ;262144 ;Short ;3:00 
+Starbase Details (POS) ;Corp/StarbaseDetail ;131072 ;Short ;1:00 
+Starbase List (POS) ;Corp/StarbaseList ;524288 ;Short ;6:00 
+Titles ;Corp/Titles ;4194304 ;Short ;1:00 
+Wallet Journal ;Corp/WalletJournal ;1048576 ;Short ;0:30 
+Wallet Transactions ;Corp/WalletTransactions ;2097152 ;Short ;0:30 
+Alliance List ;EVE/AllianceList ;None ;M-Short ;1:00 
+Certificate Tree ;EVE/CertificateTree ;None ;M-Short ;0:00 
+Character Affiliation ;EVE/CharacterAffiliation ;None ;M-Short ;1:00 
+Character ID (Name to ID Conversion) ;EVE/CharacterID ;None ;M-Short ;720:00 
+Character Info ;EVE/CharacterInfo ;8388608(Public) / 16777216(Private) ;Short ;1:00 
+Character Name (ID to Name Conversion) ;EVE/CharacterName ;None ;M-Short ;720:00 
+Conquerable Station List (Includes Outposts) ;EVE/ConquerableStationList ;None ;M-Short ;1:00 
+Error List ;EVE/ErrorList ;None ;M-Short ;1:00 
+Factional Warfare Stats ;EVE/FacWarStats ;None ;Short ;1:00 
+Factional Warfare Top 100 Stats ;EVE/FacWarTopStats ;None ;Short ;1:00 
+RefTypes List ;EVE/RefTypes ;None ;M-Short ;24:00 
+Skill Tree ;EVE/SkillTree ;None ;Weird ;86400:00 
+Type Name ;EVE/TypeName ;None ;M-Short ;1:00 
+Factional Warfare Systems (Occupancy Map) ;Map/FacWarSystems ;None ;Short ;1:00 
+Jumps ;Map/Jumps ;None ;Short ;1:00 
+Kills ;Map/Kills ;None ;Short ;1:00 
+Sovereignty ;Map/Sovereignty ;None ;Short ;1:00 
+Server Status ;Server/ServerStatus ;None ;Short ;0:03 
+Call List (Access Mask reference) ;API/CallList ;None ;M-Short ;6:00 

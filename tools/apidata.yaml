@@ -1,0 +1,731 @@
+Char:
+  AccountBalance:
+    _fk:
+    - characterID
+    accounts:
+      accountID: int
+      accountKey: int
+      balance: float
+  AssetList:
+    _fk:
+    - characterID
+    assets:
+      flag: int
+      itemID: int
+      locationID: int
+      quantity: int
+      singleton: int
+      typeID: int
+  Blueprints:
+    _fk:
+    - characterID
+    blueprints:
+      flagID: int
+      itemID: int
+      locationID: int
+      materialEfficiency: int
+      quantity: int
+      runs: int
+      timeEfficiency: int
+      typeID: int
+      typeName: unicode
+  CharacterSheet:
+    DoB: int
+    _fk:
+    - characterID
+    allianceID: int
+    allianceName: str
+    ancestry: unicode
+    attributeEnhancers: Element
+    attributes: Element
+    balance: float
+    bloodLine: unicode
+    certificates:
+      certificateID: '#FIXME'
+    characterID: int
+    cloneName: unicode
+    cloneSkillPoints: int
+    corporationID: int
+    corporationName: unicode
+    corporationRoles:
+      roleID: int
+      roleName: unicode
+    corporationRolesAtBase:
+      roleID: int
+      roleName: unicode
+    corporationRolesAtHQ:
+      roleID: int
+      roleName: unicode
+    corporationRolesAtOther:
+      roleID: int
+      roleName: unicode
+    corporationTitles:
+      titleID: '#FIXME'
+      titleName: '#FIXME'
+    factionID: int
+    factionName: str
+    gender: unicode
+    name: unicode
+    race: unicode
+    skills:
+      level: int
+      published: int
+      skillpoints: int
+      typeID: int
+  ContactList:
+    _fk:
+    - characterID
+    allianceContactList:
+      contactID: '#FIXME'
+      contactName: '#FIXME'
+      contactTypeID: '#FIXME'
+      standing: '#FIXME'
+    contactList:
+      contactID: int
+      contactName: unicode
+      contactTypeID: int
+      inWatchlist: NoneType
+      standing: int
+    corporateContactList:
+      contactID: '#FIXME'
+      contactName: '#FIXME'
+      contactTypeID: '#FIXME'
+      standing: '#FIXME'
+  ContactNotifications:
+    _fk:
+    - characterID
+    contactNotifications:
+      messageData: '#FIXME'
+      notificationID: '#FIXME'
+      senderID: '#FIXME'
+      senderName: '#FIXME'
+      sentDate: '#FIXME'
+  ContractBids:
+    _fk:
+    - characterID
+    bidList:
+      amount: '#FIXME'
+      bidID: '#FIXME'
+      bidderID: '#FIXME'
+      contractID: '#FIXME'
+      dateBid: '#FIXME'
+  Contracts:
+    _fk:
+    - characterID
+    contractList:
+      acceptorID: '#FIXME'
+      assigneeID: '#FIXME'
+      availability: '#FIXME'
+      buyout: '#FIXME'
+      collateral: '#FIXME'
+      contractID: '#FIXME'
+      dateAccepted: '#FIXME'
+      dateCompleted: '#FIXME'
+      dateExpired: '#FIXME'
+      dateIssued: '#FIXME'
+      endStationID: '#FIXME'
+      forCorp: '#FIXME'
+      issuerCorpID: '#FIXME'
+      issuerID: '#FIXME'
+      numDays: '#FIXME'
+      price: '#FIXME'
+      reward: '#FIXME'
+      startStationID: '#FIXME'
+      status: '#FIXME'
+      title: '#FIXME'
+      type: '#FIXME'
+      volume: '#FIXME'
+  FacWarStats: '#FIXME'
+  IndustryJobs:
+    _fk:
+    - characterID
+    jobs:
+      activityID: '#FIXME'
+      blueprintID: '#FIXME'
+      blueprintLocationID: '#FIXME'
+      blueprintTypeID: '#FIXME'
+      blueprintTypeName: '#FIXME'
+      completedCharacterID: '#FIXME'
+      completedDate: '#FIXME'
+      cost: '#FIXME'
+      endDate: '#FIXME'
+      facilityID: '#FIXME'
+      installerID: '#FIXME'
+      installerName: '#FIXME'
+      jobID: '#FIXME'
+      licensedRuns: '#FIXME'
+      outputLocationID: '#FIXME'
+      pauseDate: '#FIXME'
+      probability: '#FIXME'
+      productTypeID: '#FIXME'
+      productTypeName: '#FIXME'
+      runs: '#FIXME'
+      solarSystemID: '#FIXME'
+      solarSystemName: '#FIXME'
+      startDate: '#FIXME'
+      stationID: '#FIXME'
+      status: '#FIXME'
+      teamID: '#FIXME'
+      timeInSeconds: '#FIXME'
+  IndustryJobsHistory:
+    _fk:
+    - characterID
+    jobs:
+      activityID: '#FIXME'
+      blueprintID: '#FIXME'
+      blueprintLocationID: '#FIXME'
+      blueprintTypeID: '#FIXME'
+      blueprintTypeName: '#FIXME'
+      completedCharacterID: '#FIXME'
+      completedDate: '#FIXME'
+      cost: '#FIXME'
+      endDate: '#FIXME'
+      facilityID: '#FIXME'
+      installerID: '#FIXME'
+      installerName: '#FIXME'
+      jobID: '#FIXME'
+      licensedRuns: '#FIXME'
+      outputLocationID: '#FIXME'
+      pauseDate: '#FIXME'
+      probability: '#FIXME'
+      productTypeID: '#FIXME'
+      productTypeName: '#FIXME'
+      runs: '#FIXME'
+      solarSystemID: '#FIXME'
+      solarSystemName: '#FIXME'
+      startDate: '#FIXME'
+      stationID: '#FIXME'
+      status: '#FIXME'
+      teamID: '#FIXME'
+      timeInSeconds: '#FIXME'
+  KillMails:
+    _fk:
+    - characterID
+    kills:
+      killID: '#FIXME'
+      killTime: '#FIXME'
+      moonID: '#FIXME'
+      solarSystemID: '#FIXME'
+  MailMessages:
+    _fk:
+    - characterID
+    messages:
+      messageID: int
+      senderID: int
+      senderName: unicode
+      sentDate: int
+      title: unicode
+      toCharacterIDs: unicode
+      toCorpOrAllianceID: int
+      toListID: unicode
+  MailingLists:
+    _fk:
+    - characterID
+    mailingLists:
+      displayName: '#FIXME'
+      listID: '#FIXME'
+  MarketOrders:
+    _fk:
+    - characterID
+    orders:
+      accountKey: '#FIXME'
+      bid: '#FIXME'
+      charID: '#FIXME'
+      duration: '#FIXME'
+      escrow: '#FIXME'
+      issued: '#FIXME'
+      minVolume: '#FIXME'
+      orderID: '#FIXME'
+      orderState: '#FIXME'
+      price: '#FIXME'
+      range: '#FIXME'
+      stationID: '#FIXME'
+      typeID: '#FIXME'
+      volEntered: '#FIXME'
+      volRemaining: '#FIXME'
+  Medals:
+    _fk:
+    - characterID
+    currentCorporation:
+      issued: '#FIXME'
+      issuerID: '#FIXME'
+      medalID: '#FIXME'
+      reason: '#FIXME'
+      status: '#FIXME'
+    otherCorporations:
+      corporationID: '#FIXME'
+      description: '#FIXME'
+      issued: '#FIXME'
+      issuerID: '#FIXME'
+      medalID: '#FIXME'
+      reason: '#FIXME'
+      status: '#FIXME'
+      title: '#FIXME'
+  Notifications:
+    _fk:
+    - characterID
+    notifications:
+      notificationID: '#FIXME'
+      read: '#FIXME'
+      senderID: '#FIXME'
+      senderName: '#FIXME'
+      sentDate: '#FIXME'
+      typeID: '#FIXME'
+  PlanetaryColonies:
+    _fk:
+    - characterID
+    colonies:
+      lastUpdate: '#FIXME'
+      numberOfPins: '#FIXME'
+      ownerID: '#FIXME'
+      ownerName: '#FIXME'
+      planetID: '#FIXME'
+      planetName: '#FIXME'
+      planetTypeID: '#FIXME'
+      planetTypeName: '#FIXME'
+      solarSystemID: '#FIXME'
+      solarSystemName: '#FIXME'
+      upgradeLevel: '#FIXME'
+  Research:
+    _fk:
+    - characterID
+    research:
+      agentID: int
+      pointsPerDay: float
+      remainderPoints: float
+      researchStartDate: int
+      skillTypeID: int
+  SkillInTraining:
+    _fk:
+    - characterID
+    currentTQTime: Element
+    skillInTraining: int
+    trainingDestinationSP: int
+    trainingEndTime: int
+    trainingStartSP: int
+    trainingStartTime: int
+    trainingToLevel: int
+    trainingTypeID: int
+  SkillQueue:
+    _fk:
+    - characterID
+    skillqueue:
+      endSP: int
+      endTime: int
+      level: int
+      queuePosition: int
+      startSP: int
+      startTime: int
+      typeID: int
+  Standings:
+    _fk:
+    - characterID
+    characterNPCStandings: Element
+  UpcomingCalendarEvents:
+    _fk:
+    - characterID
+    upcomingEvents:
+      duration: int
+      eventDate: int
+      eventID: int
+      eventText: unicode
+      eventTitle: unicode
+      importance: int
+      ownerID: int
+      ownerName: unicode
+      ownerTypeID: int
+      response: unicode
+  WalletJournal:
+    _fk:
+    - characterID
+    transactions:
+      amount: float
+      argID1: int
+      argName1: unicode
+      balance: float
+      date: int
+      owner1TypeID: int
+      owner2TypeID: int
+      ownerID1: int
+      ownerID2: int
+      ownerName1: unicode
+      ownerName2: unicode
+      reason: unicode
+      refID: int
+      refTypeID: int
+      taxAmount: unicode
+      taxReceiverID: unicode
+  WalletTransactions:
+    _fk:
+    - characterID
+    transactions:
+      clientID: int
+      clientName: unicode
+      clientTypeID: int
+      journalTransactionID: int
+      price: float
+      quantity: int
+      stationID: int
+      stationName: unicode
+      transactionDateTime: int
+      transactionFor: unicode
+      transactionID: int
+      transactionType: unicode
+      typeID: int
+      typeName: unicode
+Corp:
+  AccountBalance:
+    _fk:
+    - characterID
+    accounts:
+      accountID: int
+      accountKey: int
+      balance: float
+  AssetList:
+    _fk:
+    - characterID
+    assets:
+      flag: int
+      itemID: int
+      locationID: int
+      quantity: int
+      singleton: int
+      typeID: int
+  Blueprints:
+    _fk:
+    - characterID
+    blueprints:
+      flagID: int
+      itemID: int
+      locationID: int
+      materialEfficiency: int
+      quantity: int
+      runs: int
+      timeEfficiency: int
+      typeID: int
+      typeName: unicode
+  ContactList:
+    _fk:
+    - characterID
+    allianceContactList:
+      contactID: '#FIXME'
+      contactName: '#FIXME'
+      contactTypeID: '#FIXME'
+      standing: '#FIXME'
+    corporateContactList:
+      contactID: '#FIXME'
+      contactName: '#FIXME'
+      contactTypeID: '#FIXME'
+      standing: '#FIXME'
+  ContainerLog:
+    _fk:
+    - characterID
+    containerLog:
+      action: '#FIXME'
+      actorID: '#FIXME'
+      actorName: '#FIXME'
+      flag: '#FIXME'
+      itemID: '#FIXME'
+      itemTypeID: '#FIXME'
+      locationID: '#FIXME'
+      logTime: '#FIXME'
+      newConfiguration: '#FIXME'
+      oldConfiguration: '#FIXME'
+      passwordType: '#FIXME'
+      quantity: '#FIXME'
+      typeID: '#FIXME'
+  ContractBids:
+    _fk:
+    - characterID
+    bidList:
+      amount: '#FIXME'
+      bidID: '#FIXME'
+      bidderID: '#FIXME'
+      contractID: '#FIXME'
+      dateBid: '#FIXME'
+  Contracts:
+    _fk:
+    - characterID
+    contractList:
+      acceptorID: '#FIXME'
+      assigneeID: '#FIXME'
+      availability: '#FIXME'
+      buyout: '#FIXME'
+      collateral: '#FIXME'
+      contractID: '#FIXME'
+      dateAccepted: '#FIXME'
+      dateCompleted: '#FIXME'
+      dateExpired: '#FIXME'
+      dateIssued: '#FIXME'
+      endStationID: '#FIXME'
+      forCorp: '#FIXME'
+      issuerCorpID: '#FIXME'
+      issuerID: '#FIXME'
+      numDays: '#FIXME'
+      price: '#FIXME'
+      reward: '#FIXME'
+      startStationID: '#FIXME'
+      status: '#FIXME'
+      title: '#FIXME'
+      type: '#FIXME'
+      volume: '#FIXME'
+  CorporationSheet:
+    _fk:
+    - characterID
+    allianceID: int
+    ceoID: int
+    ceoName: unicode
+    corporationID: int
+    corporationName: unicode
+    description: str
+    divisions:
+      accountKey: int
+      description: unicode
+    factionID: int
+    logo: Element
+    memberCount: int
+    memberLimit: int
+    shares: int
+    stationID: int
+    stationName: unicode
+    taxRate: int
+    ticker: unicode
+    url: unicode
+    walletDivisions:
+      accountKey: int
+      description: unicode
+  FacWarStats: '#FIXME'
+  Facilities:
+    _fk:
+    - characterID
+    facilities:
+      facilityID: int
+      regionID: int
+      regionName: unicode
+      solarSystemID: int
+      solarSystemName: unicode
+      starbaseModifier: int
+      tax: int
+      typeID: int
+      typeName: unicode
+  IndustryJobs:
+    _fk:
+    - characterID
+    jobs:
+      activityID: int
+      blueprintID: int
+      blueprintLocationID: int
+      blueprintTypeID: int
+      blueprintTypeName: unicode
+      completedCharacterID: int
+      completedDate: int
+      cost: float
+      endDate: int
+      facilityID: int
+      installerID: int
+      installerName: unicode
+      jobID: int
+      licensedRuns: int
+      outputLocationID: int
+      pauseDate: int
+      probability: int
+      productTypeID: int
+      productTypeName: unicode
+      runs: int
+      solarSystemID: int
+      solarSystemName: unicode
+      startDate: int
+      stationID: int
+      status: int
+      teamID: int
+      timeInSeconds: int
+  IndustryJobsHistory:
+    _fk:
+    - characterID
+    jobs:
+      activityID: int
+      blueprintID: int
+      blueprintLocationID: int
+      blueprintTypeID: int
+      blueprintTypeName: unicode
+      completedCharacterID: int
+      completedDate: int
+      cost: float
+      endDate: int
+      facilityID: int
+      installerID: int
+      installerName: unicode
+      jobID: int
+      licensedRuns: int
+      outputLocationID: int
+      pauseDate: int
+      probability: int
+      productTypeID: int
+      productTypeName: unicode
+      runs: int
+      solarSystemID: int
+      solarSystemName: unicode
+      startDate: int
+      stationID: int
+      status: int
+      teamID: int
+      timeInSeconds: int
+  KillMails:
+    _fk:
+    - characterID
+    kills:
+      killID: int
+      killTime: int
+      moonID: int
+      solarSystemID: int
+  MarketOrders:
+    _fk:
+    - characterID
+    orders:
+      accountKey: int
+      bid: int
+      charID: int
+      duration: int
+      escrow: float
+      issued: int
+      minVolume: int
+      orderID: int
+      orderState: int
+      price: float
+      range: int
+      stationID: int
+      typeID: int
+      volEntered: int
+      volRemaining: int
+  Medals:
+    _fk:
+    - characterID
+    medals:
+      created: '#FIXME'
+      creatorID: '#FIXME'
+      description: '#FIXME'
+      medalID: '#FIXME'
+      title: '#FIXME'
+  MemberMedals:
+    _fk:
+    - characterID
+    issuedMedals:
+      characterID: '#FIXME'
+      issued: '#FIXME'
+      issuerID: '#FIXME'
+      medalID: '#FIXME'
+      reason: '#FIXME'
+      status: '#FIXME'
+  MemberSecurity:
+    _fk:
+    - characterID
+    members:
+      characterID: int
+      name: unicode
+  MemberSecurityLog:
+    _fk:
+    - characterID
+    roleHistory:
+      changeTime: '#FIXME'
+      characterID: '#FIXME'
+      issuerID: '#FIXME'
+      roleLocationType: '#FIXME'
+  MemberTracking:
+    _fk:
+    - extended
+    members:
+      base: unicode
+      baseID: int
+      characterID: int
+      name: unicode
+      startDateTime: int
+      title: unicode
+  OutpostList:
+    _fk:
+    - characterID
+    corporationStarbases:
+      dockingCostPerShipVolume: '#FIXME'
+      officeRentalCost: '#FIXME'
+      ownerID: '#FIXME'
+      reprocessingEfficiency: '#FIXME'
+      reprocessingStationTake: '#FIXME'
+      solarSystemID: '#FIXME'
+      standingOwnerID: '#FIXME'
+      stationID: '#FIXME'
+      stationName: '#FIXME'
+      stationTypeID: '#FIXME'
+  Shareholders:
+    _fk:
+    - characterID
+    characters:
+      shareholderCorporationID: '#FIXME'
+      shareholderCorporationName: '#FIXME'
+      shareholderID: '#FIXME'
+      shareholderName: '#FIXME'
+      shares: '#FIXME'
+    corporations:
+      shareholderID: int
+      shareholderName: unicode
+      shares: int
+  Standings:
+    _fk:
+    - characterID
+    corporationNPCStandings: Element
+  StarbaseDetail: '#FIXME'
+  StarbaseList:
+    _fk:
+    - characterID
+    starbases:
+      itemID: int
+      locationID: int
+      moonID: int
+      onlineTimestamp: int
+      standingOwnerID: int
+      state: int
+      stateTimestamp: int
+      typeID: int
+  Titles:
+    _fk:
+    - characterID
+    titles:
+      titleID: '#FIXME'
+      titleName: '#FIXME'
+  WalletJournal:
+    _fk:
+    - characterID
+    entries:
+      amount: float
+      argID1: int
+      argName1: unicode
+      balance: float
+      date: int
+      owner1TypeID: int
+      owner2TypeID: int
+      ownerID1: int
+      ownerID2: int
+      ownerName1: unicode
+      ownerName2: unicode
+      reason: unicode
+      refID: int
+      refTypeID: int
+  WalletTransactions:
+    _fk:
+    - characterID
+    transactions:
+      characterID: int
+      characterName: unicode
+      clientID: int
+      clientName: unicode
+      clientTypeID: int
+      journalTransactionID: int
+      price: float
+      quantity: int
+      stationID: int
+      stationName: unicode
+      transactionDateTime: int
+      transactionFor: unicode
+      transactionID: int
+      transactionType: unicode
+      typeID: int
+      typeName: unicode
+
