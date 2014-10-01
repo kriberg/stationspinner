@@ -1,7 +1,7 @@
 from django.db import models
-from mptt.models import MPTTModel, TreeForeignKey
 from stationspinner.accounting.models import APIKey, APIUpdate, Capsuler
 from stationspinner.libs import fields as custom
+from django_pgjson.fields import JsonBField
 
 
 class CharacterSheet(models.Model):
@@ -186,23 +186,17 @@ class Research(models.Model):
     owner = models.ForeignKey(CharacterSheet)
 
 
-class Asset(MPTTModel):
-    itemID = models.BigIntegerField()
-    typeID = models.IntegerField(null=True)
-    singleton = models.BooleanField(default=False)
-    locationID = models.BigIntegerField()
-    flag = models.IntegerField()
-    quantity = models.IntegerField()
-    parent = TreeForeignKey('self', null=True, blank=True, related_name="children")
-
+class AssetList(models.Model):
+    items = JsonBField()
+    retrieved = custom.DateTimeField()
     owner = models.ForeignKey(CharacterSheet)
 
 
 class MarketOrder(models.Model):
-    orderID = models.IntegerField()
+    orderID = models.BigIntegerField()
     typeID = models.IntegerField()
-    volEntered = models.IntegerField()
-    minVolume = models.IntegerField()
+    volEntered = models.BigIntegerField()
+    minVolume = models.BigIntegerField()
     charID = models.IntegerField()
     accountKey = models.IntegerField(default=1000)
     issued = custom.DateTimeField()
@@ -211,7 +205,7 @@ class MarketOrder(models.Model):
     escrow = models.DecimalField(max_digits=30, decimal_places=2, null=True)
     stationID = models.IntegerField()
     orderState = models.IntegerField()
-    volRemaining = models.IntegerField()
+    volRemaining = models.BigIntegerField()
     duration = models.IntegerField()
     price = models.DecimalField(max_digits=30, decimal_places=2)
 

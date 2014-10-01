@@ -1,6 +1,6 @@
 from django.db import models
-from django_hstore import hstore
-from stationspinner.accounting.models import APIKey, APIUpdate
+from django_pgjson.fields import JsonField
+from stationspinner.accounting.models import APIKey
 from stationspinner.libs import fields as custom
 from stationspinner.character import models as character_models
 
@@ -111,13 +111,12 @@ class Starbase(models.Model):
     moonID = models.IntegerField(null=True)
 
     # General settings
-    general_settings = hstore.DictionaryField(default={})
+    general_settings = JsonField(default={}, blank=True)
 
     # Combat settings
-    combat_settings = hstore.DictionaryField(default={})
+    combat_settings = JsonField(default={}, blank=True)
 
     owner = models.ForeignKey(CorporationSheet)
-    objects = hstore.HStoreManager()
 
 
     def get_state(self):

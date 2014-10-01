@@ -1,31 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-#from django_hstore import hstore
-#from django.dispatch import receiver
-
+from django_pgjson.fields import JsonField
 
 class Capsuler(AbstractUser):
+    settings = JsonField(blank=True, default={})
     def __unicode__(self):
         return self.username
 
     def get_active_keys(self):
         return APIKey.objects.filter(owner=self, expired=False)
-
-#    def get_settings(self):
-#        return CapsulerSetting.objects.get(owner=self)
-#
-#
-#class CapsulerSetting(models.Model):
-#    settings = hstore.DictionaryField(default={})
-#    owner = models.OneToOneField(Capsuler)
-#
-#    objects = hstore.HStoreManager()
-#
-#
-#@receiver(models.signals.pre_save, sender=Capsuler)
-#def add_settings(sender, **kwargs):
-#    settings = CapsulerSetting.objects.get_or_create(owner=kwargs['instance'])
-#    settings.save()
 
 
 class APIKey(models.Model):
