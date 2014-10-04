@@ -18,6 +18,15 @@ DATABASES = {
         'PASSWORD': '',
         'HOST': '',                      # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
         'PORT': '',                      # Set to empty string for default.
+    },
+    'sde': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': '',                      # Or path to database file if using sqlite3.
+        # The following settings are not used with sqlite3:
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',                      # Empty for localhost through domain sockets or '127.0.0.1' for localhost through TCP.
+        'PORT': '',                      # Set to empty string for default.
     }
 }
 
@@ -128,12 +137,12 @@ INSTALLED_APPS = [
     'grappelli',
     'django.contrib.admin',
     'django.contrib.admindocs',
-    'django_hstore',
     # Stationspinner apps
     'stationspinner.accounting',
     'stationspinner.character',
     'stationspinner.corporation',
     'stationspinner.universe',
+    'stationspinner.sde',
 ]
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
@@ -204,3 +213,5 @@ if DEBUG:
         'level': 'DEBUG',
         'class': 'logging.StreamHandler'
     }
+
+DATABASE_ROUTERS = ['stationspinner.dbrouter.DBRouter',]

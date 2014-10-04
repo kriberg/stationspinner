@@ -1,7 +1,10 @@
+from stationspinner.libs import get_location_name
 from stationspinner.libs.eveapi import eveapi
 from stationspinner.libs.eveapi_cache import RedisCache
+from stationspinner.sde.models import InvType
 
 import logging
+import copy
 
 log = logging.getLogger(__name__)
 
@@ -44,7 +47,7 @@ class EveAPIHandler():
                 defaults[attribute] = getattr(result, attribute)
         return defaults
 
-    def autoparse(self, result, obj):
+    def autoparse(self, result, obj, ignore=()):
         """
         Tries to match the field names of the django model with the results
         from the eveapi. If the names match up, set the model values for those
@@ -55,7 +58,49 @@ class EveAPIHandler():
         """
         kwargs = self._create_defaults(result, obj._meta.get_all_field_names())
         for attribute, value in kwargs.items():
+            if attribute in ignore:
+                continue
             setattr(obj, attribute, value)
+        return obj
+
+    def autoparseObj(self,
+                     entry,
+                     objClass,
+                     unique_together=(),
+                      extra_selectors={},
+                      owner=None,
+                      exclude=(),
+                      pre_save=False):
+
+        selectors = {}
+        for column in unique_together:
+            selectors[column] = getattr(entry, column)
+
+        for key, value in extra_selectors.items():
+            selectors[key] = value
+
+        defaults = self._create_defaults(entry,
+                                        objClass._meta.get_all_field_names())
+
+        for field in exclude:
+            if field in defaults:
+                defaults.pop(field)
+
+        if len(selectors) > 0:
+            obj, created = objClass.objects.update_or_create(defaults=defaults,
+                                                             **selectors)
+        else:
+            obj = objClass(**defaults)
+
+        if owner:
+            obj.owner = owner
+
+        if pre_save:
+            obj.save()
+
+        if 'update_from_api' in dir(obj):
+            obj.update_from_api(entry, self)
+
         return obj
 
     def autoparseList(self,
@@ -105,3 +150,52 @@ class EveAPIHandler():
             obj_list.append(obj.pk)
 
         return obj_list
+
+    def asset_parser(self, assets):
+        def parse_rowset(rowset, locationID=None, parent=None, path=()):
+            contents = []
+            for row in rowset:
+                if hasattr(row, 'locationID'):
+                    locationID = row.locationID
+
+                locationName = get_location_name(locationID)
+
+                try:
+                    item_type = InvType.objects.get(pk=row.typeID)
+                    typeName = item_type.typeName
+                except InvType.DoesNotExist:
+                    typeName = None
+
+                item = {
+                    'itemID': row.itemID,
+                    'locationID': locationID,
+                    'locationName': locationName,
+                    'typeID': row.typeID,
+                    'typeName': typeName,
+                    'quantity': row.quantity,
+                    'flag': row.flag,
+                    'singleton': row.singleton,
+                    'parent': parent,
+                    'path': path
+                }
+
+                if hasattr(row, 'rawQuantity'):
+                    item['rawQuantity'] = row.rawQuantity
+
+                if hasattr(row, 'contents'):
+                    item['contents'] = parse_rowset(row.contents,
+                                                    locationID=locationID,
+                                                    parent=row.itemID,
+                                                    path=path+(row.itemID,))
+
+                contents.append(item)
+
+            return contents
+
+        store = {}
+
+        for container in parse_rowset(assets):
+            store[container['locationID']] = container
+
+        return store
+

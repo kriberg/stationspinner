@@ -1,11 +1,18 @@
 from stationspinner.celery import app
-from celery import group, chain
+from celery import group
 from datetime import datetime
 
 from stationspinner.libs.eveapihandler import EveAPIHandler
 from stationspinner.accounting.models import Capsuler, APIKey
 from stationspinner.character.tasks import fetch_charactersheet, \
-    fetch_blueprints
+    fetch_blueprints, \
+    fetch_assetlist, \
+    fetch_contacts, \
+    fetch_marketorders, \
+    fetch_medals, \
+    fetch_research, \
+    fetch_skillqueue, \
+    fetch_skill_in_training
 
 from celery.utils.log import get_task_logger
 
@@ -45,18 +52,23 @@ def refresh_capsuler(capsuler_pk):
                 if new.accessMask > current.accessMask:
                     chars_to_keys[char_id] = key_pk
 
-    update_sheets = group(fetch_charactersheet.s(character_pk, apikey_pk) \
-                          for character_pk, apikey_pk in chars_to_keys.items())
+    update_characters = fetch_charactersheet.starmap(chars_to_keys.items())
+    tasks = update_characters.apply_async()
 
-    tasks = update_sheets.apply_async()
     characterIDs = tasks.get()
 
-    update_blueprints = group(fetch_blueprints.s(character_pk, apikey_pk) \
-                          for character_pk, apikey_pk in chars_to_keys.items())
+    jobs = group(fetch_blueprints.map(characterIDs),
+                  fetch_assetlist.map(characterIDs),
+                  fetch_contacts.map(characterIDs),
+                  fetch_marketorders.map(characterIDs),
+                  fetch_medals.map(characterIDs),
+                  fetch_research.map(characterIDs),
+                  fetch_skillqueue.map(characterIDs),
+                  fetch_skill_in_training.map(characterIDs))()
 
-    tasks = update_blueprints.apply_async()
-    tasks.get()
+    result = jobs.get()
     log.info('Capsuler {0} updated in {1} seconds.'.format(capsuler, (datetime.now()-start).total_seconds()))
+    return result
 
 
 @app.task(name='accounting.validate_key')
