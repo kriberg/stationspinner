@@ -7,4 +7,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         characters = CharacterSheet.objects.filter(enabled=True)
         for char in characters:
-            self.stdout.write('CharacterID\t\t {0} APIKey\t\t {1}'.format(char.pk, char.owner_key.pk))
+            self.stdout.write('{0}\t\tCharacterID\t\t {1} APIKey\t\t {2}'.format(char.name,
+                                                                          char.pk,
+                                                                          char.owner_key.pk))
