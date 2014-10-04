@@ -4,6 +4,18 @@ from stationspinner.libs import fields as custom
 from django_pgjson.fields import JsonBField
 
 
+class Skill(models.Model):
+    skillpoints = models.IntegerField(default=0)
+    level = models.IntegerField(default=0)
+    typeID = models.IntegerField()
+    published = models.BooleanField(default=True)
+
+    owner = models.ForeignKey('CharacterSheet', related_name='skills')
+
+    class Meta:
+        unique_together = ('typeID', 'owner')
+
+
 class CharacterSheet(models.Model):
     GENDER = (
         ('Male', 'Male'),
@@ -71,7 +83,7 @@ class CharacterSheet(models.Model):
         return self.name
 
     def update_from_api(self, sheet, handler):
-        handler.autoparse(sheet, self)
+        handler.autoparse(sheet, self, ignore=('skills',))
         handler.autoparse(sheet.attributes, self)
 
         if not sheet.attributeEnhancers == '':
@@ -140,7 +152,7 @@ class UpcomingCalendarEvent(models.Model):
     eventDate = custom.DateTimeField()
     eventText = models.TextField(blank=True, default='')
     ownerTypeID = models.IntegerField()
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
 
 class Blueprint(models.Model):
@@ -154,7 +166,7 @@ class Blueprint(models.Model):
     locationID = models.BigIntegerField()
     quantity = models.IntegerField()
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
     class Meta:
         unique_together = ('itemID', 'owner')
@@ -173,7 +185,7 @@ class Contact(models.Model):
     contactTypeID = models.IntegerField()
     listType = models.CharField(max_length=20, choices=CONTACT_LIST_TYPES)
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
 
 class Research(models.Model):
@@ -183,13 +195,16 @@ class Research(models.Model):
     agentID = models.IntegerField()
     remainderPoints = models.DecimalField(max_digits=20, decimal_places=10)
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
 
 class AssetList(models.Model):
     items = JsonBField()
     retrieved = custom.DateTimeField()
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
+
+    def __unicode__(self):
+        return "{0}'s assets ({1})".format(self.owner, self.retrieved)
 
 
 class MarketOrder(models.Model):
@@ -209,7 +224,7 @@ class MarketOrder(models.Model):
     duration = models.IntegerField()
     price = models.DecimalField(max_digits=30, decimal_places=2)
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
 
 class Medal(models.Model):
@@ -222,7 +237,7 @@ class Medal(models.Model):
     corporationID = models.IntegerField(null=True)
     description = models.TextField(blank=True, default='')
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
 
 class PlanetaryColony(models.Model):
@@ -238,7 +253,7 @@ class PlanetaryColony(models.Model):
     solarSystemID = models.IntegerField()
     planetTypeName = models.CharField(max_length=50)
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
     class Meta:
         verbose_name_plural = "PlanetaryColonies"
@@ -250,7 +265,7 @@ class WalletJournal(models.Model):
     reason = models.CharField(max_length=255, blank=True, null=True)
     date = custom.DateTimeField()
     refTypeID = models.IntegerField(null=True)
-    refID = models.IntegerField(null=True)
+    refID = models.BigIntegerField(null=True)
     ownerID2 = models.IntegerField(null=True)
     taxAmount = models.CharField(max_length=255, blank=True, null=True)
     ownerID1 = models.IntegerField(null=True)
@@ -262,7 +277,7 @@ class WalletJournal(models.Model):
     amount = models.DecimalField(max_digits=30, decimal_places=2, null=True)
     balance = models.DecimalField(max_digits=30, decimal_places=2, null=True)
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
 
 class Notification(models.Model):
@@ -273,7 +288,7 @@ class Notification(models.Model):
     senderName = models.CharField(max_length=255)
     senderID = models.IntegerField()
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
 
 class Contract(models.Model):
@@ -300,7 +315,7 @@ class Contract(models.Model):
     issuerCorpID = models.IntegerField()
     contractID = models.BigIntegerField()
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
     def get_items(self):
         return ContractItem.objects.filter(contract=self, owner=self.owner)
@@ -321,7 +336,7 @@ class ContractItem(models.Model):
     singleton = models.BooleanField(default=False)
     included = models.BooleanField(default=True)
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
     class Meta:
         unique_together = ('contract', 'owner', 'rowID')
@@ -334,7 +349,7 @@ class ContractBid(models.Model):
     dateBid = custom.DateTimeField()
     amount = models.DecimalField(max_digits=30, decimal_places=2, null=True)
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
     class Meta:
         unique_together = ('bidID', 'contractID', 'owner')
@@ -342,21 +357,21 @@ class ContractBid(models.Model):
 
 class SkillQueue(models.Model):
     typeID = models.IntegerField()
-    endTime = custom.DateTimeField()
-    startTime = custom.DateTimeField()
+    endTime = custom.DateTimeField(null=True)
+    startTime = custom.DateTimeField(null=True)
     level = models.IntegerField()
     queuePosition = models.IntegerField()
     startSP = models.IntegerField()
     endSP = models.IntegerField()
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet', related_name='skillQueue')
 
 
 class MailingList(models.Model):
     listID = models.IntegerField()
     displayName = models.CharField(max_length=255)
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
 
 
@@ -367,7 +382,7 @@ class ContactNotification(models.Model):
     messageData = models.TextField(blank='', default='')
     sentDate = custom.DateTimeField()
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
 
 class WalletTransaction(models.Model):
@@ -386,7 +401,7 @@ class WalletTransaction(models.Model):
     clientName = models.CharField(max_length=255, blank=True, null=True)
     transactionType = models.CharField(max_length=255, blank=True, null=True)
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
 
 class CorporationRole(models.Model):
@@ -400,32 +415,20 @@ class CorporationRole(models.Model):
     roleName = models.CharField(max_length=100)
     location = models.CharField(max_length=10, choices=ROLE_LOCATION)
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
 
 class CorporationTitle(models.Model):
     titleID = models.IntegerField()
     titleName = models.CharField(max_length=255)
 
-    owner = models.ForeignKey(CharacterSheet)
-
-
-class Skill(models.Model):
-    skillpoints = models.IntegerField(default=0)
-    level = models.IntegerField(default=0)
-    typeID = models.IntegerField()
-    published = models.BooleanField(default=True)
-
-    owner = models.ForeignKey(CharacterSheet)
-
-    class Meta:
-        unique_together = ('typeID', 'owner')
+    owner = models.ForeignKey('CharacterSheet')
 
 
 class Certificate(models.Model):
     certificateID = models.IntegerField()
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
     class Meta:
         unique_together = ('certificateID', 'owner')
@@ -441,7 +444,7 @@ class MailMessage(models.Model):
     toListID = models.TextField(blank=True, default='')
     toCharacterIDs = models.TextField(blank=True, default='')
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
     class Meta:
         unique_together = ('messageID', 'owner')
@@ -451,13 +454,13 @@ class SkillInTraining(models.Model):
     trainingStartSP = models.IntegerField(null=True)
     trainingTypeID = models.IntegerField(null=True)
     trainingDestinationSP = models.IntegerField(null=True)
-    currentTQTime = custom.DateTimeField()
+    currentTQTime = custom.DateTimeField(null=True)
     trainingEndTime = custom.DateTimeField(null=True)
     skillInTraining = models.BooleanField(default=True)
     trainingStartTime = custom.DateTimeField(null=True)
     trainingToLevel = models.IntegerField(null=True)
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet', related_name='skillInTraining')
 
 
 class IndustryJob(models.Model):
@@ -489,7 +492,7 @@ class IndustryJob(models.Model):
     solarSystemID = models.IntegerField()
     licensedRuns = models.IntegerField(null=True)
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
 class IndustryJobHistory(models.Model):
     status = models.IntegerField(null=True)
@@ -520,7 +523,7 @@ class IndustryJobHistory(models.Model):
     solarSystemID = models.IntegerField()
     licensedRuns = models.IntegerField(null=True)
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
 
 class NPCStanding(models.Model):
@@ -534,7 +537,7 @@ class NPCStanding(models.Model):
     fromName = models.CharField(max_length=255)
     standing = models.DecimalField(max_digits=5, decimal_places=2)
 
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey('CharacterSheet')
 
     class Meta:
         unique_together = ('fromID', 'owner')
