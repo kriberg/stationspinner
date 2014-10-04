@@ -1,12 +1,13 @@
 from django.db import models
 from django_pgjson.fields import JsonField
-from stationspinner.accounting.models import APIKey
+from stationspinner.accounting.models import APIKey, Capsuler
 from stationspinner.libs import fields as custom
 from stationspinner.character import models as character_models
 
 
 class CorporationSheet(models.Model):
     owner_key = models.ForeignKey(APIKey)
+    owner = models.ForeignKey(Capsuler)
     enabled = models.BooleanField(default=False)
 
     corporationID = models.IntegerField(primary_key=True)
@@ -25,7 +26,6 @@ class CorporationSheet(models.Model):
     memberCount = models.IntegerField(default=1)
     shares = models.IntegerField(default=1)
     url = models.CharField(max_length=255, blank=True, default='')
-
 
 
 class Shareholder(models.Model):
@@ -177,70 +177,70 @@ class Blueprint(character_models.Blueprint):
 
 class IndustryJob(character_models.IndustryJob):
     def __init__(self, *args, **kwargs):
-        super(Blueprint, self).__init__(*args, **kwargs)
+        super(IndustryJob, self).__init__(*args, **kwargs)
         owner = models.ForeignKey(CorporationSheet)
         owner.contribute_to_class(models.ForeignKey, 'owner')
 
 
 class IndustryJobHistory(character_models.IndustryJobHistory):
     def __init__(self, *args, **kwargs):
-        super(Blueprint, self).__init__(*args, **kwargs)
+        super(IndustryJobHistory, self).__init__(*args, **kwargs)
         owner = models.ForeignKey(CorporationSheet)
         owner.contribute_to_class(models.ForeignKey, 'owner')
 
 
 class WalletTransaction(character_models.WalletTransaction):
     def __init__(self, *args, **kwargs):
-        super(Blueprint, self).__init__(*args, **kwargs)
+        super(WalletTransaction, self).__init__(*args, **kwargs)
         owner = models.ForeignKey(CorporationSheet)
         owner.contribute_to_class(models.ForeignKey, 'owner')
 
 
 class WalletJournal(character_models.WalletJournal):
     def __init__(self, *args, **kwargs):
-        super(Blueprint, self).__init__(*args, **kwargs)
+        super(WalletJournal, self).__init__(*args, **kwargs)
         owner = models.ForeignKey(CorporationSheet)
         owner.contribute_to_class(models.ForeignKey, 'owner')
 
 
 class Contact(character_models.Contact):
     def __init__(self, *args, **kwargs):
-        super(Blueprint, self).__init__(*args, **kwargs)
+        super(Contact, self).__init__(*args, **kwargs)
         owner = models.ForeignKey(CorporationSheet)
         owner.contribute_to_class(models.ForeignKey, 'owner')
 
 
-class Asset(character_models.Asset):
+class AssetList(character_models.AssetList):
     def __init__(self, *args, **kwargs):
-        super(Blueprint, self).__init__(*args, **kwargs)
+        super(AssetList, self).__init__(*args, **kwargs)
         owner = models.ForeignKey(CorporationSheet)
         owner.contribute_to_class(models.ForeignKey, 'owner')
 
 
 class MarketOrder(character_models.MarketOrder):
     def __init__(self, *args, **kwargs):
-        super(Blueprint, self).__init__(*args, **kwargs)
+        super(MarketOrder, self).__init__(*args, **kwargs)
         owner = models.ForeignKey(CorporationSheet)
         owner.contribute_to_class(models.ForeignKey, 'owner')
 
 
 class Contract(character_models.Contract):
     def __init__(self, *args, **kwargs):
-        super(Blueprint, self).__init__(*args, **kwargs)
+        super(Contract, self).__init__(*args, **kwargs)
         owner = models.ForeignKey(CorporationSheet)
         owner.contribute_to_class(models.ForeignKey, 'owner')
 
 
 class ContractItem(character_models.ContractItem):
     def __init__(self, *args, **kwargs):
-        super(Blueprint, self).__init__(*args, **kwargs)
+        super(ContractItem, self).__init__(*args, **kwargs)
         owner = models.ForeignKey(CorporationSheet)
         owner.contribute_to_class(models.ForeignKey, 'owner')
 
 
 class ContractBid(character_models.ContractBid):
     def __init__(self, *args, **kwargs):
-        super(Blueprint, self).__init__(*args, **kwargs)
+        super(ContractBid, self).__init__(*args, **kwargs)
         owner = models.ForeignKey(CorporationSheet)
         owner.contribute_to_class(models.ForeignKey, 'owner')
 
@@ -264,7 +264,7 @@ class ContainerLog(models.Model):
 
 class NPCStanding(character_models.NPCStanding):
     def __init__(self, *args, **kwargs):
-        super(Blueprint, self).__init__(*args, **kwargs)
+        super(NPCStanding, self).__init__(*args, **kwargs)
         owner = models.ForeignKey(CorporationSheet)
         owner.contribute_to_class(models.ForeignKey, 'owner')
 
@@ -275,7 +275,7 @@ class MemberSecurity(character_models.CorporationRole):
     grantable = models.BooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
-        super(Blueprint, self).__init__(*args, **kwargs)
+        super(MemberSecurity, self).__init__(*args, **kwargs)
         owner = models.ForeignKey(CorporationSheet)
         owner.contribute_to_class(models.ForeignKey, 'owner')
 
@@ -285,7 +285,7 @@ class MemberTitle(character_models.CorporationTitle):
     characterName = models.CharField(max_length=255)
 
     def __init__(self, *args, **kwargs):
-        super(Blueprint, self).__init__(*args, **kwargs)
+        super(MemberTitle, self).__init__(*args, **kwargs)
         owner = models.ForeignKey(CorporationSheet)
         owner.contribute_to_class(models.ForeignKey, 'owner')
 
