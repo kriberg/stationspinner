@@ -1,5 +1,5 @@
 from django.db import models
-from django_pgjson.fields import JsonField
+from django_pgjson.fields import JsonField, JsonBField
 from stationspinner.accounting.models import APIKey, Capsuler
 from stationspinner.libs import fields as custom
 from stationspinner.character import models as character_models
@@ -27,6 +27,27 @@ class CorporationSheet(models.Model):
     shares = models.IntegerField(default=1)
     url = models.CharField(max_length=255, blank=True, default='')
 
+    def update_from_api(self, sheet, handler):
+        handler.autoparse(sheet, self)
+        self.enabled = True
+        self.save()
+
+        handler.autoparseList(sheet.divisions,
+                              Division,
+                              unique_together=('accountKey',),
+                              extra_selectors={'owner': self},
+                              owner=self,
+                              pre_save=True)
+
+        handler.autoparseList(sheet.walletDivisions,
+                              WalletDivision,
+                              unique_together=('accountKey',),
+                              extra_selectors={'owner': self},
+                              owner=self,
+                              pre_save=True)
+
+    def __unicode__(self):
+        return self.corporationName
 
 class Shareholder(models.Model):
     HOLDER_TYPES = (
@@ -168,81 +189,253 @@ class OutpostService(models.Model):
         unique_together = ('outpost', 'serviceName', 'owner')
 
 
-class Blueprint(character_models.Blueprint):
-    def __init__(self, *args, **kwargs):
-        super(Blueprint, self).__init__(*args, **kwargs)
-        owner = models.ForeignKey(CorporationSheet)
-        owner.contribute_to_class(models.ForeignKey, 'owner')
+class Blueprint(models.Model):
+    itemID = models.BigIntegerField()
+    typeID = models.IntegerField()
+    runs = models.IntegerField()
+    flagID = models.IntegerField()
+    timeEfficiency = models.IntegerField()
+    materialEfficiency = models.IntegerField()
+    typeName = models.CharField(max_length=255)
+    locationID = models.BigIntegerField()
+    quantity = models.IntegerField()
+
+    owner = models.ForeignKey(CorporationSheet)
+
+    class Meta:
+        unique_together = ('itemID', 'owner')
 
 
-class IndustryJob(character_models.IndustryJob):
-    def __init__(self, *args, **kwargs):
-        super(IndustryJob, self).__init__(*args, **kwargs)
-        owner = models.ForeignKey(CorporationSheet)
-        owner.contribute_to_class(models.ForeignKey, 'owner')
+class IndustryJob(models.Model):
+    status = models.IntegerField(null=True)
+    startDate = custom.DateTimeField()
+    endDate = custom.DateTimeField()
+    probability = models.DecimalField(max_digits=4, decimal_places=2, null=True)
+    blueprintTypeName = models.CharField(max_length=255, blank=True, null=True)
+    runs = models.IntegerField(null=True)
+    outputLocationID = models.BigIntegerField()
+    activityID = models.IntegerField()
+    cost = models.DecimalField(max_digits=30, decimal_places=2, null=True)
+    blueprintTypeID = models.IntegerField(null=True)
+    timeInSeconds = models.IntegerField()
+    productTypeID = models.IntegerField(null=True)
+    completedDate = custom.DateTimeField(null=True)
+    completedCharacterID = models.IntegerField(null=True)
+    installerName = models.CharField(max_length=255)
+    installerID = models.IntegerField()
+    facilityID = models.IntegerField()
+    pauseDate = custom.DateTimeField(null=True)
+    solarSystemName = models.CharField(max_length=255)
+    stationID = models.IntegerField(null=True)
+    jobID = models.BigIntegerField(null=True)
+    teamID = models.IntegerField(null=True)
+    productTypeName = models.CharField(max_length=255, blank=True, null=True)
+    blueprintLocationID = models.IntegerField(null=True)
+    blueprintID = models.BigIntegerField(null=True)
+    solarSystemID = models.IntegerField()
+    licensedRuns = models.IntegerField(null=True)
+
+    owner = models.ForeignKey(CorporationSheet)
 
 
-class IndustryJobHistory(character_models.IndustryJobHistory):
-    def __init__(self, *args, **kwargs):
-        super(IndustryJobHistory, self).__init__(*args, **kwargs)
-        owner = models.ForeignKey(CorporationSheet)
-        owner.contribute_to_class(models.ForeignKey, 'owner')
+class IndustryJobHistory(models.Model):
+    status = models.IntegerField(null=True)
+    startDate = custom.DateTimeField()
+    endDate = custom.DateTimeField()
+    probability = models.DecimalField(max_digits=4, decimal_places=2, null=True)
+    blueprintTypeName = models.CharField(max_length=255, blank=True, null=True)
+    runs = models.IntegerField(null=True)
+    outputLocationID = models.BigIntegerField()
+    activityID = models.IntegerField()
+    cost = models.DecimalField(max_digits=30, decimal_places=2, null=True)
+    blueprintTypeID = models.IntegerField(null=True)
+    timeInSeconds = models.IntegerField()
+    productTypeID = models.IntegerField(null=True)
+    completedDate = custom.DateTimeField(null=True)
+    completedCharacterID = models.IntegerField(null=True)
+    installerName = models.CharField(max_length=255)
+    installerID = models.IntegerField()
+    facilityID = models.IntegerField()
+    pauseDate = custom.DateTimeField(null=True)
+    solarSystemName = models.CharField(max_length=255)
+    stationID = models.IntegerField(null=True)
+    jobID = models.BigIntegerField(null=True)
+    teamID = models.IntegerField(null=True)
+    productTypeName = models.CharField(max_length=255, blank=True, null=True)
+    blueprintLocationID = models.IntegerField(null=True)
+    blueprintID = models.BigIntegerField(null=True)
+    solarSystemID = models.IntegerField()
+    licensedRuns = models.IntegerField(null=True)
+
+    owner = models.ForeignKey(CorporationSheet)
 
 
-class WalletTransaction(character_models.WalletTransaction):
-    def __init__(self, *args, **kwargs):
-        super(WalletTransaction, self).__init__(*args, **kwargs)
-        owner = models.ForeignKey(CorporationSheet)
-        owner.contribute_to_class(models.ForeignKey, 'owner')
+class WalletTransaction(models.Model):
+    typeID = models.IntegerField(null=True)
+    clientTypeID = models.IntegerField(null=True)
+    transactionFor = models.CharField(max_length=255, blank=True, null=True)
+    price = models.DecimalField(max_digits=30, decimal_places=2, null=True)
+    clientID = models.IntegerField(null=True)
+    journalTransactionID = models.IntegerField(null=True)
+    typeName = models.CharField(max_length=255, blank=True, null=True)
+    stationID = models.IntegerField(null=True)
+    stationName = models.CharField(max_length=255, blank=True, null=True)
+    transactionID = models.IntegerField(null=True)
+    quantity = models.IntegerField(null=True)
+    transactionDateTime = custom.DateTimeField(null=True)
+    clientName = models.CharField(max_length=255, blank=True, null=True)
+    transactionType = models.CharField(max_length=255, blank=True, null=True)
+
+    owner = models.ForeignKey(CorporationSheet)
+
+class WalletJournal(models.Model):
+    taxReceiverID = models.IntegerField(null=True)
+    argName1 = models.CharField(max_length=255, blank=True, null=True)
+    reason = models.CharField(max_length=255, blank=True, null=True)
+    date = custom.DateTimeField()
+    refTypeID = models.IntegerField(null=True)
+    refID = models.BigIntegerField(null=True)
+    ownerID2 = models.IntegerField(null=True)
+    taxAmount = models.CharField(max_length=255, blank=True, null=True)
+    ownerID1 = models.IntegerField(null=True)
+    argID1 = models.IntegerField(null=True)
+    owner1TypeID = models.IntegerField(null=True)
+    ownerName2 = models.CharField(max_length=255, blank=True, null=True)
+    owner2TypeID = models.IntegerField(null=True)
+    ownerName1 = models.CharField(max_length=255, blank=True, null=True)
+    amount = models.DecimalField(max_digits=30, decimal_places=2, null=True)
+    balance = models.DecimalField(max_digits=30, decimal_places=2, null=True)
+
+    owner = models.ForeignKey(CorporationSheet)
 
 
-class WalletJournal(character_models.WalletJournal):
-    def __init__(self, *args, **kwargs):
-        super(WalletJournal, self).__init__(*args, **kwargs)
-        owner = models.ForeignKey(CorporationSheet)
-        owner.contribute_to_class(models.ForeignKey, 'owner')
+class Contact(models.Model):
+    CONTACT_LIST_TYPES = (
+        ('Private', 'Private'),
+        ('Corporate', 'Corporate'),
+        ('Alliance', 'Alliance')
+    )
+    standing = models.IntegerField()
+    inWatchlist = models.BooleanField(default=False)
+    contactID = models.IntegerField()
+    contactName = models.CharField(max_length=255)
+    contactTypeID = models.IntegerField()
+    listType = models.CharField(max_length=20, choices=CONTACT_LIST_TYPES)
+
+    owner = models.ForeignKey(CorporationSheet)
 
 
-class Contact(character_models.Contact):
-    def __init__(self, *args, **kwargs):
-        super(Contact, self).__init__(*args, **kwargs)
-        owner = models.ForeignKey(CorporationSheet)
-        owner.contribute_to_class(models.ForeignKey, 'owner')
+class AssetList(models.Model):
+    items = JsonBField()
+    retrieved = custom.DateTimeField()
+    owner = models.ForeignKey(CorporationSheet)
+
+    def __unicode__(self):
+        return "{0}'s assets ({1})".format(self.owner, self.retrieved)
 
 
-class AssetList(character_models.AssetList):
-    def __init__(self, *args, **kwargs):
-        super(AssetList, self).__init__(*args, **kwargs)
-        owner = models.ForeignKey(CorporationSheet)
-        owner.contribute_to_class(models.ForeignKey, 'owner')
+class Asset(models.Model):
+    itemID = models.BigIntegerField()
+    quantity = models.BigIntegerField()
+    locationID = models.BigIntegerField()
+    typeID = models.IntegerField()
+    flag = models.IntegerField()
+    singleton = models.BooleanField(default=False)
+    rawQuantity = models.IntegerField(default=0)
+    path = models.CharField(max_length=255, default='')
+
+    owner = models.ForeignKey(CorporationSheet)
+
+    def from_item(self, item):
+        self.itemID = item['itemID']
+        self.quantity = item['quantity']
+        self.locationID = item['locationID']
+        self.typeID = item['typeID']
+        self.flag = item['flag']
+        self.singleton = item['singleton']
+        self.path = ".".join(map(str, item['path']))
+
+        if 'rawQuantity' in item:
+            self.rawQuantity = item['rawQuantity']
 
 
-class MarketOrder(character_models.MarketOrder):
-    def __init__(self, *args, **kwargs):
-        super(MarketOrder, self).__init__(*args, **kwargs)
-        owner = models.ForeignKey(CorporationSheet)
-        owner.contribute_to_class(models.ForeignKey, 'owner')
+    class Meta:
+        managed = False
 
 
-class Contract(character_models.Contract):
-    def __init__(self, *args, **kwargs):
-        super(Contract, self).__init__(*args, **kwargs)
-        owner = models.ForeignKey(CorporationSheet)
-        owner.contribute_to_class(models.ForeignKey, 'owner')
+class MarketOrder(models.Model):
+    orderID = models.BigIntegerField()
+    typeID = models.IntegerField()
+    volEntered = models.BigIntegerField()
+    minVolume = models.BigIntegerField()
+    charID = models.IntegerField()
+    accountKey = models.IntegerField(default=1000)
+    issued = custom.DateTimeField()
+    bid = models.BooleanField(default=False)
+    range = models.IntegerField()
+    escrow = models.DecimalField(max_digits=30, decimal_places=2, null=True)
+    stationID = models.IntegerField()
+    orderState = models.IntegerField()
+    volRemaining = models.BigIntegerField()
+    duration = models.IntegerField()
+    price = models.DecimalField(max_digits=30, decimal_places=2)
+
+    owner = models.ForeignKey(CorporationSheet)
 
 
-class ContractItem(character_models.ContractItem):
-    def __init__(self, *args, **kwargs):
-        super(ContractItem, self).__init__(*args, **kwargs)
-        owner = models.ForeignKey(CorporationSheet)
-        owner.contribute_to_class(models.ForeignKey, 'owner')
+class Contract(models.Model):
+    status = models.CharField(max_length=50)
+    startStationID = models.IntegerField(null=True)
+    dateCompleted = custom.DateTimeField(null=True)
+    collateral = models.DecimalField(max_digits=30, decimal_places=2, null=True)
+    assigneeID = models.IntegerField(null=True)
+    issuerID = models.IntegerField()
+    price = models.DecimalField(max_digits=30, decimal_places=2, null=True)
+    endStationID = models.IntegerField(null=True)
+    buyout = models.DecimalField(max_digits=30, decimal_places=2, null=True)
+    dateExpired = custom.DateTimeField()
+    availability = models.CharField(max_length=10)
+    numDays = models.IntegerField(null=True)
+    volume = models.DecimalField(max_digits=30, decimal_places=2, null=True)
+    title = models.CharField(max_length=255)
+    acceptorID = models.IntegerField(null=True)
+    forCorp = models.BooleanField(default=False)
+    dateAccepted = custom.DateTimeField(null=True)
+    dateIssued = custom.DateTimeField(null=True)
+    reward = models.DecimalField(max_digits=30, decimal_places=2, null=True)
+    type = models.CharField(max_length=15)
+    issuerCorpID = models.IntegerField()
+    contractID = models.BigIntegerField()
+
+    owner = models.ForeignKey(CorporationSheet)
 
 
-class ContractBid(character_models.ContractBid):
-    def __init__(self, *args, **kwargs):
-        super(ContractBid, self).__init__(*args, **kwargs)
-        owner = models.ForeignKey(CorporationSheet)
-        owner.contribute_to_class(models.ForeignKey, 'owner')
+class ContractItem(models.Model):
+    contract = models.ForeignKey(Contract)
+    rowID = models.BigIntegerField()
+    typeID = models.IntegerField()
+    quantity = models.BigIntegerField()
+    rawQuantity = models.IntegerField(null=True)
+    singleton = models.BooleanField(default=False)
+    included = models.BooleanField(default=True)
+
+    owner = models.ForeignKey(CorporationSheet)
+
+    class Meta:
+        unique_together = ('contract', 'owner', 'rowID')
+
+
+class ContractBid(models.Model):
+    bidID = models.BigIntegerField()
+    contractID = models.BigIntegerField()
+    bidderID = models.BigIntegerField()
+    dateBid = custom.DateTimeField()
+    amount = models.DecimalField(max_digits=30, decimal_places=2, null=True)
+
+    owner = models.ForeignKey(CorporationSheet)
+
+    class Meta:
+        unique_together = ('bidID', 'contractID', 'owner')
 
 
 
@@ -262,32 +455,47 @@ class ContainerLog(models.Model):
     owner = models.ForeignKey(CorporationSheet)
 
 
-class NPCStanding(character_models.NPCStanding):
-    def __init__(self, *args, **kwargs):
-        super(NPCStanding, self).__init__(*args, **kwargs)
-        owner = models.ForeignKey(CorporationSheet)
-        owner.contribute_to_class(models.ForeignKey, 'owner')
+class NPCStanding(models.Model):
+    STANDING_TYPE = (
+        ('Agent', 'Agent'),
+        ('Corporation', 'Corporation'),
+        ('Faction', 'Faction')
+    )
+    type = models.CharField(max_length=11, choices=STANDING_TYPE)
+    fromID = models.IntegerField()
+    fromName = models.CharField(max_length=255)
+    standing = models.DecimalField(max_digits=5, decimal_places=2)
+
+    owner = models.ForeignKey(CorporationSheet)
+
+    class Meta:
+        unique_together = ('fromID', 'owner')
 
 
-class MemberSecurity(character_models.CorporationRole):
+class MemberSecurity(models.Model):
+    ROLE_LOCATION = (
+        ('Global', 'Global'),
+        ('Base', 'Base'),
+        ('Other', 'Other'),
+        ('HQ', 'HQ'),
+    )
+    roleID = models.BigIntegerField()
+    roleName = models.CharField(max_length=100)
+    location = models.CharField(max_length=10, choices=ROLE_LOCATION)
     characterID = models.IntegerField()
     characterName = models.CharField(max_length=255)
     grantable = models.BooleanField(default=False)
 
-    def __init__(self, *args, **kwargs):
-        super(MemberSecurity, self).__init__(*args, **kwargs)
-        owner = models.ForeignKey(CorporationSheet)
-        owner.contribute_to_class(models.ForeignKey, 'owner')
+    owner = models.ForeignKey(CorporationSheet)
 
 
-class MemberTitle(character_models.CorporationTitle):
+class MemberTitle(models.Model):
     characterID = models.IntegerField()
     characterName = models.CharField(max_length=255)
+    titleID = models.IntegerField()
+    titleName = models.CharField(max_length=255)
 
-    def __init__(self, *args, **kwargs):
-        super(MemberTitle, self).__init__(*args, **kwargs)
-        owner = models.ForeignKey(CorporationSheet)
-        owner.contribute_to_class(models.ForeignKey, 'owner')
+    owner = models.ForeignKey(CorporationSheet)
 
 
 class MemberSecurityLog(models.Model):
@@ -338,8 +546,18 @@ class Division(models.Model):
         unique_together = ('accountKey', 'owner')
 
 
-class WalletDivision(Division):
-    pass
+class WalletDivision(models.Model):
+    accountKey = models.IntegerField()
+    description = models.CharField(max_length=255)
+
+    owner = models.ForeignKey(CorporationSheet)
+
+    def __unicode__(self):
+        return self.description
+
+    class Meta:
+        unique_together = ('accountKey', 'owner')
+
 
 
 class AccountBalance(models.Model):
