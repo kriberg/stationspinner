@@ -4,7 +4,6 @@ from stationspinner.libs.eveapi_cache import RedisCache
 from stationspinner.sde.models import InvType
 
 import logging
-import copy
 
 log = logging.getLogger(__name__)
 
@@ -151,20 +150,29 @@ class EveAPIHandler():
 
         return obj_list
 
-    def asset_parser(self, assets):
+    def asset_parser(self, assets, AssetClass, owner):
+        location_cache = {}
+        type_cache = {}
         def parse_rowset(rowset, locationID=None, parent=None, path=()):
             contents = []
             for row in rowset:
                 if hasattr(row, 'locationID'):
                     locationID = row.locationID
 
-                locationName = get_location_name(locationID)
+                if locationID in location_cache:
+                    locationName = location_cache[locationID]
+                else:
+                    locationName = get_location_name(locationID)
+                    location_cache[locationID] = locationName
 
-                try:
-                    item_type = InvType.objects.get(pk=row.typeID)
-                    typeName = item_type.typeName
-                except InvType.DoesNotExist:
-                    typeName = None
+                if row.typeID in type_cache:
+                    typeName = type_cache[row.typeID]
+                else:
+                    try:
+                        item_type = InvType.objects.get(pk=row.typeID)
+                        typeName = item_type.typeName
+                    except InvType.DoesNotExist:
+                        typeName = None
 
                 item = {
                     'itemID': row.itemID,
@@ -182,6 +190,11 @@ class EveAPIHandler():
                 if hasattr(row, 'rawQuantity'):
                     item['rawQuantity'] = row.rawQuantity
 
+                asset = AssetClass()
+                asset.from_item(item)
+                asset.owner = owner
+                asset.save()
+
                 if hasattr(row, 'contents'):
                     item['contents'] = parse_rowset(row.contents,
                                                     locationID=locationID,
@@ -193,9 +206,10 @@ class EveAPIHandler():
             return contents
 
         store = {}
+        AssetClass.objects.filter(owner=owner).delete()
 
         for container in parse_rowset(assets):
-            store[container['locationID']] = container
+            store[container['itemID']] = container
 
         return store
 
