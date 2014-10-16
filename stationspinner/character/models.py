@@ -1,5 +1,5 @@
 from django.db import models
-from stationspinner.accounting.models import APIKey, APIUpdate, Capsuler
+from stationspinner.accounting.models import APIKey, Capsuler
 from stationspinner.libs import fields as custom
 from django_pgjson.fields import JsonBField
 
@@ -206,6 +206,34 @@ class AssetList(models.Model):
     def __unicode__(self):
         return "{0}'s assets ({1})".format(self.owner, self.retrieved)
 
+
+class Asset(models.Model):
+    itemID = models.BigIntegerField()
+    quantity = models.BigIntegerField()
+    locationID = models.BigIntegerField()
+    typeID = models.IntegerField()
+    flag = models.IntegerField()
+    singleton = models.BooleanField(default=False)
+    rawQuantity = models.IntegerField(default=0)
+    path = models.CharField(max_length=255, default='')
+
+    owner = models.ForeignKey(CharacterSheet)
+
+    def from_item(self, item):
+        self.itemID = item['itemID']
+        self.quantity = item['quantity']
+        self.locationID = item['locationID']
+        self.typeID = item['typeID']
+        self.flag = item['flag']
+        self.singleton = item['singleton']
+        self.path = ".".join(map(str, item['path']))
+
+        if 'rawQuantity' in item:
+            self.rawQuantity = item['rawQuantity']
+
+
+    class Meta:
+        managed = False
 
 class MarketOrder(models.Model):
     orderID = models.BigIntegerField()

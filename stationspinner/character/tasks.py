@@ -4,7 +4,7 @@ from stationspinner.character.models import CharacterSheet, WalletJournal, \
     Blueprint, Contact, Research, AssetList, MarketOrder, Medal, Notification, \
     WalletTransaction, PlanetaryColony, Contract, ContractItem, ContractBid, \
     SkillQueue, MailingList, ContactNotification, MailMessage, \
-    SkillInTraining, IndustryJob, IndustryJobHistory, NPCStanding
+    SkillInTraining, IndustryJob, IndustryJobHistory, NPCStanding, Asset
 
 from stationspinner.libs.eveapihandler import EveAPIHandler
 
@@ -205,7 +205,9 @@ def fetch_assetlist(character_pk):
     assetlist = AssetList(owner=character,
                           retrieved=api_data._meta.currentTime)
 
-    assetlist.items = handler.asset_parser(api_data.assets)
+    assetlist.items = handler.asset_parser(api_data.assets,
+                                           Asset,
+                                           character)
     assetlist.save()
 
 
