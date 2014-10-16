@@ -1,3 +1,5 @@
 from django.contrib import admin
+from stationspinner.corporation.models import CorporationSheet, AssetList
 
-# Register your models here.
+admin.site.register(CorporationSheet)
+admin.site.register(AssetList)
