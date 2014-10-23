@@ -12,6 +12,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('auth', '0001_initial'),
+        ('universe', '__first__'),
     ]
 
     operations = [
@@ -51,6 +52,8 @@ class Migration(migrations.Migration):
                 ('type', models.CharField(max_length=11, null=True, editable=False, choices=[(b'Account', b'Account'), (b'Character', b'Character'), (b'Corporation', b'Corporation')])),
                 ('expired', models.BooleanField(default=False, editable=False)),
                 ('expires', models.DateTimeField(null=True, editable=False)),
+                ('characterID', models.IntegerField(null=True)),
+                ('corporationID', models.IntegerField(null=True)),
                 ('owner', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],
             options={
@@ -61,8 +64,9 @@ class Migration(migrations.Migration):
             name='APIUpdate',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('service', models.CharField(max_length=100)),
-                ('last_update', models.DateTimeField(auto_now=True)),
+                ('owner', models.IntegerField()),
+                ('last_update', models.DateTimeField(null=True)),
+                ('apicall', models.ForeignKey(to='universe.APICall')),
                 ('apikey', models.ForeignKey(to='accounting.APIKey')),
             ],
             options={
@@ -71,6 +75,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name='apiupdate',
-            unique_together=set([('service', 'apikey')]),
+            unique_together=set([('apicall', 'apikey', 'owner')]),
         ),
     ]
