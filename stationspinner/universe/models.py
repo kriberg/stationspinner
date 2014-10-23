@@ -95,7 +95,7 @@ class APICall(models.Model):
     description = models.TextField()
 
     def __unicode__(self):
-        return self.name
+        return "{0}.{1}".format(self.type, self.name)
 
     class Meta:
         unique_together = ('accessMask', 'type')

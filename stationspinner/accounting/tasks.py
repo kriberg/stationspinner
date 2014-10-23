@@ -3,20 +3,10 @@ from celery import group
 from datetime import datetime
 
 from stationspinner.libs.eveapihandler import EveAPIHandler
-from stationspinner.accounting.models import Capsuler, APIKey
-from stationspinner.character.tasks import fetch_charactersheet, \
-    fetch_blueprints, \
-    fetch_assetlist, \
-    fetch_contacts, \
-    fetch_marketorders, \
-    fetch_medals, \
-    fetch_research, \
-    fetch_skillqueue, \
-    fetch_skill_in_training
-
-from stationspinner.corporation.tasks import fetch_corporationsheet, \
-    fetch_assetlist as corp_fetch_assetlist, \
-    fetch_membertracking as corp_fetch_membertracking
+from stationspinner.accounting.models import Capsuler, APIKey, APIUpdate
+from stationspinner.universe.models import APICall
+from stationspinner.character.tasks import API_MAP as character_tasks
+from stationspinner.corporation.tasks import API_MAP as corporation_tasks
 
 from celery.utils.log import get_task_logger
 
@@ -37,65 +27,35 @@ def refresh_capsuler(capsuler_pk):
 
     validation = validate_key.map([apikey.pk for apikey in keys])
     tasks = validation.apply_async()
-    valid_characters = tasks.get()
-    log.debug('Valid characterIDs: {0}'.format(valid_characters))
+    tasks.get()
 
-    # Since we have a bunch of keys, some characters could be available on several of them.
-    # We'll use the key with the biggest access mask, in such cases.
-    masks = {}
-    for key in keys:
-        masks[key.pk] = key.accessMask
-    chars_to_keys = {}
+    keys = APIKey.objects.filter(owner=capsuler, expired=False).exclude(type='Corporation')
+    for task_batch in character_tasks:
+        batch = []
+        for name, taskfns in task_batch.items():
+            apicall = APICall.objects.get(type='Character', name=name)
+            targets = APIUpdate.objects.filter(apicall=apicall,
+                                               apikey__in=keys)
+            if targets.count() > 0:
+                for fn in taskfns:
+                    batch.append(fn.map([t.pk for t in targets]))
+        tasks = group(batch).apply_async()
+        tasks.get()
 
+    corpkeys = APIKey.objects.filter(owner=capsuler, expired=False, type='Corporation')
+    for task_batch in corporation_tasks:
+        batch = []
+        for name, taskfns in task_batch.items():
+            apicall = APICall.objects.get(type='Corporation', name=name)
+            targets = APIUpdate.objects.filter(apicall=apicall,
+                                               apikey__in=corpkeys)
+            if targets.count() > 0:
+                for fn in taskfns:
+                    batch.append(fn.map([t.pk for t in targets]))
+        tasks = group(batch).apply_async()
+        tasks.get()
 
-    for charlists in valid_characters:
-        # Corp keys have no valid chars, so we'll skip those
-        if not charlists:
-            continue
-        for char_id, key_pk  in charlists:
-            if not char_id in chars_to_keys:
-                chars_to_keys[char_id] = key_pk
-            else:
-                current = masks[chars_to_keys[char_id]]
-                new = masks[key_pk]
-                if new > current:
-                    chars_to_keys[char_id] = key_pk
-
-    update_characters = fetch_charactersheet.starmap(chars_to_keys.items())
-    tasks = update_characters.apply_async()
-
-    characterIDs = tasks.get()
-
-    corpkeys = keys.filter(type='Corporation', expired=False)
-    corp_to_keys = {}
-    for key in corpkeys:
-        if not key.corporationID in corp_to_keys:
-            corp_to_keys[key.corporationID] = key.pk
-        else:
-            current = masks[corpkeys[key.corporationID]]
-            new = masks[key.pk]
-            if new > current:
-                corp_to_keys[key.corporationID] = key.pk
-
-    updated_corporations = fetch_corporationsheet.starmap(corp_to_keys.items())
-    tasks = updated_corporations.apply_async()
-
-    corpIDs = tasks.get()
-
-    jobs = group(fetch_blueprints.map(characterIDs),
-                  fetch_assetlist.map(characterIDs),
-                  fetch_contacts.map(characterIDs),
-                  fetch_marketorders.map(characterIDs),
-                  fetch_medals.map(characterIDs),
-                  fetch_research.map(characterIDs),
-                  fetch_skillqueue.map(characterIDs),
-                  fetch_skill_in_training.map(characterIDs),
-                  corp_fetch_assetlist.map(corpIDs),
-                  corp_fetch_membertracking.map(corpIDs))()
-
-    result = jobs.get()
-    log.info('Capsuler {0} updated in {1} seconds.'.format(capsuler, (datetime.now()-start).total_seconds()))
-    return result
+    log.info('Capsuler "{0}" updated in {1} seconds.'.format(capsuler, (datetime.now()-start).total_seconds()))
 
 
 @app.task(name='accounting.validate_key')
@@ -113,19 +73,38 @@ def validate_key(apikey_pk):
     expires = datetime.fromtimestamp(keyinfo.key.expires)
     if expires < datetime.now():
         apikey.expired = True
-        return None
+        APIUpdate.objects.filter(apikey=apikey).delete()
+        return
+
     apikey.accessMask = keyinfo.key.accessMask
     apikey.type = keyinfo.key.type
+
     if keyinfo.key.type == 'Corporation':
         apikey.characterID = keyinfo.key.characters[0].characterID
         apikey.corporationID = keyinfo.key.characters[0].corporationID
         apikey.save()
-        return
+        for call_type in APICall.objects.all():
+            if call_type.accessMask & apikey.accessMask > 0:
+                APIUpdate.objects.update_or_create(owner=apikey.corporationID,
+                                                   apicall=call_type,
+                                                   apikey=apikey)
 
-    character_ids = [(char.characterID, apikey_pk) for char in keyinfo.key.characters]
-    apikey.save()
+    elif keyinfo.key.type == 'Character':
+        apikey.characterID = keyinfo.key.characters[0].characterID
+        apikey.save()
+        for call_type in APICall.objects.all():
+            if call_type.accessMask & apikey.accessMask > 0:
+                APIUpdate.objects.update_or_create(owner=apikey.characterID,
+                                                   apicall=call_type,
+                                                   apikey=apikey)
+    elif keyinfo.key.type == 'Account':
+        apikey.save()
 
-    return character_ids
-
-
-#TODO: task to disable expired keys and disable characters/corporations
+        for char in keyinfo.key.characters:
+            for call_type in APICall.objects.all():
+                if call_type.accessMask & apikey.accessMask > 0:
+                    APIUpdate.objects.update_or_create(owner=char.characterID,
+                                                       apicall=call_type,
+                                                       apikey=apikey)
+    else:
+        pass

@@ -1,6 +1,6 @@
 from stationspinner.celery import app
 from stationspinner.libs.eveapihandler import EveAPIHandler
-from stationspinner.accounting.models import APIKey
+from stationspinner.accounting.models import APIKey, APIUpdate
 from stationspinner.corporation.models import CorporationSheet, AssetList, \
     MarketOrder, Medal, MemberMedal, MemberSecurity, MemberSecurityLog, \
     MemberTitle, MemberTracking, ContractItem, AccountBalance, Contact, \
@@ -14,20 +14,18 @@ log = get_task_logger(__name__)
 
 
 @app.task(name='corporation.fetch_corporationsheet')
-def fetch_corporationsheet(corporation_pk, apikey_pk):
+def fetch_corporationsheet(apiupdate_pk):
     try:
-        apikey = APIKey.objects.get(pk=apikey_pk)
-    except APIKey.DoesNotExist, dne:
-        log.error('APIKey {0} could not be found.'.format(apikey_pk))
+        target = APIUpdate.objects.get(pk=apiupdate_pk)
+    except APIUpdate.DoesNotExist, dne:
+        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
         raise dne
+
+    apikey = target.apikey
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(apikey)
     sheet = auth.corp.CorporationSheet(characterID=apikey.characterID)
-
-    if not sheet.corporationID == corporation_pk:
-        log.error('API returned other corporation ({0}) than requested with key {1}'.format(sheet.corporationID,
-                                                                                            apikey_pk))
 
     try:
         corporation = CorporationSheet.objects.get(corporationID=sheet.corporationID)
@@ -60,14 +58,20 @@ def fetch_corporationsheet(corporation_pk, apikey_pk):
     return corporation.pk
 
 
-
 @app.task(name='corporation.fetch_assetlist')
-def fetch_assetlist(corporation_pk):
+def fetch_assetlist(apiupdate_pk):
     try:
-        corporation = CorporationSheet.objects.get(pk=corporation_pk)
-    except CorporationSheet.DoesNotExist, dbe:
-        log.error('Requested characterID {0} could not be fetched.'.format(corporation_pk))
-        raise dbe
+        target = APIUpdate.objects.get(pk=apiupdate_pk)
+    except APIUpdate.DoesNotExist, dne:
+        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        raise dne
+
+    try:
+        corporation = CorporationSheet.objects.get(pk=target.owner)
+    except CorporationSheet.DoesNotExist, dne:
+        log.error('Corporation {0} for APIUpdate {1} does not exist'.format(target.owner,
+                                                                          target.pk))
+        raise dne
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
@@ -84,12 +88,19 @@ def fetch_assetlist(corporation_pk):
 
 
 @app.task(name='corporation.fetch_membertracking')
-def fetch_membertracking(corporation_pk):
+def fetch_membertracking(apiupdate_pk):
     try:
-        corporation = CorporationSheet.objects.get(pk=corporation_pk)
-    except CorporationSheet.DoesNotExist, dbe:
-        log.error('Requested characterID {0} could not be fetched.'.format(corporation_pk))
-        raise dbe
+        target = APIUpdate.objects.get(pk=apiupdate_pk)
+    except APIUpdate.DoesNotExist, dne:
+        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        raise dne
+
+    try:
+        corporation = CorporationSheet.objects.get(pk=target.owner)
+    except CorporationSheet.DoesNotExist, dne:
+        log.error('Corporation {0} for APIUpdate {1} does not exist'.format(target.owner,
+                                                                          target.pk))
+        raise dne
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
@@ -102,3 +113,12 @@ def fetch_membertracking(corporation_pk):
                           extra_selectors={'owner': corporation},
                           owner=corporation,
                           pre_save=True)
+
+API_MAP = [
+    {
+        'CorporationSheet': (fetch_corporationsheet,),
+    },
+    {
+        'AssetList': (fetch_assetlist,),
+        'MemberTrackingExtended': (fetch_membertracking,),
+    }]

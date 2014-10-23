@@ -1,4 +1,4 @@
-from stationspinner.libs import get_location_name
+from stationspinner.libs.pragma import get_location_name
 from stationspinner.libs.eveapi import eveapi
 from stationspinner.libs.eveapi_cache import RedisCache
 from stationspinner.sde.models import InvType
@@ -132,8 +132,11 @@ class EveAPIHandler():
                     defaults.pop(field)
 
             if len(selectors) > 0:
-                obj, created = objClass.objects.update_or_create(defaults=defaults,
-                                                                 **selectors)
+                try:
+                    obj, created = objClass.objects.update_or_create(defaults=defaults,
+                                                                     **selectors)
+                except ValueError:
+                    print defaults, selectors
             else:
                 obj = objClass(**defaults)
 

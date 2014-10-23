@@ -1,7 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django_pgjson.fields import JsonField
+from datetime import datetime
+from pytz import UTC
 
+from stationspinner.universe.models import APICall
 
 class Capsuler(AbstractUser):
     settings = JsonField(blank=True, default={})
@@ -35,12 +38,29 @@ class APIKey(models.Model):
     def __unicode__(self):
         return self.name
 
+    def can_call(self, apicall):
+        if apicall.accessMask & self.accessMask > 0:
+            True
+        else:
+            False
+
 
 class APIUpdate(models.Model):
-    service = models.CharField(max_length=100)
-    last_update = models.DateTimeField(auto_now=True)
+    apicall = models.ForeignKey(APICall)
     apikey = models.ForeignKey(APIKey)
+    owner = models.IntegerField()
+    last_update = models.DateTimeField(null=True)
+
+    def updated(self):
+        self.last_update = datetime.now(tz=UTC)
+        self.save()
+
+    def __unicode__(self):
+        return u'{0} {1} {2}'.format(self.apicall,
+                                     self.apikey,
+                                     self.owner)
 
     class Meta:
-        unique_together = ('service', 'apikey')
+        unique_together = ('apicall', 'apikey', 'owner')
+
 

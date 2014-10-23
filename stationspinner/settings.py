@@ -138,11 +138,12 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.admindocs',
     # Stationspinner apps
+    'stationspinner.sde',
+    'stationspinner.universe',
     'stationspinner.accounting',
     'stationspinner.character',
     'stationspinner.corporation',
-    'stationspinner.universe',
-    'stationspinner.sde',
+
 ]
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'

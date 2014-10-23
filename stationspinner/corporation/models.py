@@ -289,7 +289,7 @@ class WalletTransaction(models.Model):
     owner = models.ForeignKey(CorporationSheet)
 
 class WalletJournal(models.Model):
-    taxReceiverID = models.IntegerField(null=True)
+    taxReceiverID = models.CharField(max_length=255, blank=True, null=True)
     argName1 = models.CharField(max_length=255, blank=True, null=True)
     reason = models.CharField(max_length=255, blank=True, null=True)
     date = custom.DateTimeField()

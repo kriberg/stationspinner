@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS ltree;
+
 CREATE TABLE "corporation_asset" (
     "id" serial NOT NULL PRIMARY KEY,
     "itemID" bigint NOT NULL,
