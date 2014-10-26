@@ -338,25 +338,34 @@ class Asset(models.Model):
     itemID = models.BigIntegerField()
     quantity = models.BigIntegerField()
     locationID = models.BigIntegerField()
+    locationName = models.CharField(max_length=255, blank=True, default='')
     typeID = models.IntegerField()
+    typeName = models.CharField(max_length=255)
     flag = models.IntegerField()
     singleton = models.BooleanField(default=False)
     rawQuantity = models.IntegerField(default=0)
     path = models.CharField(max_length=255, default='')
+    parent_id = models.BigIntegerField(null=True)
+
 
     owner = models.ForeignKey(CorporationSheet)
 
-    def from_item(self, item):
+    def from_item(self, item, path):
         self.itemID = item['itemID']
         self.quantity = item['quantity']
         self.locationID = item['locationID']
+        self.locationName = item['locationName']
         self.typeID = item['typeID']
+        self.typeName = item['typeName']
         self.flag = item['flag']
         self.singleton = item['singleton']
-        self.path = ".".join(map(str, item['path']))
+        self.path = ".".join(map(str, path))
 
         if 'rawQuantity' in item:
             self.rawQuantity = item['rawQuantity']
+
+        if 'parent' in item:
+            self.parent_id = item['parent']
 
 
     class Meta:

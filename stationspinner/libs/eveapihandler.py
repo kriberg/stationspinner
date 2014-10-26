@@ -187,14 +187,13 @@ class EveAPIHandler():
                     'flag': row.flag,
                     'singleton': row.singleton,
                     'parent': parent,
-                    'path': path
                 }
 
                 if hasattr(row, 'rawQuantity'):
                     item['rawQuantity'] = row.rawQuantity
 
                 asset = AssetClass()
-                asset.from_item(item)
+                asset.from_item(item, path)
                 asset.owner = owner
                 asset.save()
 
