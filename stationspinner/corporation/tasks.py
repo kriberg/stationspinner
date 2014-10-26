@@ -12,6 +12,21 @@ from celery.utils.log import get_task_logger
 
 log = get_task_logger(__name__)
 
+def _get_corporation_auth(apiupdate_pk):
+    try:
+        target = APIUpdate.objects.get(pk=apiupdate_pk)
+    except APIUpdate.DoesNotExist, dne:
+        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        raise dne
+
+    try:
+        corporation = CorporationSheet.objects.get(pk=target.owner)
+    except CorporationSheet.DoesNotExist, dne:
+        log.error('Corporation {0} for APIUpdate {1} does not exist'.format(target.owner,
+                                                                          target.pk))
+        raise dne
+
+    return target, corporation
 
 @app.task(name='corporation.fetch_corporationsheet')
 def fetch_corporationsheet(apiupdate_pk):
@@ -55,23 +70,13 @@ def fetch_corporationsheet(apiupdate_pk):
 
     log.info('Corporation {0} "{1}" updated.'.format(sheet.corporationID,
                                                       sheet.corporationName))
+    target.updated()
     return corporation.pk
 
 
 @app.task(name='corporation.fetch_assetlist')
 def fetch_assetlist(apiupdate_pk):
-    try:
-        target = APIUpdate.objects.get(pk=apiupdate_pk)
-    except APIUpdate.DoesNotExist, dne:
-        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
-        raise dne
-
-    try:
-        corporation = CorporationSheet.objects.get(pk=target.owner)
-    except CorporationSheet.DoesNotExist, dne:
-        log.error('Corporation {0} for APIUpdate {1} does not exist'.format(target.owner,
-                                                                          target.pk))
-        raise dne
+    target, corporation = _get_corporation_auth(apiupdate_pk)
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
@@ -85,22 +90,12 @@ def fetch_assetlist(apiupdate_pk):
                                            Asset,
                                            corporation)
     assetlist.save()
+    target.updated()
 
 
 @app.task(name='corporation.fetch_membertracking')
 def fetch_membertracking(apiupdate_pk):
-    try:
-        target = APIUpdate.objects.get(pk=apiupdate_pk)
-    except APIUpdate.DoesNotExist, dne:
-        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
-        raise dne
-
-    try:
-        corporation = CorporationSheet.objects.get(pk=target.owner)
-    except CorporationSheet.DoesNotExist, dne:
-        log.error('Corporation {0} for APIUpdate {1} does not exist'.format(target.owner,
-                                                                          target.pk))
-        raise dne
+    target, corporation = _get_corporation_auth(apiupdate_pk)
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
@@ -113,6 +108,24 @@ def fetch_membertracking(apiupdate_pk):
                           extra_selectors={'owner': corporation},
                           owner=corporation,
                           pre_save=True)
+    target.updated()
+
+@app.task(name='corporation.fetch_startbaselist')
+def fetch_starbaselist(apiupdate_pk):
+    target, corporation = _get_corporation_auth(apiupdate_pk)
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(corporation.owner_key)
+
+    apidata = auth.corp.StarbaseList(characterID=corporation.owner_key.characterID)
+
+    handler.autoparseList(apidata.starbases,
+                          Starbase,
+                          unique_together=('locationID', 'moonID'),
+                          extra_selectors={'owner': corporation},
+                          owner=corporation,
+                          pre_save=True)
+    target.updated()
 
 API_MAP = [
     {
@@ -121,4 +134,5 @@ API_MAP = [
     {
         'AssetList': (fetch_assetlist,),
         'MemberTrackingExtended': (fetch_membertracking,),
+        'StarbaseList': (fetch_starbaselist,),
     }]
