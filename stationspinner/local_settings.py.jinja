@@ -1,0 +1,55 @@
+ADMINS = (
+    {% for admin in stationspinner.admins %}
+    ('{{ admin.full_name', '{{ admin.email }}'),
+    {% endfor %}
+)
+
+DEBUG = {{ stationspinner.debug }}
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'stationspinner',
+        'USER': 'stationspinner',
+        'PASSWORD': '{{ db.users.stationspinner.password }}',
+        {% if stationspinner.databases.stationspinner.socket %}
+        'HOST': '',
+        'PORT': '',
+        {% else %}
+        'HOST': '{{ stationspinner.databases.stationspinner.host }}',
+        'PORT': '{{ stationspinner.databases.stationspinner.port }}',
+        {% endif %}
+    },
+    'sde': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2', 
+        'NAME': 'sde',
+        'USER': 'sde',
+        'PASSWORD': '{{ db.users.sde.password }}',
+        {% if stationspinner.databases.sde.socket %}
+        'HOST': '',
+        'PORT': '',
+        {% else %}
+        'HOST': '{{ stationspinner.databases.sde.host }}',
+        'PORT': '{{ stationspinner.databases.sde.port }}',
+        {% endif %}
+    }
+}
+
+ALLOWED_HOSTS = [
+    {% for host in stationspinner.allowed_hosts %}
+    '{{ host }}',
+    {% endfor %}
+]
+
+CACHES = {
+    "default": {
+        "BACKEND": "redis_cache.cache.RedisCache",
+        "LOCATION": "{{ stationspinner.redis.host }}:{{ stationspinner.redis.port }}:{{ stationspinner.redis.cachedb }}",
+        "OPTIONS": {
+            "CLIENT_CLASS": "redis_cache.client.DefaultClient",
+        }
+    }
+}
+BROKER_URL = "redis://{{ stationspinner.redis.host }}:{{ stationspinner.redis.port }}:{{ stationspinner.redis.celerydb }}"
+CELERY_RESULT_BACKEND = "redis://{{ stationspinner.redis.host }}:{{ stationspinner.redis.port }}:{{ stationspinner.redis.celerydb }}"
+SECRET_KEY = '{{ stationspinner.secret_key }}'
