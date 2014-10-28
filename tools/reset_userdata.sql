@@ -13,6 +13,7 @@ delete from character_skillintraining;
 delete from character_walletjournal;
 delete from corporation_assetlist;
 delete from corporation_asset;
+delete from corporation_starbase;
 delete from corporation_membertracking;
 delete from corporation_walletdivision;
 delete from corporation_division;
