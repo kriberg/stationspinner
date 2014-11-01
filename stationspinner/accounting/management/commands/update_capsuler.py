@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 from stationspinner.accounting.models import Capsuler
-from stationspinner.accounting.tasks import refresh_capsuler
+from stationspinner.accounting.tasks import update_capsuler
 
 class Command(BaseCommand):
     args = '<capsuler_pk capsuler_pk ...>'
@@ -13,5 +13,5 @@ class Command(BaseCommand):
             except Capsuler.DoesNotExist:
                 raise CommandError('Capsuler "%s" does not exist' % capsuler_pk)
 
-            self.stdout.write('Refreshing capsuler %s.' % capsuler)
-            refresh_capsuler(capsuler.pk)
+            self.stdout.write('Updating capsuler %s.' % capsuler)
+            update_capsuler(capsuler.pk)
