@@ -5,6 +5,7 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^char/', include('stationspinner.character.urls')),
+    url(r'^prices/', include('stationspinner.evecentral.urls')),
 
     url(r'^grappelli/', include('grappelli.urls')), # grappelli URLS
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),

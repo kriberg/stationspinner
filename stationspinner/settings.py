@@ -143,6 +143,7 @@ INSTALLED_APPS = [
     'stationspinner.accounting',
     'stationspinner.character',
     'stationspinner.corporation',
+    'stationspinner.evecentral',
 
 ]
 
