@@ -18,6 +18,7 @@ class Market(models.Model):
 class MarketItem(models.Model):
     typeID = models.IntegerField()
     locationID = models.IntegerField()
+    typeName = models.CharField(max_length=255)
     buy_volume = models.DecimalField(max_digits=20, decimal_places=2, null=True)
     buy_avg = models.DecimalField(max_digits=20, decimal_places=2, null=True)
     buy_max = models.DecimalField(max_digits=20, decimal_places=2, null=True)

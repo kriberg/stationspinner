@@ -62,6 +62,7 @@ def parse_market_data(typeIDs, locationID):
                 prices['{0}_{1}'.format(price_type, statistic)] = value
         MarketItem.objects.update_or_create(typeID=typeID,
                                             locationID=locationID,
+                                            typeName=InvType.objects.get(pk=typeID).typeName,
                                             defaults=prices)
 
 

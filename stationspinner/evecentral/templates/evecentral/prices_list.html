@@ -1,0 +1,33 @@
+<table>
+    <thead>
+        <tr>
+            <th>{{name}}</th>
+            <th>updated {{updated}}</th>
+        </tr>
+        <tr>
+            <th>TypeID</th>
+            <th>TypeName</th>
+            <th>Buy max</th>
+            <th>Buy percentile</th>
+            <th>Buy volume</th>
+            <th>Sell min</th>
+            <th>Sell percentile</th>
+            <th>Sell volume</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for item in prices %}
+    <tr>
+        <td>{{ item.typeID }}</td>
+        <td>{{ item.typeName }}</td>
+        <td>{{ item.buy_max }}</td>
+        <td>{{ item.buy_percentile }}</td>
+        <td>{{ item.buy_volume }}</td>
+        <td>{{ item.sell_min }}</td>
+        <td>{{ item.sell_percentile }}</td>
+        <td>{{ item.sell_volume }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
