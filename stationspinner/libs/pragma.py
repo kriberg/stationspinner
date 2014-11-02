@@ -3,6 +3,9 @@ from stationspinner.sde.models import MapDenormalize, \
     DgmAttributeCategory, \
     DgmTypeAttribute
 from stationspinner.universe.models import ConquerableStation
+from datetime import datetime
+from pytz import UTC
+from stationspinner.libs.eveapi import eveapi
 
 def get_attributes_by_categories(item):
     type_attributes = DgmTypeAttribute.objects.filter(type=item)
@@ -41,13 +44,13 @@ def get_location_name(location_id):
     elif location_id >= 66014934 and location_id <= 67999999:
         try:
             loc = ConquerableStation.objects.get(pk=(int(location_id)-6000000))
-            return loc.name
+            return loc.stationName
         except ConquerableStation.DoesNotExist:
             pass
     elif location_id >= 60014861 and location_id <= 60014928:
         try:
             loc = ConquerableStation.objects.get(pk=location_id)
-            return loc.name
+            return loc.stationName
         except ConquerableStation.DoesNotExist:
             pass
     elif location_id >= 60000000 and location_id <= 61000000:
@@ -59,7 +62,7 @@ def get_location_name(location_id):
     elif location_id >= 61000000:
         try:
             loc = ConquerableStation.objects.get(pk=location_id)
-            return loc.name
+            return loc.stationName
         except ConquerableStation.DoesNotExist:
             pass
     else:
@@ -72,7 +75,7 @@ def get_location_name(location_id):
 
 def get_location_id(location_name):
     try:
-        loc =StaStation.objects.get(stationname=location_name)
+        loc =StaStation.objects.get(stationName=location_name)
         if loc.pk >= 60000000 and loc.pk <= 60014932:
             return loc.pk+6000001
         else:
@@ -81,7 +84,7 @@ def get_location_id(location_name):
         pass
 
     try:
-        loc = ConquerableStation.objects.get(name=location_name)
+        loc = ConquerableStation.objects.get(stationName=location_name)
         if loc.pk >= 60014934 and loc.pk <= 61999999:
             return int(loc.pk)+6000000
         else:
@@ -89,5 +92,12 @@ def get_location_id(location_name):
     except:
         pass
 
-    return MapDenormalize.objects.get(itemname=location_name)
+    return MapDenormalize.objects.get(itemName=location_name)
 
+def get_current_time():
+    try:
+        api = eveapi.EVEAPIConnection()
+        status = api.server.ServerStatus()
+        return datetime.fromtimestamp(status._meta.currentTime, tz=UTC)
+    except:
+        return datetime.now(tz=UTC)
