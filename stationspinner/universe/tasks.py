@@ -1,17 +1,37 @@
 from stationspinner.celery import app
 from stationspinner.libs.eveapihandler import EveAPIHandler
 from stationspinner.universe.models import Alliance,\
-    RefType, ConquerableStation, Sovereignty, APICallGroup, APICall
+    RefType, ConquerableStation, Sovereignty, APICallGroup, APICall, UniverseUpdate
 from celery.utils.log import get_task_logger
+from celery import group
+from stationspinner.libs.pragma import get_current_time
 
 log = get_task_logger(__name__)
+
+
+@app.task(name='universe.update_universe')
+def update_universe():
+    batch = []
+    for name, taskfn in API_MAP.items():
+        target, created = UniverseUpdate.objects.get_or_create(apicall=name)
+        current_time = get_current_time()
+        if created:
+            batch.append(taskfn.s())
+        else:
+            if not target.cached_until:
+                batch.append(taskfn.s())
+            elif target.cached_until < current_time:
+                batch.append(taskfn.s())
+
+    group(batch).apply_async()
+    log.info('Universe update scheduled')
 
 
 @app.task(name='universe.fetch_alliances')
 def fetch_alliances():
     handler = EveAPIHandler()
     api = handler.get_eveapi()
-    apiData = api.eve.AllianceList()
+    apiData = api.eve.AllianceList(version=1)
     allianceIDs = handler.autoparseList(apiData.alliances,
                                       Alliance,
                                       unique_together=('allianceID',))
@@ -24,6 +44,10 @@ def fetch_alliances():
 
     #log.info('Closed {0} alliances.'.format(closed.count()))
 
+    update, created = UniverseUpdate.objects.get_or_create(apicall='AllianceList')
+    update.updated(apiData)
+
+
 
 @app.task(name='universe.fetch_reftypes')
 def fetch_reftypes():
@@ -35,6 +59,8 @@ def fetch_reftypes():
                           unique_together=('refTypeID',),
                           pre_save=True)
     log.info('Updated {0} ref types.'.format(len(rIDs)))
+    update, created = UniverseUpdate.objects.get_or_create(apicall='RefTypes')
+    update.updated(apiData)
 
 
 @app.task(name='universe.fetch_conquerable_stations')
@@ -47,6 +73,8 @@ def fetch_conquerable_stations():
                           unique_together=('stationID',),
                           pre_save=True)
     log.info('Updated {0} conquerable stations.'.format(len(stationIDs)))
+    update, created = UniverseUpdate.objects.get_or_create(apicall='ConquerableStationList')
+    update.updated(apiData)
 
 
 @app.task(name='universe.fetch_sovereignty')
@@ -59,6 +87,8 @@ def fetch_sovereignty():
                           unique_together=('solarSystemID',),
                           pre_save=True)
     log.info('Updated sovereignty for {0} systems.'.format(len(sovIDs)))
+    update, created = UniverseUpdate.objects.get_or_create(apicall='Sovereignty')
+    update.updated(apiData)
 
 
 @app.task(name='universe.fetch_apicalls')
@@ -76,3 +106,13 @@ def fetch_apicalls():
                           pre_save=True)
 
     log.info('Added {0} call groups and {1} calls.'.format(cgIDs, cIDs))
+    update, created = UniverseUpdate.objects.get_or_create(apicall='CallList')
+    update.updated(apiData)
+
+API_MAP = {
+    'CallList': fetch_apicalls,
+    'RefTypes': fetch_reftypes,
+    'AllianceList': fetch_alliances,
+    'ConquerableStationList': fetch_conquerable_stations,
+    'Sovereignty': fetch_sovereignty,
+    }

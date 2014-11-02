@@ -1,6 +1,9 @@
 from django.db import models
 from datetime import datetime
 from stationspinner.libs import fields as custom
+from pytz import UTC
+
+
 
 class Alliance(models.Model):
     closed = models.BooleanField(default=False)
@@ -100,3 +103,12 @@ class APICall(models.Model):
     class Meta:
         unique_together = ('accessMask', 'type')
 
+class UniverseUpdate(models.Model):
+    apicall = models.CharField(max_length=50)
+    last_update = models.DateTimeField(null=True)
+    cached_until = custom.DateTimeField(null=True)
+
+    def updated(self, api):
+        self.last_update = datetime.fromtimestamp(api._meta.currentTime, tz=UTC)
+        self.cached_until = datetime.fromtimestamp(api._meta.cachedUntil, tz=UTC)
+        self.save()
