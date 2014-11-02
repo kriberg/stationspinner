@@ -6,7 +6,8 @@ from stationspinner.corporation.models import CorporationSheet, AssetList, \
     MemberTitle, MemberTracking, ContractItem, AccountBalance, Contact, \
     ContainerLog, Contract, ContractBid, NPCStanding, Facilities, \
     OutpostService, Shareholder, Starbase, StarbaseFuel, IndustryJob, \
-    IndustryJobHistory, Outpost, WalletTransaction, WalletJournal, Asset
+    IndustryJobHistory, Outpost, WalletTransaction, WalletJournal, Asset, \
+    Blueprint
 
 from celery.utils.log import get_task_logger
 
@@ -70,7 +71,7 @@ def fetch_corporationsheet(apiupdate_pk):
 
     log.info('Corporation {0} "{1}" updated.'.format(sheet.corporationID,
                                                       sheet.corporationName))
-    target.updated()
+    target.updated(sheet)
     return corporation.pk
 
 
@@ -90,7 +91,7 @@ def fetch_assetlist(apiupdate_pk):
                                            Asset,
                                            corporation)
     assetlist.save()
-    target.updated()
+    target.updated(api_data)
 
 
 @app.task(name='corporation.fetch_membertracking')
@@ -108,7 +109,7 @@ def fetch_membertracking(apiupdate_pk):
                           extra_selectors={'owner': corporation},
                           owner=corporation,
                           pre_save=True)
-    target.updated()
+    target.updated(api_data)
 
 @app.task(name='corporation.fetch_startbaselist')
 def fetch_starbaselist(apiupdate_pk):
@@ -117,22 +118,42 @@ def fetch_starbaselist(apiupdate_pk):
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
 
-    apidata = auth.corp.StarbaseList(characterID=corporation.owner_key.characterID)
+    api_data = auth.corp.StarbaseList(characterID=corporation.owner_key.characterID)
 
-    handler.autoparseList(apidata.starbases,
+    handler.autoparseList(api_data.starbases,
                           Starbase,
                           unique_together=('locationID', 'moonID'),
                           extra_selectors={'owner': corporation},
                           owner=corporation,
                           pre_save=True)
-    target.updated()
+    target.updated(api_data)
+
+@app.task(name='corporation.fetch_blueprints')
+def fetch_blueprints(apiupdate_pk):
+    target, corporation = _get_corporation_auth(apiupdate_pk)
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(corporation.owner_key)
+
+    api_data = auth.corp.Blueprints(characterID=corporation.owner_key.characterID)
+
+    blueprintsIDs = handler.autoparseList(api_data.blueprints,
+                          Blueprint,
+                          unique_together=('itemID',),
+                          extra_selectors={'owner': corporation},
+                          owner=corporation,
+                          pre_save=True)
+
+    Blueprint.objects.filter(owner=corporation) \
+        .exclude(pk__in=blueprintsIDs).delete()
+    target.updated(api_data)
 
 API_MAP = [
     {
         'CorporationSheet': (fetch_corporationsheet,),
     },
     {
-        'AssetList': (fetch_assetlist,),
+        'AssetList': (fetch_assetlist, fetch_blueprints),
         'MemberTrackingExtended': (fetch_membertracking,),
         'StarbaseList': (fetch_starbaselist,),
     }]

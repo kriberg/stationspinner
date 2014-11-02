@@ -55,7 +55,7 @@ def fetch_charactersheet(apiupdate_pk):
     character.owner = apikey.owner
     character.update_from_api(sheet, handler)
 
-    target.updated()
+    target.updated(sheet)
 
     log.info('Character {0} "{1}" updated.'.format(sheet.characterID,
                                                       sheet.name))
@@ -82,18 +82,18 @@ def fetch_blueprints(apiupdate_pk):
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(apikey)
 
-    blueprintsData = auth.char.Blueprints(characterID=target.owner)
+    api_data = auth.char.Blueprints(characterID=target.owner)
 
-    blueprintsIDs = handler.autoparseList(blueprintsData.blueprints,
+    blueprintsIDs = handler.autoparseList(api_data.blueprints,
                           Blueprint,
                           unique_together=('itemID',),
                           extra_selectors={'owner': character},
                           owner=character,
                           pre_save=True)
 
-    deleted_blueprints = Blueprint.objects.filter(owner=character) \
+    Blueprint.objects.filter(owner=character) \
         .exclude(pk__in=blueprintsIDs).delete()
-    target.updated()
+    target.updated(api_data)
 
 
 @app.task(name='character.fetch_contacts')
@@ -140,7 +140,7 @@ def fetch_contacts(apiupdate_pk):
                           pre_save=True))
 
     Contact.objects.filter(owner=character).exclude(pk__in=cIDs).delete()
-    target.updated()
+    target.updated(api_data)
 
 
 @app.task(name='character.fetch_research')
@@ -171,7 +171,7 @@ def fetch_research(apiupdate_pk):
                           owner=character,
                           pre_save=True)
     Research.objects.filter(owner=character).exclude(pk__in=rIDs).delete()
-    target.updated()
+    target.updated(api_data)
 
 
 @app.task(name='character.fetch_marketorders')
@@ -201,7 +201,7 @@ def fetch_marketorders(apiupdate_pk):
                           extra_selectors={'owner': character},
                           owner=character,
                           pre_save=True)
-    target.updated()
+    target.updated(api_data)
 
 
 @app.task(name='character.fetch_medals')
@@ -239,7 +239,7 @@ def fetch_medals(apiupdate_pk):
                           pre_save=True))
 
     Medal.objects.filter(owner=character).exclude(pk__in=mIDs).delete()
-    target.updated()
+    target.updated(api_data)
 
 
 @app.task(name='character.fetch_assetlist')
@@ -270,7 +270,7 @@ def fetch_assetlist(apiupdate_pk):
                                            Asset,
                                            character)
     assetlist.save()
-    target.updated()
+    target.updated(api_data)
 
 
 @app.task(name='character.fetch_walletjournal')
@@ -300,7 +300,7 @@ def fetch_walletjournal(apiupdate_pk):
                           extra_selectors={'owner': character},
                           owner=character,
                           pre_save=True)
-    target.updated()
+    target.updated(api_data)
 
 
 @app.task(name='character.fetch_skillqueue')
@@ -329,7 +329,7 @@ def fetch_skillqueue(apiupdate_pk):
                           owner=character,
                           pre_delete=True,
                           pre_save=True)
-    target.updated()
+    target.updated(api_data)
 
 
 @app.task(name='character.fetch_skill_in_training')
@@ -360,7 +360,7 @@ def fetch_skill_in_training(apiupdate_pk):
                          exclude=('currentTQTime',))
     obj.currentTQTime = api_data.currentTQTime.data
     obj.save()
-    target.updated()
+    target.updated(api_data)
 
 
 
