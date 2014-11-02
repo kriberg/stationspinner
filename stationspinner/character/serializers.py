@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from stationspinner.character.models import CharacterSheet, Skill, \
-    SkillInTraining, SkillQueue, AssetList
+    SkillInTraining, SkillQueue, AssetList, Asset
 
 
 class SkillSerializer(serializers.ModelSerializer):
@@ -35,3 +35,8 @@ class AssetListSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssetList
         exclude = ('owner',)
+
+class AsseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Asset
+        exclude = ('owner','typeID', 'locationID', 'itemID')
