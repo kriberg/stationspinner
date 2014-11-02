@@ -48,7 +48,7 @@ def parse_market_data(typeIDs, locationID):
         if locationID > 30000000:
             data = ec.market_stats(type_ids=typeIDs, system=locationID)
         else:
-            data = ec.market_stats(type_ids=typeIDs, region=locationID)
+            data = ec.market_stats(type_ids=typeIDs, regions=locationID)
     except Exception, ex:
         log.error('Could not update locationID {0}: {1}'.format(locationID,
                                                                 format_exc(ex)))
