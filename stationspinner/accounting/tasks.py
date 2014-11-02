@@ -1,9 +1,11 @@
 from stationspinner.celery import app
 from celery import group
 from datetime import datetime
+from django.db.models import Q
 
 from stationspinner.libs.eveapihandler import EveAPIHandler
 from stationspinner.accounting.models import Capsuler, APIKey, APIUpdate
+from stationspinner.libs.pragma import get_current_time
 from stationspinner.universe.models import APICall
 from stationspinner.character.tasks import API_MAP as character_tasks
 from stationspinner.corporation.tasks import API_MAP as corporation_tasks
@@ -12,30 +14,33 @@ from celery.utils.log import get_task_logger
 
 log = get_task_logger(__name__)
 
-def refresh_capsuler(capsuler_pk):
-    start = datetime.now()
+def update_capsuler(capsuler_pk):
     try:
         capsuler = Capsuler.objects.get(pk=capsuler_pk)
         log.info('Refreshing capsuler "{0}"'.format(capsuler.username))
     except Capsuler.DoesNotExist:
         log.error('Tried to refresh non-existant capsuler, pk={0}'.format(capsuler_pk))
         return None
+    start = datetime.now()
 
     keys = APIKey.objects.filter(owner=capsuler)
     if keys.count() == 0:
         return None
 
-    validation = validate_key.map([apikey.pk for apikey in keys])
-    tasks = validation.apply_async()
+    tasks = validate_key.map([apikey.pk for apikey in keys]).apply_async()
     tasks.get()
 
     keys = APIKey.objects.filter(owner=capsuler, expired=False).exclude(type='Corporation')
+
     for task_batch in character_tasks:
         batch = []
         for name, taskfns in task_batch.items():
+            current_time = get_current_time()
             apicall = APICall.objects.get(type='Character', name=name)
             targets = APIUpdate.objects.filter(apicall=apicall,
                                                apikey__in=keys)
+            targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
+
             if targets.count() > 0:
                 for fn in taskfns:
                     batch.append(fn.map([t.pk for t in targets]))
@@ -46,9 +51,12 @@ def refresh_capsuler(capsuler_pk):
     for task_batch in corporation_tasks:
         batch = []
         for name, taskfns in task_batch.items():
+            current_time = get_current_time()
             apicall = APICall.objects.get(type='Corporation', name=name)
             targets = APIUpdate.objects.filter(apicall=apicall,
                                                apikey__in=corpkeys)
+            targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
+
             if targets.count() > 0:
                 for fn in taskfns:
                     batch.append(fn.map([t.pk for t in targets]))

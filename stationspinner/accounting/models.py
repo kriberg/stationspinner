@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django_pgjson.fields import JsonField
 from datetime import datetime
 from pytz import UTC
+from stationspinner.libs import fields as custom
 
 from stationspinner.universe.models import APICall
 
@@ -50,9 +51,11 @@ class APIUpdate(models.Model):
     apikey = models.ForeignKey(APIKey)
     owner = models.IntegerField()
     last_update = models.DateTimeField(null=True)
+    cached_until = custom.DateTimeField(null=True)
 
-    def updated(self):
-        self.last_update = datetime.now(tz=UTC)
+    def updated(self, api):
+        self.last_update = datetime.fromtimestamp(api._meta.currentTime, tz=UTC)
+        self.cached_until = datetime.fromtimestamp(api._meta.cachedUntil, tz=UTC)
         self.save()
 
     def __unicode__(self):
