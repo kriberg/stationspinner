@@ -8,3 +8,5 @@ django-filter
 celery[redis]>=3.1
 django-grappelli
 django-pgjson
+flower
+EVELink
