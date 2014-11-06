@@ -5,7 +5,7 @@ from stationspinner.libs.pragma import get_location_name
 from stationspinner.sde.models import InvType
 from evelink.thirdparty.eve_central import EVECentral
 from urllib2 import urlopen
-from datetime import datetime, timedelta
+from datetime import datetime
 from pytz import UTC
 from django.db.models import Q
 from celery.utils.log import get_task_logger
@@ -26,9 +26,8 @@ def _market_items():
 @app.task(name='evecentral.update_all_markets')
 def update_all_markets():
     market_updates = []
-    six_hours_ago = datetime.now(tz=UTC) - timedelta(hours=6)
     for market in Market.objects.filter(
-                    Q(last_updated__lt=six_hours_ago) | Q(last_updated=None)):
+                    Q(cached_until__lte=datetime.now(tz=UTC)) | Q(cached_until=None)):
         market_updates.extend(update_market(market.locationID))
         market.updated()
         log.info('Updating "{0}" market'.format(get_location_name(market.locationID)))

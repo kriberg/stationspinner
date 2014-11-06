@@ -1,15 +1,15 @@
 from django.db import models
 from stationspinner.libs.pragma import get_location_name
 from stationspinner.sde.models import InvType
-from datetime import datetime
+from datetime import datetime, timedelta
 from pytz import UTC
 
 class Market(models.Model):
     locationID = models.IntegerField()
-    last_updated = models.DateTimeField(null=True)
+    cached_until = models.DateTimeField(null=True)
 
     def updated(self):
-        self.last_updated = datetime.now(tz=UTC)
+        self.last_updated = datetime.now(tz=UTC) + timedelta(hours=6)
         self.save()
 
     def __unicode__(self):

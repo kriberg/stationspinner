@@ -18,14 +18,17 @@ class PriceView(TemplateResponseMixin, View):
         content = cache.get(key, None)
 
         if not content:
+            print 'generated'
             prices = MarketItem.objects.filter(locationID=locationID).order_by('typeName')
             response = render(request, self.template_name, dictionary={
-                'updated': market.last_updated,
+                'cached_until': market.cached_until,
                 'name': get_location_name(market.locationID),
                 'prices': prices,
             })
-            cacheTimeSeconds = (market.last_updated - datetime.now(tz=UTC)).total_seconds()
+            cacheTimeSeconds = (market.cached_until - datetime.now(tz=UTC)).total_seconds()
+            print cacheTimeSeconds
             cache.set(key, response.content, timeout=cacheTimeSeconds)
             return response
         else:
+            print 'cached'
             return HttpResponse(content=content)
