@@ -11,8 +11,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'stationspinner',
         'USER': 'stationspinner',
-        'PASSWORD': '{{ db.users.stationspinner.password }}',
         {%- if stationspinner.databases.stationspinner.socket %}
+        'PASSWORD': '{{ db.users.stationspinner.password }}',
         'HOST': '',
         'PORT': '',
         {%- else %}
@@ -24,8 +24,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', 
         'NAME': 'sde',
         'USER': 'sde',
-        'PASSWORD': '{{ db.users.sde.password }}',
         {%- if stationspinner.databases.sde.socket %}
+        'PASSWORD': '{{ db.users.sde.password }}',
         'HOST': '',
         'PORT': '',
         {%- else %}
@@ -36,15 +36,15 @@ DATABASES = {
 }
 
 ALLOWED_HOSTS = [
-    {% for host in stationspinner.allowed_hosts %}
+    {%- for host in stationspinner.allowed_hosts %}
     '{{ host }}',
-    {% endfor %}
+    {%- endfor %}
 ]
 
 CACHES = {
     "default": {
         "BACKEND": "redis_cache.cache.RedisCache",
-        "LOCATION": "{{ stationspinner.redis.host }}:{{ stationspinner.redis.port }}/{{ stationspinner.redis.cachedb }}",
+        "LOCATION": "{{ stationspinner.redis.host }}:{{ stationspinner.redis.port }}:{{ stationspinner.redis.cachedb }}",
         "OPTIONS": {
             "CLIENT_CLASS": "redis_cache.client.DefaultClient",
         }
