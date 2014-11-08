@@ -146,7 +146,7 @@ class EveAPIHandler():
             if pre_save:
                 obj.save()
 
-            if 'update_from_api' in dir(obj):
+            if hasattr(obj, 'update_from_api'):
                 obj.update_from_api(entry, self)
 
             obj_list.append(obj.pk)
