@@ -23,18 +23,25 @@ class Alliance(models.Model):
         self.closed = False
         self.save()
         current_members = []
-        for memberData in result.memberCorporations:
-            member, created = AllianceMember.objects.get_or_create(alliance=self,
-                                                                   corporationID=memberData.corporationID,
-                                                                   startDate=memberData.startDate)
-            if created:
-                member.save()
-            current_members.append(memberData.corporationID)
-        previous_members = AllianceMember.objects.filter(alliance=self) \
-            .exclude(corporationID__in=current_members)
-        for exmember in previous_members:
-            exmember.endDate = datetime.now()
-            exmember.save()
+        if hasattr(result, 'memberCorporations'):
+            for memberData in result.memberCorporations:
+                member, created = AllianceMember.objects.get_or_create(alliance=self,
+                                                                       corporationID=memberData.corporationID,
+                                                                       startDate=memberData.startDate)
+                if created:
+                    member.save()
+                current_members.append(memberData.corporationID)
+            previous_members = AllianceMember.objects.filter(alliance=self) \
+                .exclude(corporationID__in=current_members)
+            for exmember in previous_members:
+                exmember.endDate = datetime.now(tz=UTC)
+                exmember.save()
+        else:
+            exmembers = AllianceMember.objects.filter(alliance=self,
+                                          endDate=None)
+            for exmember in exmembers:
+                exmember.endDate = datetime.now(tz=UTC)
+                exmember.save()
 
 
 class AllianceMember(models.Model):

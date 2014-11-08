@@ -5,6 +5,8 @@ from stationspinner.universe.models import Alliance,\
 from celery.utils.log import get_task_logger
 from celery import group
 from stationspinner.libs.pragma import get_current_time
+from datetime import datetime
+from pytz import UTC
 
 log = get_task_logger(__name__)
 
@@ -31,18 +33,17 @@ def update_universe():
 def fetch_alliances():
     handler = EveAPIHandler()
     api = handler.get_eveapi()
-    apiData = api.eve.AllianceList(version=1)
+    apiData = api.eve.AllianceList()
     allianceIDs = handler.autoparseList(apiData.alliances,
                                       Alliance,
                                       unique_together=('allianceID',))
     log.info('Updated {0} alliances.'.format(len(allianceIDs)))
-    #closed = Alliance.objects.exclude(pk__in=allianceIDs)
-    #for alliance in closed:
-    #    alliance.closed = True
-    #    alliance.endDate = datetime.now()
-    #    alliance.save()
-
-    #log.info('Closed {0} alliances.'.format(closed.count()))
+    closed = Alliance.objects.exclude(pk__in=allianceIDs)
+    for alliance in closed:
+        alliance.closed = True
+        alliance.endDate = datetime.now(tz=UTC)
+        alliance.save()
+    log.info('Closed {0} alliances.'.format(closed.count()))
 
     update, created = UniverseUpdate.objects.get_or_create(apicall='AllianceList')
     update.updated(apiData)
