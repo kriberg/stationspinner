@@ -135,7 +135,6 @@ INSTALLED_APPS = [
     'django_extensions',
     'rest_framework',
     'grappelli',
-    'djcelery',
     'django.contrib.admin',
     'django.contrib.admindocs',
     # Stationspinner apps
@@ -218,6 +217,3 @@ if DEBUG:
     }
 
 DATABASE_ROUTERS = ['stationspinner.dbrouter.DBRouter',]
-
-import djcelery
-djcelery.setup_loader()
