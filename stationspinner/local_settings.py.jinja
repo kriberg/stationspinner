@@ -10,8 +10,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'stationspinner',
-        'USER': 'stationspinner',
-        'PASSWORD': '{{ db.users.stationspinner.password }}',
+        'USER': '{{ stationspinner.users.stationspinner.user }}',
+        'PASSWORD': '{{ stationspinner.users.stationspinner.password }}',
         {%- if stationspinner.databases.stationspinner.socket %}
         'HOST': '',
         'PORT': '',
@@ -23,8 +23,8 @@ DATABASES = {
     'sde': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', 
         'NAME': 'sde',
-        'USER': 'sde',
-        'PASSWORD': '{{ db.users.sde.password }}',
+        'USER': '{{ stationspinner.users.sde.user }}',
+        'PASSWORD': '{{ stationspinner.users.sde.password }}',
         {%- if stationspinner.databases.sde.socket %}
         'HOST': '',
         'PORT': '',
