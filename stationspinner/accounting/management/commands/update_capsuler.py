@@ -7,11 +7,11 @@ class Command(BaseCommand):
     help = 'Starts a refresh job for a given capsuler'
 
     def handle(self, *args, **options):
-        for capsuler_pk in args:
+        for name in args:
             try:
-                capsuler = Capsuler.objects.get(pk=capsuler_pk)
+                capsuler = Capsuler.objects.get(username=name)
             except Capsuler.DoesNotExist:
-                raise CommandError('Capsuler "%s" does not exist' % capsuler_pk)
+                raise CommandError('Capsuler "%s" does not exist' % name)
 
             self.stdout.write('Updating capsuler %s.' % capsuler)
             update_capsuler(capsuler.pk)
