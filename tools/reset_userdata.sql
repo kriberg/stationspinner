@@ -17,6 +17,7 @@ delete from corporation_starbase;
 delete from corporation_membertracking;
 delete from corporation_walletdivision;
 delete from corporation_division;
+delete from corporation_blueprint;
 delete from corporation_corporationsheet;
 delete from character_charactersheet;
 delete from accounting_apiupdate;
