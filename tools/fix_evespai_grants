@@ -9,4 +9,4 @@ psql -qAt -d stationspinner -c "SELECT 'GRANT SELECT ON public.'||quote_ident(re
   FROM pg_class c, pg_catalog.pg_namespace n
  WHERE c.relkind='r'
    AND c.relnamespace=n.oid
-   AND n.nspname='public';" | psql -qAt -d sde
+   AND n.nspname='public';" | psql -qAt -d stationspinner
