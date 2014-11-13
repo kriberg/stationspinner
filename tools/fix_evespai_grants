@@ -1,0 +1,12 @@
+#!/bin/bash
+psql -qAt -d sde -c "SELECT 'GRANT SELECT ON public.'||quote_ident(relname)||' TO scruffy;' 
+  FROM pg_class c, pg_catalog.pg_namespace n
+ WHERE c.relkind='r'
+   AND c.relnamespace=n.oid
+   AND n.nspname='public';" | psql -qAt -d sde
+
+psql -qAt -d stationspinner -c "SELECT 'GRANT SELECT ON public.'||quote_ident(relname)||' TO scruffy;' 
+  FROM pg_class c, pg_catalog.pg_namespace n
+ WHERE c.relkind='r'
+   AND c.relnamespace=n.oid
+   AND n.nspname='public';" | psql -qAt -d sde
