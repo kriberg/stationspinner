@@ -15,10 +15,10 @@ CREATE TABLE "corporation_asset" (
     "parent_id" bigint,
     "owner_id" integer NOT NULL
 );
-CREATE INDEX corporation_asset__path_gist_idx ON character_asset USING GIST (path);
-CREATE INDEX corporation_asset_owner_id ON character_asset USING btree (owner_id);
-CREATE INDEX corporation_asset_compound_owner_id_item_id ON character_asset USING btree (owner_id, "itemID");
-CREATE INDEX corporation_asset_compound_owner_id_parent_id ON character_asset USING btree (owner_id, parent_id);
+CREATE INDEX corporation_asset__path_gist_idx ON corporation_asset USING GIST (path);
+CREATE INDEX corporation_asset_owner_id ON corporation_asset USING btree (owner_id);
+CREATE INDEX corporation_asset_compound_owner_id_item_id ON corporation_asset USING btree (owner_id, "itemID");
+CREATE INDEX corporation_asset_compound_owner_id_parent_id ON corporation_asset USING btree (owner_id, parent_id);
 ALTER TABLE ONLY corporation_asset
     ADD CONSTRAINT corporation_asset_owner_id_fkey FOREIGN KEY (owner_id)
     REFERENCES corporation_corporationsheet("corporationID") DEFERRABLE INITIALLY DEFERRED;
