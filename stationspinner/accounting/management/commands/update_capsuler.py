@@ -3,7 +3,7 @@ from stationspinner.accounting.models import Capsuler
 from stationspinner.accounting.tasks import update_capsuler
 
 class Command(BaseCommand):
-    args = '<capsuler_pk capsuler_pk ...>'
+    args = '<capsuler_pk> <capsuler_pk...>'
     help = 'Starts a refresh job for a given capsuler'
 
     def handle(self, *args, **options):
