@@ -20,12 +20,7 @@ def _get_corporation_auth(apiupdate_pk):
         log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
         raise dne
 
-    try:
-        corporation = CorporationSheet.objects.get(pk=target.owner)
-    except CorporationSheet.DoesNotExist, dne:
-        log.error('Corporation {0} for APIUpdate {1} does not exist'.format(target.owner,
-                                                                          target.pk))
-        raise dne
+    corporation = CorporationSheet.objects.get(pk=target.owner)
 
     return target, corporation
 
@@ -77,7 +72,11 @@ def fetch_corporationsheet(apiupdate_pk):
 
 @app.task(name='corporation.fetch_assetlist')
 def fetch_assetlist(apiupdate_pk):
-    target, corporation = _get_corporation_auth(apiupdate_pk)
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
@@ -96,7 +95,11 @@ def fetch_assetlist(apiupdate_pk):
 
 @app.task(name='corporation.fetch_membertracking')
 def fetch_membertracking(apiupdate_pk):
-    target, corporation = _get_corporation_auth(apiupdate_pk)
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
@@ -111,9 +114,14 @@ def fetch_membertracking(apiupdate_pk):
                           pre_save=True)
     target.updated(api_data)
 
+
 @app.task(name='corporation.fetch_startbaselist')
 def fetch_starbaselist(apiupdate_pk):
-    target, corporation = _get_corporation_auth(apiupdate_pk)
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
@@ -130,7 +138,11 @@ def fetch_starbaselist(apiupdate_pk):
 
 @app.task(name='corporation.fetch_blueprints')
 def fetch_blueprints(apiupdate_pk):
-    target, corporation = _get_corporation_auth(apiupdate_pk)
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
@@ -148,12 +160,8 @@ def fetch_blueprints(apiupdate_pk):
         .exclude(pk__in=blueprintsIDs).delete()
     target.updated(api_data)
 
-API_MAP = [
-    {
-        'CorporationSheet': (fetch_corporationsheet,),
-    },
-    {
+API_MAP = {
         'AssetList': (fetch_assetlist, fetch_blueprints),
         'MemberTrackingExtended': (fetch_membertracking,),
         'StarbaseList': (fetch_starbaselist,),
-    }]
+    }

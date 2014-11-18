@@ -1,5 +1,5 @@
 from stationspinner.celery import app
-from celery import group
+from celery import group, chord, chain
 from datetime import datetime
 from django.db.models import Q
 
@@ -7,63 +7,97 @@ from stationspinner.libs.eveapihandler import EveAPIHandler
 from stationspinner.accounting.models import Capsuler, APIKey, APIUpdate
 from stationspinner.libs.pragma import get_current_time
 from stationspinner.universe.models import APICall
-from stationspinner.character.tasks import API_MAP as character_tasks
-from stationspinner.corporation.tasks import API_MAP as corporation_tasks
+from stationspinner.character.tasks import API_MAP as character_tasks, fetch_charactersheet
+from stationspinner.corporation.tasks import API_MAP as corporation_tasks, fetch_corporationsheet
 
 from celery.utils.log import get_task_logger
 
 log = get_task_logger(__name__)
 
-def update_capsuler(capsuler_pk):
-    try:
-        capsuler = Capsuler.objects.get(pk=capsuler_pk)
-        log.info('Refreshing capsuler "{0}"'.format(capsuler.username))
-    except Capsuler.DoesNotExist:
-        log.error('Tried to refresh non-existant capsuler, pk={0}'.format(capsuler_pk))
-        return None
-    start = datetime.now()
+@app.task(name='accounting.update_capsulers')
+def update_capsulers():
+    chain(update_capsuler_keys.s(), update_all_sheets.s(), update_all_apidata.s())()
+
+@app.task(name='accounting.update_capsuler_keys')
+def update_capsuler_keys(*args, **kwargs):
+    capsulers = Capsuler.objects.filter(is_active=True)
+    for capsuler in capsulers:
+        queue_capsuler_keys(capsuler).apply_async()
+
+    log.info('Queued updating of all capsulers.')
+
+
+def queue_capsuler_keys(capsuler):
+    log.info('Refreshing capsuler "{0}" keys'.format(capsuler.username))
 
     keys = APIKey.objects.filter(owner=capsuler)
     if keys.count() == 0:
         return None
 
-    tasks = validate_key.map([apikey.pk for apikey in keys]).apply_async()
-    tasks.get()
+    return validate_key.map([apikey.pk for apikey in keys])
 
-    keys = APIKey.objects.filter(owner=capsuler, expired=False).exclude(type='Corporation')
+@app.task(name='accounting.update_all_sheets')
+def update_all_sheets(*args, **kwargs):
+    #### Characters
+    keys = APIKey.objects.filter(expired=False).exclude(type='Corporation')
+    current_time = get_current_time()
+    apicall = APICall.objects.get(type='Character', name='CharacterSheet')
+    targets = APIUpdate.objects.filter(apicall=apicall,
+                                       apikey__in=keys)
+    targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
 
-    for task_batch in character_tasks:
-        batch = []
-        for name, taskfns in task_batch.items():
-            current_time = get_current_time()
-            apicall = APICall.objects.get(type='Character', name=name)
-            targets = APIUpdate.objects.filter(apicall=apicall,
-                                               apikey__in=keys)
-            targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
+    if targets.count() > 0:
+        character_sheets = fetch_charactersheet.map([t.pk for t in targets])
 
-            if targets.count() > 0:
-                for fn in taskfns:
-                    batch.append(fn.map([t.pk for t in targets]))
-        tasks = group(batch).apply_async()
-        tasks.get()
+    #### Corporations
+    corpkeys = APIKey.objects.filter(expired=False, type='Corporation')
+    apicall = APICall.objects.get(type='Corporation', name='CorporationSheet')
+    targets = APIUpdate.objects.filter(apicall=apicall,
+                                       apikey__in=corpkeys)
+    targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
 
-    corpkeys = APIKey.objects.filter(owner=capsuler, expired=False, type='Corporation')
-    for task_batch in corporation_tasks:
-        batch = []
-        for name, taskfns in task_batch.items():
-            current_time = get_current_time()
-            apicall = APICall.objects.get(type='Corporation', name=name)
-            targets = APIUpdate.objects.filter(apicall=apicall,
-                                               apikey__in=corpkeys)
-            targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
+    if targets.count() > 0:
+        corporation_sheets = fetch_corporationsheet.map([t.pk for t in targets])
 
-            if targets.count() > 0:
-                for fn in taskfns:
-                    batch.append(fn.map([t.pk for t in targets]))
-        tasks = group(batch).apply_async()
-        tasks.get()
+    group(character_sheets, corporation_sheets).apply_async()
 
-    log.info('Capsuler "{0}" updated in {1} seconds.'.format(capsuler, (datetime.now()-start).total_seconds()))
+@app.task(name='accounting.update_all_apidata')
+def update_all_apidata(*args, **kwargs):
+    group(queue_character_tasks() + queue_corporation_tasks()).apply_async()
+
+def queue_character_tasks():
+    keys = APIKey.objects.filter(expired=False).exclude(type='Corporation')
+    tasks = []
+
+    for name, taskfns in character_tasks.items():
+        current_time = get_current_time()
+        apicall = APICall.objects.get(type='Character', name=name)
+        targets = APIUpdate.objects.filter(apicall=apicall,
+                                           apikey__in=keys)
+        targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
+
+        if targets.count() > 0:
+            for fn in taskfns:
+                tasks.append(fn.map([t.pk for t in targets]))
+
+    return tasks
+
+
+def queue_corporation_tasks():
+    corpkeys = APIKey.objects.filter(expired=False, type='Corporation')
+    tasks = []
+
+    for name, taskfns in corporation_tasks.items():
+        current_time = get_current_time()
+        apicall = APICall.objects.get(type='Corporation', name=name)
+        targets = APIUpdate.objects.filter(apicall=apicall,
+                                           apikey__in=corpkeys)
+        targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
+
+        if targets.count() > 0:
+            for fn in taskfns:
+                tasks.append(fn.map([t.pk for t in targets]))
+    return tasks
 
 
 @app.task(name='accounting.validate_key')

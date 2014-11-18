@@ -13,6 +13,16 @@ from celery.utils.log import get_task_logger
 
 log = get_task_logger(__name__)
 
+def _get_character_auth(apiupdate_pk):
+    try:
+        target = APIUpdate.objects.get(pk=apiupdate_pk)
+    except APIUpdate.DoesNotExist, dne:
+        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        raise dne
+
+    character = CharacterSheet.objects.get(pk=target.owner)
+
+    return target, character
 
 
 @app.task(name='character.fetch_charactersheet')
@@ -65,22 +75,13 @@ def fetch_charactersheet(apiupdate_pk):
 @app.task(name='character.fetch_blueprints')
 def fetch_blueprints(apiupdate_pk):
     try:
-        target = APIUpdate.objects.get(pk=apiupdate_pk)
-    except APIUpdate.DoesNotExist, dne:
-        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
-        raise dne
-
-    apikey = target.apikey
-    
-    try:
-        character = CharacterSheet.objects.get(pk=target.owner)
-    except CharacterSheet.DoesNotExist, dne:
-        log.error('Character {0} for APIUpdate {1} does not exist'.format(target.owner, 
-                                                                          target.pk))
-        raise dne
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(apikey)
+    auth = handler.get_authed_eveapi(target.apikey)
 
     api_data = auth.char.Blueprints(characterID=target.owner)
 
@@ -99,21 +100,13 @@ def fetch_blueprints(apiupdate_pk):
 @app.task(name='character.fetch_contacts')
 def fetch_contacts(apiupdate_pk):
     try:
-        target = APIUpdate.objects.get(pk=apiupdate_pk)
-    except APIUpdate.DoesNotExist, dne:
-        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
-        raise dne
-
-    apikey = target.apikey
-    try:
-        character = CharacterSheet.objects.get(pk=target.owner)
-    except CharacterSheet.DoesNotExist, dne:
-        log.error('Character {0} for APIUpdate {1} does not exist'.format(target.owner, 
-                                                                          target.pk))
-        raise dne
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(apikey)
+    auth = handler.get_authed_eveapi(target.apikey)
 
     api_data = auth.char.ContactList(characterID=target.owner)
 
@@ -146,21 +139,13 @@ def fetch_contacts(apiupdate_pk):
 @app.task(name='character.fetch_research')
 def fetch_research(apiupdate_pk):
     try:
-        target = APIUpdate.objects.get(pk=apiupdate_pk)
-    except APIUpdate.DoesNotExist, dne:
-        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
-        raise dne
-
-    apikey = target.apikey
-    try:
-        character = CharacterSheet.objects.get(pk=target.owner)
-    except CharacterSheet.DoesNotExist, dne:
-        log.error('Character {0} for APIUpdate {1} does not exist'.format(target.owner, 
-                                                                          target.pk))
-        raise dne
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(apikey)
+    auth = handler.get_authed_eveapi(target.apikey)
 
     api_data = auth.char.Research(characterID=target.owner)
 
@@ -177,21 +162,13 @@ def fetch_research(apiupdate_pk):
 @app.task(name='character.fetch_marketorders')
 def fetch_marketorders(apiupdate_pk):
     try:
-        target = APIUpdate.objects.get(pk=apiupdate_pk)
-    except APIUpdate.DoesNotExist, dne:
-        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
-        raise dne
-
-    apikey = target.apikey
-    try:
-        character = CharacterSheet.objects.get(pk=target.owner)
-    except CharacterSheet.DoesNotExist, dne:
-        log.error('Character {0} for APIUpdate {1} does not exist'.format(target.owner, 
-                                                                          target.pk))
-        raise dne
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(apikey)
+    auth = handler.get_authed_eveapi(target.apikey)
 
     api_data = auth.char.MarketOrders(characterID=target.owner)
 
@@ -207,21 +184,13 @@ def fetch_marketorders(apiupdate_pk):
 @app.task(name='character.fetch_medals')
 def fetch_medals(apiupdate_pk):
     try:
-        target = APIUpdate.objects.get(pk=apiupdate_pk)
-    except APIUpdate.DoesNotExist, dne:
-        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
-        raise dne
-
-    apikey = target.apikey
-    try:
-        character = CharacterSheet.objects.get(pk=target.owner)
-    except CharacterSheet.DoesNotExist, dne:
-        log.error('Character {0} for APIUpdate {1} does not exist'.format(target.owner, 
-                                                                          target.pk))
-        raise dne
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(apikey)
+    auth = handler.get_authed_eveapi(target.apikey)
 
     api_data = auth.char.Medals(characterID=target.owner)
 
@@ -245,21 +214,13 @@ def fetch_medals(apiupdate_pk):
 @app.task(name='character.fetch_assetlist')
 def fetch_assetlist(apiupdate_pk):
     try:
-        target = APIUpdate.objects.get(pk=apiupdate_pk)
-    except APIUpdate.DoesNotExist, dne:
-        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
-        raise dne
-
-    apikey = target.apikey
-    try:
-        character = CharacterSheet.objects.get(pk=target.owner)
-    except CharacterSheet.DoesNotExist, dne:
-        log.error('Character {0} for APIUpdate {1} does not exist'.format(target.owner, 
-                                                                          target.pk))
-        raise dne
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(apikey)
+    auth = handler.get_authed_eveapi(target.apikey)
 
     api_data = auth.char.AssetList(characterID=target.owner)
 
@@ -276,21 +237,13 @@ def fetch_assetlist(apiupdate_pk):
 @app.task(name='character.fetch_walletjournal')
 def fetch_walletjournal(apiupdate_pk):
     try:
-        target = APIUpdate.objects.get(pk=apiupdate_pk)
-    except APIUpdate.DoesNotExist, dne:
-        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
-        raise dne
-
-    apikey = target.apikey
-    try:
-        character = CharacterSheet.objects.get(pk=target.owner)
-    except CharacterSheet.DoesNotExist, dne:
-        log.error('Character {0} for APIUpdate {1} does not exist'.format(target.owner,
-                                                                          target.pk))
-        raise dne
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(apikey)
+    auth = handler.get_authed_eveapi(target.apikey)
 
     api_data = auth.char.WalletJournal(characterID=target.owner)
 
@@ -306,21 +259,13 @@ def fetch_walletjournal(apiupdate_pk):
 @app.task(name='character.fetch_skillqueue')
 def fetch_skillqueue(apiupdate_pk):
     try:
-        target = APIUpdate.objects.get(pk=apiupdate_pk)
-    except APIUpdate.DoesNotExist, dne:
-        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
-        raise dne
-
-    apikey = target.apikey
-    try:
-        character = CharacterSheet.objects.get(pk=target.owner)
-    except CharacterSheet.DoesNotExist, dne:
-        log.error('Character {0} for APIUpdate {1} does not exist'.format(target.owner,
-                                                                          target.pk))
-        raise dne
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(apikey)
+    auth = handler.get_authed_eveapi(target.apikey)
 
     api_data = auth.char.SkillQueue(characterID=target.owner)
 
@@ -335,21 +280,13 @@ def fetch_skillqueue(apiupdate_pk):
 @app.task(name='character.fetch_skill_in_training')
 def fetch_skill_in_training(apiupdate_pk):
     try:
-        target = APIUpdate.objects.get(pk=apiupdate_pk)
-    except APIUpdate.DoesNotExist, dne:
-        log.error('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
-        raise dne
-
-    apikey = target.apikey
-    try:
-        character = CharacterSheet.objects.get(pk=target.owner)
-    except CharacterSheet.DoesNotExist, dne:
-        log.error('Character {0} for APIUpdate {1} does not exist'.format(target.owner,
-                                                                          target.pk))
-        raise dne
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(apikey)
+    auth = handler.get_authed_eveapi(target.apikey)
 
     api_data = auth.char.SkillInTraining(characterID=target.owner)
 
@@ -365,11 +302,7 @@ def fetch_skill_in_training(apiupdate_pk):
 
 
 
-API_MAP = [
-    {
-        'CharacterSheet': (fetch_charactersheet,),
-    },
-    {
+API_MAP = {
         'ContactList': (fetch_contacts,),
         'Research': (fetch_research,),
         'MarketOrders': (fetch_marketorders,),
@@ -378,4 +311,4 @@ API_MAP = [
         'WalletJournal': (fetch_walletjournal,),
         'SkillQueue': (fetch_skillqueue,),
         'SkillInTraining': (fetch_skill_in_training,),
-    }]
+    }
