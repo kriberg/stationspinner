@@ -201,6 +201,7 @@ REST_FRAMEWORK = {
     'PAGINATE_BY': 100
 }
 
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 # Local settings ...
 
