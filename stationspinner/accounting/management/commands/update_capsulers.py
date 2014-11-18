@@ -1,13 +1,9 @@
 from django.core.management.base import BaseCommand, CommandError
-from stationspinner.accounting.models import Capsuler
-from stationspinner.accounting.tasks import update_capsuler
+from stationspinner.celery import app
 
 class Command(BaseCommand):
     args = ''
-    help = 'Starts a refresh job for a given capsuler'
+    help = 'Updates all capsulers'
 
     def handle(self, *args, **options):
-        capsulers = Capsuler.objects.all()
-        for capsuler in capsulers:
-            self.stdout.write('Updating capsuler %s.' % capsuler)
-            update_capsuler(capsuler.pk)
+        app.send_task('accounting.update_capsulers').get()
