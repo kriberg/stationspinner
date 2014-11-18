@@ -16,8 +16,10 @@ class Command(BaseCommand):
         except MapDenormalize.DoesNotExist:
             self.stdout.write("Unknown location")
             sys.exit(1)
-
-        market = Market(locationID=location.pk)
-        market.save()
-
-        self.stdout.write('Added "{0}" to indexed markets.'.format(location.itemName))
+        try:
+            Market.objects.get(locationID=location.pk)
+            self.stdout.write('Market "{0}" already in indexing list.'.format(location.itemName))
+        except Market.DoesNotExist:
+            market = Market(locationID=location.pk)
+            market.save()
+            self.stdout.write('Added "{0}" to indexed markets.'.format(location.itemName))
