@@ -38,6 +38,7 @@ def queue_capsuler_keys(capsuler):
 
 @app.task(name='accounting.update_all_sheets')
 def update_all_sheets(*args, **kwargs):
+    tasks = []
     #### Characters
     keys = APIKey.objects.filter(expired=False).exclude(type='Corporation')
     current_time = get_current_time()
@@ -47,7 +48,8 @@ def update_all_sheets(*args, **kwargs):
     targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
 
     if targets.count() > 0:
-        character_sheets = fetch_charactersheet.map([t.pk for t in targets])
+        tasks.append(fetch_charactersheet.map([t.pk for t in targets]))
+
 
     #### Corporations
     corpkeys = APIKey.objects.filter(expired=False, type='Corporation')
@@ -57,9 +59,9 @@ def update_all_sheets(*args, **kwargs):
     targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
 
     if targets.count() > 0:
-        corporation_sheets = fetch_corporationsheet.map([t.pk for t in targets])
+        tasks.append(fetch_corporationsheet.map([t.pk for t in targets]))
 
-    group(character_sheets, corporation_sheets).apply_async()
+    group(tasks).apply_async()
 
 @app.task(name='accounting.update_all_apidata')
 def update_all_apidata(*args, **kwargs):
