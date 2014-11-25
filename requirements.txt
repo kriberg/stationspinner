@@ -9,4 +9,4 @@ celery[redis]>=3.1
 django-grappelli
 django-pgjson
 flower
-EVELink
+git+https://github.com/eve-val/evelink
