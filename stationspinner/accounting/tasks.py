@@ -1,11 +1,14 @@
 from stationspinner.celery import app
-from celery import group, chord, chain
+from celery import group, chain
 from datetime import datetime
 from django.db.models import Q
+from traceback import format_exc
+from pytz import UTC
 
 from stationspinner.libs.eveapihandler import EveAPIHandler
-from stationspinner.accounting.models import Capsuler, APIKey, APIUpdate
 from stationspinner.libs.pragma import get_current_time
+from stationspinner.libs.eveapi.eveapi import AuthenticationError
+from stationspinner.accounting.models import Capsuler, APIKey, APIUpdate
 from stationspinner.universe.models import APICall
 from stationspinner.character.tasks import API_MAP as character_tasks, fetch_charactersheet
 from stationspinner.corporation.tasks import API_MAP as corporation_tasks, fetch_corporationsheet
@@ -21,10 +24,10 @@ def update_capsulers():
 @app.task(name='accounting.update_capsuler_keys')
 def update_capsuler_keys(*args, **kwargs):
     capsulers = Capsuler.objects.filter(is_active=True)
-    for capsuler in capsulers:
-        queue_capsuler_keys(capsuler).apply_async()
 
-    log.info('Queued updating of all capsulers.')
+    active_keys = APIKey.objects.filter(expired=False, owner__in=capsulers)
+    log.info('Validating {0} keys'.format(active_keys.count()))
+    validate_key.map([key.pk for key in active_keys]).apply_async()
 
 
 def queue_capsuler_keys(capsuler):
@@ -45,10 +48,16 @@ def update_all_sheets(*args, **kwargs):
     apicall = APICall.objects.get(type='Character', name='CharacterSheet')
     targets = APIUpdate.objects.filter(apicall=apicall,
                                        apikey__in=keys)
-    targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
+    targets = targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
 
     if targets.count() > 0:
+        log.info('Queued {0} {1}'.format(
+                targets.count(),
+                apicall
+            ))
         tasks.append(fetch_charactersheet.map([t.pk for t in targets]))
+    else:
+        log.info('No character sheets need updating.')
 
 
     #### Corporations
@@ -56,10 +65,16 @@ def update_all_sheets(*args, **kwargs):
     apicall = APICall.objects.get(type='Corporation', name='CorporationSheet')
     targets = APIUpdate.objects.filter(apicall=apicall,
                                        apikey__in=corpkeys)
-    targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
+    targets = targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
 
     if targets.count() > 0:
+        log.info('Queued {0} {1}'.format(
+                targets.count(),
+                apicall
+            ))
         tasks.append(fetch_corporationsheet.map([t.pk for t in targets]))
+    else:
+        log.info('No corporation sheets need updating')
 
     group(tasks).apply_async()
 
@@ -76,11 +91,19 @@ def queue_character_tasks():
         apicall = APICall.objects.get(type='Character', name=name)
         targets = APIUpdate.objects.filter(apicall=apicall,
                                            apikey__in=keys)
-        targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
+        targets = targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
 
         if targets.count() > 0:
+            log.info('Queued {0} {1}'.format(
+                targets.count(),
+                apicall
+            ))
             for fn in taskfns:
                 tasks.append(fn.map([t.pk for t in targets]))
+        else:
+            log.info('No targets for {0} need updating'.format(
+                apicall
+            ))
 
     return tasks
 
@@ -94,11 +117,19 @@ def queue_corporation_tasks():
         apicall = APICall.objects.get(type='Corporation', name=name)
         targets = APIUpdate.objects.filter(apicall=apicall,
                                            apikey__in=corpkeys)
-        targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
+        targets = targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
 
         if targets.count() > 0:
+            log.info('Queued {0} {1}'.format(
+                targets.count(),
+                apicall
+            ))
             for fn in taskfns:
                 tasks.append(fn.map([t.pk for t in targets]))
+        else:
+            log.info('No targets for {0} need updating'.format(
+                apicall
+            ))
     return tasks
 
 
@@ -112,16 +143,39 @@ def validate_key(apikey_pk):
 
     api = handler.get_eveapi()
     auth = api.auth(keyID=apikey.keyID, vCode=apikey.vCode)
-    keyinfo = auth.account.APIKeyInfo()
-
-    expires = datetime.fromtimestamp(keyinfo.key.expires)
-    if expires < datetime.now():
+    try:
+        keyinfo = auth.account.APIKeyInfo()
+    except AuthenticationError:
         apikey.expired = True
+        apikey.save()
+        log.info('APIKey "{0}" owned by "{1}" is disabled according to the eveapi.'.format(
+            apikey.name,
+            apikey.owner
+        ))
+        return
+    except Exception, ex:
+        apikey.expired = True
+        apikey.save()
+        log.info('Unexpected error while validating APIKey "{0}" owned by "{1}": {2}.'.format(
+            apikey.name,
+            apikey.owner,
+            format_exc(ex)
+        ))
+        return
+
+    if not keyinfo.key.expires:
+        expires = datetime.fromtimestamp(2000000000, tz=UTC)
+    else:
+        expires = datetime.fromtimestamp(keyinfo.key.expires, tz=UTC)
+    if expires < datetime.now(tz=UTC):
+        apikey.expired = True
+        apikey.save()
         APIUpdate.objects.filter(apikey=apikey).delete()
         return
 
     apikey.accessMask = keyinfo.key.accessMask
     apikey.type = keyinfo.key.type
+    apikey.expires = expires
 
     if keyinfo.key.type == 'Corporation':
         apikey.characterID = keyinfo.key.characters[0].characterID
@@ -151,4 +205,4 @@ def validate_key(apikey_pk):
                                                        apicall=call_type,
                                                        apikey=apikey)
     else:
-        pass
+        apikey.save()
