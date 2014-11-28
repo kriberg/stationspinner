@@ -228,19 +228,19 @@ CELERYBEAT_SCHEDULE = {
     },
     'universe.update_universe': {
         'task': 'universe.update_universe',
-        'schedule': timedelta(hours=6)
+        'schedule': timedelta(hours=24)
     },
     'accounting.update_capsuler_keys': {
         'task': 'accounting.update_capsuler_keys',
-        'schedule': timedelta(hours=1)
+        'schedule': timedelta(hours=24)
     },
     'accounting.update_all_sheets': {
         'task': 'accounting.update_all_sheets',
-        'schedule': timedelta(hours=1)
+        'schedule': timedelta(hours=2)
     },
     'accounting.update_all_apidata': {
         'task': 'accounting.update_all_apidata',
-        'schedule': timedelta(minutes=15)
+        'schedule': timedelta(minutes=30)
     },
 }
 
