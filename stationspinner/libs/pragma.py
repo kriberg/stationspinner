@@ -95,9 +95,9 @@ def get_location_id(location_name):
     return MapDenormalize.objects.get(itemName=location_name)
 
 def get_current_time():
-    try:
-        api = eveapi.EVEAPIConnection()
-        status = api.server.ServerStatus()
-        return datetime.fromtimestamp(status._meta.currentTime, tz=UTC)
-    except:
-        return datetime.now(tz=UTC)
+    #try:
+    #    api = eveapi.EVEAPIConnection()
+    #    status = api.server.ServerStatus()
+    #    return datetime.fromtimestamp(status._meta.currentTime, tz=UTC)
+    #except:
+    return datetime.now(tz=UTC)
