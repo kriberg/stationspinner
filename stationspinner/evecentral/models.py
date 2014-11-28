@@ -9,7 +9,7 @@ class Market(models.Model):
     cached_until = models.DateTimeField(null=True)
 
     def updated(self):
-        self.last_updated = datetime.now(tz=UTC) + timedelta(hours=6)
+        self.cached_until = datetime.now(tz=UTC) + timedelta(hours=6)
         self.save()
 
     def __unicode__(self):
