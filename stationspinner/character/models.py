@@ -34,8 +34,6 @@ class CharacterSheet(models.Model):
     # balance
     # bloodLine
     # characterID
-    # cloneName
-    # cloneSkillPoints
     # corporationID
     # corporationName
     # factionID
@@ -46,7 +44,6 @@ class CharacterSheet(models.Model):
 
     characterID = models.IntegerField(primary_key=True)                                     # auto
     name = models.CharField(max_length=255)                                                 # auto
-    cloneSkillPoints = models.IntegerField()                                                # auto
     corporationID = models.IntegerField()                                                   # auto
     corporationName = models.CharField(max_length=255)                                      # auto
     bloodLine = models.CharField(max_length=50)                                             # auto
@@ -59,7 +56,6 @@ class CharacterSheet(models.Model):
     gender = models.CharField(max_length=6, choices=GENDER)                                 # auto
     race = models.CharField(max_length=20)                                                  # auto
     allianceID = models.IntegerField(null=True)                                             # auto
-    cloneName = models.CharField(max_length=255, blank=True, null=True)                     # auto
 
     # Base attributes
     charisma = models.IntegerField()
