@@ -135,6 +135,18 @@ def queue_corporation_tasks():
 
 @app.task(name='accounting.validate_key')
 def validate_key(apikey_pk):
+    """
+    Validates an apikey and register all characters or corporations that should
+    be updated using this key.
+
+    The process is roughly:
+    1. Check the key against the eveapi. Disable if expired or not existing etc
+    2. Create an APIUpdate "target" for the services the access mask grants you
+       access to, for every character or corporation the key is valid for.
+
+    :param apikey_pk:
+    :return:
+    """
     try:
         apikey = APIKey.objects.get(pk=apikey_pk)
     except APIKey.DoesNotExist, dne:
@@ -181,28 +193,44 @@ def validate_key(apikey_pk):
         apikey.characterID = keyinfo.key.characters[0].characterID
         apikey.corporationID = keyinfo.key.characters[0].corporationID
         apikey.save()
-        for call_type in APICall.objects.all():
+        targets = []
+        for call_type in APICall.objects.filter(type='Corporation'):
             if call_type.accessMask & apikey.accessMask > 0:
-                APIUpdate.objects.update_or_create(owner=apikey.corporationID,
+                target, created = APIUpdate.objects.update_or_create(owner=apikey.corporationID,
                                                    apicall=call_type,
-                                                   apikey=apikey)
+                                                   defaults={'apikey': apikey})
+                targets.append(target.pk)
+
+        # If a key access mask is changed, there could be residual targets
+        # registered with that key, so we'll delete those
+        APIUpdate.objects.filter(
+            owner=apikey.corporationID,
+            apikey=apikey).exclude(pk__in=targets).delete()
+        # Any other keys that provides other accessmasks than this key will then remain.
+        # If two keys provide access to the same endpoint for the same entity, whichever
+        # key was parsed last, gets the honor. There can be only one!
 
     elif keyinfo.key.type == 'Character':
         apikey.characterID = keyinfo.key.characters[0].characterID
         apikey.save()
-        for call_type in APICall.objects.all():
+        targets = []
+        for call_type in APICall.objects.filter(type='Character'):
             if call_type.accessMask & apikey.accessMask > 0:
-                APIUpdate.objects.update_or_create(owner=apikey.characterID,
+                target, created = APIUpdate.objects.update_or_create(owner=apikey.characterID,
                                                    apicall=call_type,
-                                                   apikey=apikey)
+                                                   defaults={'apikey': apikey})
+                targets.append(target.pk)
+        APIUpdate.objects.filter(owner=apikey.corporationID).exclude(pk__in=targets).delete()
     elif keyinfo.key.type == 'Account':
         apikey.save()
-
+        targets = []
         for char in keyinfo.key.characters:
-            for call_type in APICall.objects.all():
+            for call_type in APICall.objects.filter(type='Character'):
                 if call_type.accessMask & apikey.accessMask > 0:
-                    APIUpdate.objects.update_or_create(owner=char.characterID,
+                    target, created = APIUpdate.objects.update_or_create(owner=char.characterID,
                                                        apicall=call_type,
-                                                       apikey=apikey)
+                                                       defaults={'apikey': apikey})
+                    targets.append(target.pk)
+        APIUpdate.objects.filter(owner=apikey.corporationID).exclude(pk__in=targets).delete()
     else:
         apikey.save()
