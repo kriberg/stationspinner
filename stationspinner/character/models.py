@@ -26,22 +26,7 @@ class CharacterSheet(models.Model):
     owner = models.ForeignKey(Capsuler)
     enabled = models.BooleanField(default=False)
 
-    # Autoparsed:
-    # DoB
-    # allianceID
-    # allianceName
-    # ancestry
-    # balance
-    # bloodLine
-    # characterID
-    # corporationID
-    # corporationName
-    # factionID
-    # factionName
-    # gender
-    # name
-    # race
-
+    # From the api
     characterID = models.IntegerField(primary_key=True)                                     # auto
     name = models.CharField(max_length=255)                                                 # auto
     corporationID = models.IntegerField()                                                   # auto
@@ -56,6 +41,17 @@ class CharacterSheet(models.Model):
     gender = models.CharField(max_length=6, choices=GENDER)                                 # auto
     race = models.CharField(max_length=20)                                                  # auto
     allianceID = models.IntegerField(null=True)                                             # auto
+    cloneJumpDate = custom.DateTimeField(null=True)
+    freeRespecs = models.IntegerField(default=0)
+    lastRespecDate = custom.DateTimeField(null=True)
+    lastTimedRespec = custom.DateTimeField(null=True)
+    freeSkillPoints = models.IntegerField(default=0)
+    homeStationID = models.IntegerField(default=0)
+    jumpActivation = custom.DateTimeField(null=True)
+    jumpFatigue = custom.DateTimeField(null=True)
+    jumpLastUpdate = custom.DateTimeField(null=True)
+    remoteStationDate = custom.DateTimeField(null=True)
+
 
     # Base attributes
     charisma = models.IntegerField()
@@ -63,17 +59,6 @@ class CharacterSheet(models.Model):
     intelligence = models.IntegerField()
     memory = models.IntegerField()
     willpower = models.IntegerField()
-    # Enhancers
-    charismaAugmentatorValue = models.IntegerField(default=0)
-    perceptionAugmentatorValue = models.IntegerField(default=0)
-    intelligenceAugmentatorValue = models.IntegerField(default=0)
-    memoryAugmentatorValue = models.IntegerField(default=0)
-    willpowerAugmentatorValue = models.IntegerField(default=0)
-    charismaAugmentatorName = models.CharField(default=None, null=True, max_length=255)
-    perceptionAugmentatorName = models.CharField(default=None, null=True, max_length=255)
-    intelligenceAugmentatorName = models.CharField(default=None, null=True, max_length=255)
-    memoryAugmentatorName = models.CharField(default=None, null=True, max_length=255)
-    willpowerAugmentatorName = models.CharField(default=None, null=True, max_length=255)
 
     def __unicode__(self):
         return self.name
@@ -82,16 +67,17 @@ class CharacterSheet(models.Model):
         handler.autoparse(sheet, self, ignore=('skills',))
         handler.autoparse(sheet.attributes, self)
 
-        if not sheet.attributeEnhancers == '':
-            boosted = filter(lambda x: str(x).endswith('Bonus'), dir(sheet.attributeEnhancers))
-            for attribute in boosted:
-                augmentator = getattr(sheet.attributeEnhancers, attribute)
-                # This just clips away the Bonus part of the name
-                base_name = attribute[:-5]
-                setattr(self, '{0}AugmentatorValue'.format(base_name), augmentator.augmentatorValue)
-                setattr(self, '{0}AugmentatorName'.format(base_name), augmentator.augmentatorName)
         self.enabled = True
         self.save()
+
+
+        implants = handler.autoparseList(sheet.implants,
+                              CharacterImplant,
+                              unique_together=('typeID',),
+                              extra_selectors={'owner': self},
+                              owner=self,
+                              pre_save=True)
+        CharacterImplant.objects.filter(owner=self).exclude(pk__in=implants).delete()
 
         handler.autoparseList(sheet.skills,
                               Skill,
@@ -100,41 +86,90 @@ class CharacterSheet(models.Model):
                               owner=self,
                               pre_save=True)
 
-        handler.autoparseList(sheet.corporationRoles,
+        clones = handler.autoparseList(sheet.jumpClones,
+                              JumpClone,
+                              unique_together=('jumpCloneID',),
+                              extra_selectors={'owner': self},
+                              owner=self,
+                              pre_save=True)
+        JumpClone.objects.filter(owner=self).exclude(pk__in=clones).delete()
+
+        clone_implants = handler.autoparseList(sheet.jumpCloneImplants,
+                              JumpCloneImplant,
+                              unique_together=('jumpCloneID',),
+                              extra_selectors={'owner': self},
+                              owner=self,
+                              pre_save=True)
+        JumpCloneImplant.objects.filter(owner=self).exclude(pk__in=clone_implants).delete()
+
+
+        roles = handler.autoparseList(sheet.corporationRoles,
                               CorporationRole,
                               unique_together=('roleID', 'roleName'),
                               extra_selectors={'owner': self, 'location': 'Global'},
                               pre_save=True)
 
-        handler.autoparseList(sheet.corporationRolesAtBase,
+        roles += handler.autoparseList(sheet.corporationRolesAtBase,
                               CorporationRole,
                               unique_together=('roleID', 'roleName'),
                               extra_selectors={'owner': self, 'location': 'Base'},
                               pre_save=True)
 
-        handler.autoparseList(sheet.corporationRolesAtOther,
+        roles += handler.autoparseList(sheet.corporationRolesAtOther,
                               CorporationRole,
                               unique_together=('roleID', 'roleName'),
                               extra_selectors={'owner': self, 'location': 'Other'},
                               pre_save=True)
 
-        handler.autoparseList(sheet.corporationRolesAtHQ,
+        roles += handler.autoparseList(sheet.corporationRolesAtHQ,
                               CorporationRole,
                               unique_together=('roleID', 'roleName'),
                               extra_selectors={'owner': self, 'location': 'HQ'},
                               pre_save=True)
 
-        handler.autoparseList(sheet.corporationTitles,
+        CorporationRole.objects.filter(owner=self).exclude(pk__in=roles).delete()
+
+
+        titles = handler.autoparseList(sheet.corporationTitles,
                               CorporationTitle,
                               unique_together=('titleID', 'titleName'),
                               extra_selectors={'owner': self},
                               pre_save=True)
+        CorporationTitle.objects.filter(owner=self).exclude(pk__in=titles).delete()
 
-        handler.autoparseList(sheet.certificates,
+        certificates = handler.autoparseList(sheet.certificates,
                               Certificate,
                               unique_together=('titleID', 'titleName'),
                               extra_selectors={'owner': self},
                               pre_save=True)
+        Certificate.objects.filter(owner=self).exclude(pk__in=certificates).delete()
+
+
+class CharacterImplant(models.Model):
+    owner = models.ForeignKey(CharacterSheet)
+    typeID = models.IntegerField()
+    typeName = models.CharField(max_length=255)
+
+
+class JumpClone(models.Model):
+    jumpCloneID = models.IntegerField(primary_key=True)
+    owner = models.ForeignKey(CharacterSheet)
+    typeID = models.IntegerField()
+    locationID = models.BigIntegerField()
+    cloneName = models.CharField(max_length=255, blank=True, default='')
+
+    class Meta:
+        unique_together = ('owner', 'jumpCloneID')
+
+
+class JumpCloneImplant(models.Model):
+    jumpCloneID = models.IntegerField()
+    typeID = models.IntegerField()
+    typeName = models.CharField(max_length=255)
+    owner = models.ForeignKey(CharacterSheet)
+
+    class Meta:
+        unique_together = ('jumpCloneID', 'typeID')
 
 
 class UpcomingCalendarEvent(models.Model):
