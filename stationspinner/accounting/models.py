@@ -14,7 +14,7 @@ class Capsuler(AbstractUser):
         return self.username
 
     def get_active_keys(self):
-        return APIKey.objects.filter(owner=self, expired=False)
+        return APIKey.objects.filter(owner=self.pk, expired=False)
 
 
 class APIKey(models.Model):
