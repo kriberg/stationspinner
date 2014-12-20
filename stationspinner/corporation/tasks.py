@@ -9,6 +9,8 @@ from stationspinner.corporation.models import CorporationSheet, AssetList, \
     IndustryJobHistory, Outpost, WalletTransaction, WalletJournal, Asset, \
     Blueprint
 
+from stationspinner.libs.eveapi.eveapi import AuthenticationError
+
 from celery.utils.log import get_task_logger
 
 log = get_task_logger(__name__)
@@ -36,7 +38,15 @@ def fetch_corporationsheet(apiupdate_pk):
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(apikey)
-    sheet = auth.corp.CorporationSheet(characterID=apikey.characterID)
+    try:
+        sheet = auth.corp.CorporationSheet(characterID=apikey.characterID)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
 
     try:
         corporation = CorporationSheet.objects.get(corporationID=sheet.corporationID)
@@ -80,8 +90,15 @@ def fetch_assetlist(apiupdate_pk):
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
-
-    api_data = auth.corp.AssetList(characterID=corporation.owner_key.characterID)
+    try:
+        api_data = auth.corp.AssetList(characterID=corporation.owner_key.characterID)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
 
     assetlist = AssetList(owner=corporation,
                           retrieved=api_data._meta.currentTime)
@@ -103,9 +120,16 @@ def fetch_membertracking(apiupdate_pk):
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
-
-    api_data = auth.corp.MemberTracking(characterID=corporation.owner_key.characterID,
+    try:
+        api_data = auth.corp.MemberTracking(characterID=corporation.owner_key.characterID,
                                         extended=1)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
     handler.autoparseList(api_data.members,
                           MemberTracking,
                           unique_together=('characterID',),
@@ -125,8 +149,15 @@ def fetch_starbaselist(apiupdate_pk):
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
-
-    api_data = auth.corp.StarbaseList(characterID=corporation.owner_key.characterID)
+    try:
+        api_data = auth.corp.StarbaseList(characterID=corporation.owner_key.characterID)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
 
     handler.autoparseList(api_data.starbases,
                           Starbase,
@@ -147,7 +178,15 @@ def fetch_blueprints(apiupdate_pk):
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
 
-    api_data = auth.corp.Blueprints(characterID=corporation.owner_key.characterID)
+    try:
+        api_data = auth.corp.Blueprints(characterID=corporation.owner_key.characterID)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
 
     blueprintsIDs = handler.autoparseList(api_data.blueprints,
                           Blueprint,

@@ -7,7 +7,7 @@ from stationspinner.character.models import CharacterSheet, WalletJournal, \
     SkillInTraining, IndustryJob, IndustryJobHistory, NPCStanding, Asset
 
 from stationspinner.libs.eveapihandler import EveAPIHandler
-
+from stationspinner.libs.eveapi.eveapi import AuthenticationError
 
 from celery.utils.log import get_task_logger
 
@@ -36,7 +36,15 @@ def fetch_charactersheet(apiupdate_pk):
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(apikey)
-    sheet = auth.char.CharacterSheet(characterID=target.owner)
+    try:
+        sheet = auth.char.CharacterSheet(characterID=target.owner)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
 
     try:
         character = CharacterSheet.objects.get(characterID=sheet.characterID)
@@ -81,9 +89,18 @@ def fetch_blueprints(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
+
     auth = handler.get_authed_eveapi(target.apikey)
 
-    api_data = auth.char.Blueprints(characterID=target.owner)
+    try:
+        api_data = auth.char.Blueprints(characterID=target.owner)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
 
     blueprintsIDs = handler.autoparseList(api_data.blueprints,
                           Blueprint,
@@ -108,7 +125,15 @@ def fetch_contacts(apiupdate_pk):
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(target.apikey)
 
-    api_data = auth.char.ContactList(characterID=target.owner)
+    try:
+        api_data = auth.char.ContactList(characterID=target.owner)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
 
     cIDs = handler.autoparseList(api_data.contactList,
                           Contact,
@@ -146,9 +171,15 @@ def fetch_research(apiupdate_pk):
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(target.apikey)
-
-    api_data = auth.char.Research(characterID=target.owner)
-
+    try:
+        api_data = auth.char.Research(characterID=target.owner)
+    except AuthenticationError:
+            log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+                target.apikey.keyID,
+                target.apikey.owner
+            ))
+            target.delete()
+            return
     rIDs = handler.autoparseList(api_data.research,
                           Research,
                           unique_together=('agentID',),
@@ -169,8 +200,15 @@ def fetch_marketorders(apiupdate_pk):
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(target.apikey)
-
-    api_data = auth.char.MarketOrders(characterID=target.owner)
+    try:
+        api_data = auth.char.MarketOrders(characterID=target.owner)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
 
     handler.autoparseList(api_data.orders,
                           MarketOrder,
@@ -190,9 +228,18 @@ def fetch_medals(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
+
     auth = handler.get_authed_eveapi(target.apikey)
 
-    api_data = auth.char.Medals(characterID=target.owner)
+    try:
+        api_data = auth.char.Medals(characterID=target.owner)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
 
     mIDs = handler.autoparseList(api_data.currentCorporation,
                           Medal,
@@ -222,7 +269,16 @@ def fetch_assetlist(apiupdate_pk):
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(target.apikey)
 
-    api_data = auth.char.AssetList(characterID=target.owner)
+    try:
+        api_data = auth.char.AssetList(characterID=target.owner)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
 
     assetlist = AssetList(owner=character,
                           retrieved=api_data._meta.currentTime)
@@ -244,9 +300,15 @@ def fetch_walletjournal(apiupdate_pk):
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(target.apikey)
-
-    api_data = auth.char.WalletJournal(characterID=target.owner)
-
+    try:
+        api_data = auth.char.WalletJournal(characterID=target.owner)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
     handler.autoparseList(api_data.transactions,
                           WalletJournal,
                           unique_together=('refID',),
@@ -266,9 +328,15 @@ def fetch_skillqueue(apiupdate_pk):
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(target.apikey)
-
-    api_data = auth.char.SkillQueue(characterID=target.owner)
-
+    try:
+        api_data = auth.char.SkillQueue(characterID=target.owner)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
     handler.autoparseList(api_data.skillqueue,
                           SkillQueue,
                           owner=character,
@@ -287,9 +355,15 @@ def fetch_skill_in_training(apiupdate_pk):
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(target.apikey)
-
-    api_data = auth.char.SkillInTraining(characterID=target.owner)
-
+    try:
+        api_data = auth.char.SkillInTraining(characterID=target.owner)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
     obj = handler.autoparseObj(api_data,
                          SkillInTraining,
                          extra_selectors={'owner': character},
