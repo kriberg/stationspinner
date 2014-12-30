@@ -4,7 +4,9 @@ from django_pgjson.fields import JsonField
 from datetime import datetime
 from pytz import UTC
 from stationspinner.libs import fields as custom
-
+from rest_framework.authtoken.models import Token
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from stationspinner.universe.models import APICall
 
 class Capsuler(AbstractUser):
@@ -15,6 +17,15 @@ class Capsuler(AbstractUser):
 
     def get_active_keys(self):
         return APIKey.objects.filter(owner=self.pk, expired=False)
+
+    def is_owner(self, obj):
+        print obj, type(obj.owner)
+        if type(obj.owner) is Capsuler:
+            return obj.owner == self
+        else:
+            return obj.owner.owner == self
+
+
 
 
 class APIKey(models.Model):
@@ -67,3 +78,7 @@ class APIUpdate(models.Model):
         unique_together = ('apicall', 'apikey', 'owner')
 
 
+@receiver(post_save, sender=Capsuler)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)

@@ -337,11 +337,11 @@ def fetch_skillqueue(apiupdate_pk):
         ))
         target.delete()
         return
-    handler.autoparseList(api_data.skillqueue,
+    skills = handler.autoparseList(api_data.skillqueue,
                           SkillQueue,
                           owner=character,
-                          pre_delete=True,
                           pre_save=True)
+    SkillQueue.objects.filter(owner=character).exclude(pk__in=skills).delete()
     target.updated(api_data)
 
 
@@ -374,6 +374,61 @@ def fetch_skill_in_training(apiupdate_pk):
     target.updated(api_data)
 
 
+@app.task(name='character.fetch_notifications')
+def fetch_notifications(apiupdate_pk):
+    try:
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.char.Notifications(characterID=target.owner)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    notifications = handler.autoparseList(api_data.notifications,
+                          Notification,
+                          unique_together=('notificationID',),
+                          extra_selectors={'owner': character},
+                          owner=character,
+                          pre_save=True)
+
+    unfetched_notifications = Notification.objects.filter(
+        owner=character,
+        pk__in=notifications,
+        broken=False,
+        raw_message=None)
+
+
+    if unfetched_notifications.count() > 0:
+        note_texts = auth.char.NotificationTexts(characterID=target.owner,
+                                               IDs=[note.notificationID for note in unfetched_notifications])
+
+        for note_data in note_texts.notifications:
+            try:
+                note = Notification.objects.get(notificationID=note_data.notificationID,
+                                                owner=target.owner)
+                note.raw_message = note_data.data
+                note.save()
+            except Notification.DoesNotExist:
+                log.error('Could not fetch notification text for notificationID {0} belonging to character "{1}".'.format(
+                    note_data.notificationID,
+                    character
+                ))
+            #except:
+            #    note.broken = True
+            #    note.save()
+
+
+    target.updated(api_data)
 
 
 API_MAP = {
@@ -385,4 +440,5 @@ API_MAP = {
         'WalletJournal': (fetch_walletjournal,),
         'SkillQueue': (fetch_skillqueue,),
         'SkillInTraining': (fetch_skill_in_training,),
+        'Notifications': (fetch_notifications,),
     }

@@ -1,0 +1,4 @@
+Copy paste this link into your web browser to activate your {{site}} armada account:
+https://{{ site }}/registration/activate/{{ activation_key }}/
+
+The link is only valid for {{ expiration_days }}. After that, you'll have to re-register.

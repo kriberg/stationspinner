@@ -1,19 +1,28 @@
 from django.db import models
+from django.db.models import Sum
 from stationspinner.accounting.models import APIKey, Capsuler
 from stationspinner.libs import fields as custom
 from django_pgjson.fields import JsonBField
+from stationspinner.sde.models import InvType
 
 
 class Skill(models.Model):
     skillpoints = models.IntegerField(default=0)
     level = models.IntegerField(default=0)
     typeID = models.IntegerField()
+    typeName = models.CharField(max_length=255, null=True)
     published = models.BooleanField(default=True)
 
     owner = models.ForeignKey('CharacterSheet', related_name='skills')
 
+    def update_from_api(self, data, handler):
+        self.typeName = InvType.objects.get(pk=self.typeID).typeName
+        self.save()
+
     class Meta:
         unique_together = ('typeID', 'owner')
+
+
 
 
 class CharacterSheet(models.Model):
@@ -52,6 +61,8 @@ class CharacterSheet(models.Model):
     jumpLastUpdate = custom.DateTimeField(null=True)
     remoteStationDate = custom.DateTimeField(null=True)
 
+    # Computed
+    skillPoints = models.IntegerField(default=0)
 
     # Base attributes
     charisma = models.IntegerField()
@@ -85,6 +96,8 @@ class CharacterSheet(models.Model):
                               extra_selectors={'owner': self},
                               owner=self,
                               pre_save=True)
+
+        self.recalculate_skillpoints()
 
         clones = handler.autoparseList(sheet.jumpClones,
                               JumpClone,
@@ -143,6 +156,10 @@ class CharacterSheet(models.Model):
                               extra_selectors={'owner': self},
                               pre_save=True)
         Certificate.objects.filter(owner=self).exclude(pk__in=certificates).delete()
+
+    def recalculate_skillpoints(self):
+        self.skillPoints = Skill.objects.filter(owner=self).aggregate(Sum('skillpoints'))['skillpoints__sum']
+        self.save()
 
 
 class CharacterImplant(models.Model):
@@ -277,6 +294,7 @@ class Asset(models.Model):
 class MarketOrder(models.Model):
     orderID = models.BigIntegerField()
     typeID = models.IntegerField()
+    typeName = models.CharField(max_length=255, null=True)
     volEntered = models.BigIntegerField()
     minVolume = models.BigIntegerField()
     charID = models.IntegerField()
@@ -292,6 +310,11 @@ class MarketOrder(models.Model):
     price = models.DecimalField(max_digits=30, decimal_places=2)
 
     owner = models.ForeignKey('CharacterSheet')
+
+
+    def update_from_api(self, sheet, handler):
+        self.typeName = InvType.objects.get(pk=self.typeID).typeName
+        self.save()
 
 
 class Medal(models.Model):
@@ -349,13 +372,23 @@ class WalletJournal(models.Model):
 
 class Notification(models.Model):
     typeID = models.IntegerField()
-    notificationID = models.IntegerField()
+    notificationID = models.IntegerField(db_index=True)
     sentDate = custom.DateTimeField()
     read = models.BooleanField(default=False)
     senderName = models.CharField(max_length=255)
     senderID = models.IntegerField()
+    raw_message = models.TextField(null=True)
+    parsed_message = models.TextField(null=True)
+    broken = models.BooleanField(default=False)
 
     owner = models.ForeignKey('CharacterSheet')
+
+    class Meta:
+        unique_together = ('owner', 'notificationID')
+
+    def parse_message(self):
+        pass
+
 
 
 class Contract(models.Model):
@@ -430,8 +463,15 @@ class SkillQueue(models.Model):
     queuePosition = models.IntegerField()
     startSP = models.IntegerField()
     endSP = models.IntegerField()
+    typeName = models.CharField(max_length=255, null=True)
 
     owner = models.ForeignKey('CharacterSheet', related_name='skillQueue')
+
+    def update_from_api(self, sheet, handler):
+        self.typeName = InvType.objects.get(pk=self.typeID).typeName
+        self.save()
+
+
 
 
 class MailingList(models.Model):
@@ -526,8 +566,16 @@ class SkillInTraining(models.Model):
     skillInTraining = models.BooleanField(default=True)
     trainingStartTime = custom.DateTimeField(null=True)
     trainingToLevel = models.IntegerField(null=True)
+    typeName = models.CharField(max_length=255, null=True)
 
     owner = models.ForeignKey('CharacterSheet', related_name='skillInTraining')
+
+    def update_from_api(self, sheet, handler):
+        try:
+            self.typeName = InvType.objects.get(pk=self.trainingTypeID).typeName
+            self.save()
+        except:
+            pass
 
 
 class IndustryJob(models.Model):
@@ -608,3 +656,4 @@ class NPCStanding(models.Model):
 
     class Meta:
         unique_together = ('fromID', 'owner')
+

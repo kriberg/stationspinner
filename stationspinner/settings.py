@@ -134,6 +134,7 @@ INSTALLED_APPS = [
     # external apps
     'django_extensions',
     'rest_framework',
+    'rest_framework.authtoken',
     'grappelli',
     'django.contrib.admin',
     'django.contrib.admindocs',
@@ -144,6 +145,8 @@ INSTALLED_APPS = [
     'stationspinner.character',
     'stationspinner.corporation',
     'stationspinner.evecentral',
+    'registration',
+    'bootstrapform',
 
 ]
 
@@ -203,6 +206,13 @@ REST_FRAMEWORK = {
 
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
+### Django registration
+ACCOUNT_ACTIVATION_DAYS = 3
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 25
+
+
 # Local settings ...
 
 try:
@@ -245,3 +255,10 @@ CELERYBEAT_SCHEDULE = {
 }
 
 CELERY_TIMEZONE = 'UTC'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+    )
+}
+

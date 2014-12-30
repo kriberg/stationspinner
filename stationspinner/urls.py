@@ -1,14 +1,19 @@
 from django.conf.urls import patterns, include, url
-
+from django.views.generic.base import RedirectView
 from django.contrib import admin
+from rest_framework.authtoken import views as authtoken
 admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^char/', include('stationspinner.character.urls')),
+    url(r'^corp/', include('stationspinner.corporation.urls')),
+    url(r'^accounting/', include('stationspinner.accounting.urls')),
     url(r'^prices/', include('stationspinner.evecentral.urls')),
-
-    url(r'^grappelli/', include('grappelli.urls')), # grappelli URLS
+    url(r'^universe/', include('stationspinner.universe.urls')),
+    url(r'^registration/', include('registration.backends.default.urls')),
+    url(r'^grappelli/', include('grappelli.urls')),
+    url(r'^auth/', authtoken.obtain_auth_token),
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^$', include('rest_framework.urls', namespace='stationspinner api'))
+    url(r'^$', RedirectView.as_view(url='/armada/', permanent=True))
 )
