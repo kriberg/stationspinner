@@ -41,9 +41,9 @@ class JumpCloneImplantSerializer(serializers.ModelSerializer):
 
 
 class CharacterSheetListSerializer(serializers.ModelSerializer):
+    skillInTraining = SkillInTrainingSerializer(many=True)
     class Meta:
         model = CharacterSheet
-        include = ('characterID', 'name', 'corporationName', 'allianceName', 'balance', 'factionName')
         exclude = ('owner', 'enabled', 'owner_key')
 
 class CharacterSheetSerializer(serializers.ModelSerializer):

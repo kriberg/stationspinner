@@ -1,9 +1,10 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from stationspinner.character.serializers import CharacterSheetSerializer, \
-    AssetListSerializer, CharacterSheetListSerializer, NotificationSerializer
+    AssetListSerializer, CharacterSheetListSerializer, NotificationSerializer, \
+    SkillInTrainingSerializer
 from stationspinner.character.models import CharacterSheet, \
-    AssetList, Notification
+    AssetList, Notification, SkillInTraining
 from stationspinner.libs.rest_permissions import CapsulerPermission
 
 
@@ -44,3 +45,4 @@ class NotificationViewset(viewsets.ReadOnlyModelViewSet):
         return Notification.objects.filter(
             owner__in=CharacterSheet.objects.filter(owner=self.request.user)
         ).order_by('-sentDate')
+

@@ -1,10 +1,9 @@
 from django.db import models
 from django.db.models import Sum
 from stationspinner.accounting.models import APIKey, Capsuler
-from stationspinner.libs import fields as custom
+from stationspinner.libs import fields as custom, notification_parser
 from django_pgjson.fields import JsonBField
 from stationspinner.sde.models import InvType
-
 
 class Skill(models.Model):
     skillpoints = models.IntegerField(default=0)
@@ -383,11 +382,28 @@ class Notification(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
+    def __unicode__(self):
+        if self.typeID in notification_parser.NOTIFICATION_CODES:
+            return u'{0} -> {1}'.format(
+                self.senderName,
+                notification_parser.NOTIFICATION_CODES[self.typeID]
+            )
+        else:
+            return u'{0} -> {1}'.format(
+                self.senderName,
+                self.typeID
+            )
+
+
     class Meta:
         unique_together = ('owner', 'notificationID')
 
-    def parse_message(self):
-        pass
+    def update_from_api(self, notification, handler):
+        self.parsed_message = notification_parser.parse_notification(
+            self.typeID,
+            self.raw_message
+        )
+        self.save()
 
 
 
