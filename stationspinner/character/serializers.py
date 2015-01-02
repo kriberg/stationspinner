@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from stationspinner.character.models import CharacterSheet, Skill, \
     SkillInTraining, SkillQueue, AssetList, Asset, CharacterImplant, \
-    JumpClone, JumpCloneImplant, Notification
+    JumpClone, JumpCloneImplant, Notification, MailMessage
 
 
 class SkillSerializer(serializers.ModelSerializer):
@@ -78,3 +78,9 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         exclude = ('owner', 'notificationID', 'senderID', 'broken')
+
+
+class MailMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MailMessage
+        fields = ('title', 'senderName', 'parsed_message', 'sentDate')

@@ -431,6 +431,63 @@ def fetch_notifications(apiupdate_pk):
     target.updated(api_data)
 
 
+@app.task(name='character.fetch_mails')
+def fetch_mails(apiupdate_pk):
+    try:
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.char.MailMessages(characterID=target.owner)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    mails = handler.autoparseList(api_data.messages,
+                          MailMessage,
+                          unique_together=('messageID',),
+                          extra_selectors={'owner': character},
+                          owner=character,
+                          pre_save=True)
+
+    unfetched_mails = MailMessage.objects.filter(
+        owner=character,
+        pk__in=mails,
+        broken=False,
+        raw_message=None)
+
+
+    if unfetched_mails.count() > 0:
+        mail_bodies = auth.char.MailBodies(characterID=target.owner,
+                                               IDs=[mail.messageID for mail in unfetched_mails])
+
+        for mail_body in mail_bodies.messages:
+            try:
+                mail = MailMessage.objects.get(messageID=mail_body.messageID,
+                                                owner=target.owner)
+                mail.raw_message = mail_body.data
+                mail.save()
+            except MailMessage.DoesNotExist:
+                log.error('Could not fetch message body for messageID {0} belonging to character "{1}".'.format(
+                    mail_body.messageID,
+                    character
+                ))
+            #except:
+            #    note.broken = True
+            #    note.save()
+
+
+    target.updated(api_data)
+
+
 API_MAP = {
         'ContactList': (fetch_contacts,),
         'Research': (fetch_research,),
@@ -441,4 +498,5 @@ API_MAP = {
         'SkillQueue': (fetch_skillqueue,),
         'SkillInTraining': (fetch_skill_in_training,),
         'Notifications': (fetch_notifications,),
+        'MailMessages': (fetch_mails,),
     }

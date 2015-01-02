@@ -40,7 +40,7 @@ class LogoutView(View):
         return HttpResponse('')
 
 
-class AccountTrainingViewset(viewsets.ReadOnlyModelViewSet):
+class MissingTrainingViewset(viewsets.ReadOnlyModelViewSet):
     serializer_class = AccountKeySerializer
     model = APIKey
     permission_classes = [CapsulerPermission]

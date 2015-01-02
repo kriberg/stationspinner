@@ -561,13 +561,24 @@ class MailMessage(models.Model):
     title = models.CharField(max_length=255, blank=True, null=True)
     senderName = models.CharField(max_length=255, blank=True, null=True)
     senderID = models.IntegerField()
-    toCorpOrAllianceID = models.IntegerField(null=True)
+    toCorpOrAllianceID = models.TextField(blank=True, default='')
     sentDate = custom.DateTimeField()
-    messageID = models.BigIntegerField()
+    messageID = models.BigIntegerField(db_index=True)
     toListID = models.TextField(blank=True, default='')
     toCharacterIDs = models.TextField(blank=True, default='')
+    raw_message = models.TextField(null=True)
+    parsed_message = models.TextField(null=True)
+    broken = models.BooleanField(default=False)
 
     owner = models.ForeignKey('CharacterSheet')
+
+    def __unicode__(self):
+        return self.title
+
+    def update_from_api(self, msg, handler):
+        if self.raw_message:
+            self.parsed_message = self.raw_message
+            self.save()
 
     class Meta:
         unique_together = ('messageID', 'owner')

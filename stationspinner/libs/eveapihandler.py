@@ -135,8 +135,9 @@ class EveAPIHandler():
                 try:
                     obj, created = objClass.objects.update_or_create(defaults=defaults,
                                                                      **selectors)
-                except ValueError:
+                except ValueError, ve:
                     print defaults, selectors
+                    raise ve
             else:
                 obj = objClass(**defaults)
 
