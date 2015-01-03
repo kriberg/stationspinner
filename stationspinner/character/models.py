@@ -4,6 +4,9 @@ from stationspinner.accounting.models import APIKey, Capsuler
 from stationspinner.libs import fields as custom, notification_parser
 from django_pgjson.fields import JsonBField
 from stationspinner.sde.models import InvType
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from stationspinner.celery import app
 
 class Skill(models.Model):
     skillpoints = models.IntegerField(default=0)
@@ -684,3 +687,7 @@ class NPCStanding(models.Model):
     class Meta:
         unique_together = ('fromID', 'owner')
 
+@receiver(post_save, sender=CharacterSheet)
+def update_apidata(sender, instance=None, created=False, **kwargs):
+    if created:
+        app.send_task('accounting.update_character_apidata', (instance.pk,))

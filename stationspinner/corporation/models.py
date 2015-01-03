@@ -2,7 +2,9 @@ from django.db import models
 from django_pgjson.fields import JsonField, JsonBField
 from stationspinner.accounting.models import APIKey, Capsuler
 from stationspinner.libs import fields as custom
-from stationspinner.character import models as character_models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from stationspinner.celery import app
 
 
 class CorporationSheet(models.Model):
@@ -584,3 +586,7 @@ class AccountBalance(models.Model):
         unique_together = ('accountID', 'owner')
 
 
+@receiver(post_save, sender=CorporationSheet)
+def update_apidata(sender, instance=None, created=False, **kwargs):
+    if created:
+        app.send_task('accounting.update_corporation_apidata', (instance.pk,))

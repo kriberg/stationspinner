@@ -5,7 +5,7 @@ from stationspinner.character.serializers import CharacterSheetSerializer, \
     SkillInTrainingSerializer, MailMessageSerializer
 from stationspinner.character.models import CharacterSheet, \
     AssetList, Notification, SkillInTraining, MailMessage
-from stationspinner.libs.rest_permissions import CapsulerPermission
+from stationspinner.libs.drf_extensions import CapsulerPermission
 
 
 class CharacterSheetViewset(viewsets.ReadOnlyModelViewSet):

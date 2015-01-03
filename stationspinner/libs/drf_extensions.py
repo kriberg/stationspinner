@@ -1,5 +1,5 @@
 from rest_framework import permissions
-from stationspinner.accounting.models import Capsuler
+from rest_framework import viewsets
 
 class CapsulerPermission(permissions.BasePermission):
     """
@@ -9,3 +9,13 @@ class CapsulerPermission(permissions.BasePermission):
     """
     def has_object_permission(self, request, view, obj):
         return request.user.is_owner(obj)
+
+    def has_permission(self, request, view):
+        return True
+
+
+class CapsulerViewset(viewsets.ModelViewSet):
+    permission_classes = [CapsulerPermission]
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)

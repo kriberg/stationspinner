@@ -4,14 +4,14 @@ from django.http import HttpResponse
 from rest_framework import viewsets
 from rest_framework.response import Response
 from stationspinner.accounting.serializers import APIKeySerializer, \
-    CapsulerSerializer, AccountKeySerializer
+    CapsulerSerializer
 from stationspinner.accounting.models import APIKey, Capsuler
 from stationspinner.character.models import SkillInTraining
 from stationspinner.universe.models import APICall
-from stationspinner.libs.rest_permissions import CapsulerPermission
+from stationspinner.libs.drf_extensions import CapsulerPermission, CapsulerViewset
 
 
-class APIKeyViewset(viewsets.ModelViewSet):
+class APIKeyViewset(CapsulerViewset):
     serializer_class = APIKeySerializer
     model = APIKey
     permission_classes = [CapsulerPermission]
@@ -41,7 +41,7 @@ class LogoutView(View):
 
 
 class MissingTrainingViewset(viewsets.ReadOnlyModelViewSet):
-    serializer_class = AccountKeySerializer
+    serializer_class = APIKeySerializer
     model = APIKey
     permission_classes = [CapsulerPermission]
 

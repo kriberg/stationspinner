@@ -8,6 +8,7 @@ from rest_framework.authtoken.models import Token
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from stationspinner.universe.models import APICall
+from stationspinner.celery import app
 
 class Capsuler(AbstractUser):
     settings = JsonField(blank=True, default={})
@@ -82,3 +83,16 @@ class APIUpdate(models.Model):
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
+
+@receiver(post_save, sender=APIKey)
+def validate_key(sender, instance=None, created=False, **kwargs):
+    if created:
+        app.send_task('accounting.validate_key', (instance.pk,))
+
+@receiver(post_save, sender=APIUpdate)
+def sheet_listener(sender, instance=None, created=False, **kwargs):
+    if created:
+        calls = APICall.objects.filter(name__in=('CorporationSheet', 'CharacterSheet'))
+        if instance.apicall in calls:
+            app.send_task('accounting.update_apikey_sheets', (instance.apikey.pk,))
+

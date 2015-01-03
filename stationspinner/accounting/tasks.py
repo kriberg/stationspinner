@@ -9,6 +9,8 @@ from stationspinner.libs.eveapihandler import EveAPIHandler
 from stationspinner.libs.pragma import get_current_time
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
 from stationspinner.accounting.models import Capsuler, APIKey, APIUpdate
+from stationspinner.character.models import CharacterSheet
+from stationspinner.corporation.models import CorporationSheet
 from stationspinner.universe.models import APICall
 from stationspinner.character.tasks import API_MAP as character_tasks, fetch_charactersheet
 from stationspinner.corporation.tasks import API_MAP as corporation_tasks, fetch_corporationsheet
@@ -38,6 +40,47 @@ def queue_capsuler_keys(capsuler):
         return None
 
     return validate_key.map([apikey.pk for apikey in keys])
+
+@app.task(name='accounting.update_apikey_sheets')
+def update_apikey_sheets(apikey_pk):
+    tasks = []
+    try:
+        key = APIKey.objects.get(pk=apikey_pk, expired=False)
+    except APIKey.DoesNotExist:
+        return
+
+    current_time = get_current_time()
+    if key.type in ('Character', 'Account'):
+        apicall = APICall.objects.get(type='Character', name='CharacterSheet')
+        targets = APIUpdate.objects.filter(apicall=apicall,
+                                           apikey=key)
+        targets = targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
+        if targets.count() > 0:
+            log.info('Queued {0} {1} for capsuler "{2}".'.format(
+                    targets.count(),
+                    apicall,
+                    key.owner
+                ))
+            tasks.append(fetch_charactersheet.map([t.pk for t in targets]))
+        else:
+            log.info('No character sheets need updating.')
+    else:
+        apicall = APICall.objects.get(type='Corporation', name='CorporationSheet')
+        targets = APIUpdate.objects.filter(apicall=apicall,
+                                           apikey=key)
+        targets = targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
+
+        if targets.count() > 0:
+            log.info('Queued {0} {1} for capsuler "{2}".'.format(
+                    targets.count(),
+                    apicall,
+                    key.owner
+                ))
+            tasks.append(fetch_corporationsheet.map([t.pk for t in targets]))
+        else:
+            log.info('No corporation sheets need updating')
+
+    group(tasks).apply_async()
 
 @app.task(name='accounting.update_all_sheets')
 def update_all_sheets(*args, **kwargs):
@@ -80,10 +123,31 @@ def update_all_sheets(*args, **kwargs):
 
 @app.task(name='accounting.update_all_apidata')
 def update_all_apidata(*args, **kwargs):
-    group(queue_character_tasks() + queue_corporation_tasks()).apply_async()
+    character_keys = APIKey.objects.filter(expired=False).exclude(type='Corporation')
+    corpkeys = APIKey.objects.filter(expired=False, type='Corporation')
+    group(queue_character_tasks(character_keys) + queue_corporation_tasks(corpkeys)).apply_async()
 
-def queue_character_tasks():
-    keys = APIKey.objects.filter(expired=False).exclude(type='Corporation')
+@app.task(name='accounting.update_character_apidata')
+def update_character_apidata(character_pk):
+    try:
+        character = CharacterSheet.objects.get(pk=character_pk)
+    except CharacterSheet.DoesNotExist:
+        return
+    key_qs = APIKey.objects.filter(pk=character.owner_key.pk)
+    group(queue_character_tasks(key_qs)).apply_async()
+
+
+@app.task(name='accounting.update_corporation_apidata')
+def update_corporation_apidata(corporation_pk):
+    try:
+        corporation = CorporationSheet.objects.get(pk=corporation_pk)
+    except CorporationSheet.DoesNotExist:
+        return
+    key_qs = APIKey.objects.filter(pk=corporation.owner_key.pk)
+    group(queue_corporation_tasks(key_qs)).apply_async()
+
+
+def queue_character_tasks(keys):
     tasks = []
 
     for name, taskfns in character_tasks.items():
@@ -108,8 +172,7 @@ def queue_character_tasks():
     return tasks
 
 
-def queue_corporation_tasks():
-    corpkeys = APIKey.objects.filter(expired=False, type='Corporation')
+def queue_corporation_tasks(corpkeys):
     tasks = []
 
     for name, taskfns in corporation_tasks.items():

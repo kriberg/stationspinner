@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from stationspinner.corporation.serializers import CorporationSheetSerializer, \
     CorporationSheetListSerializer
 from stationspinner.corporation.models import CorporationSheet
-from stationspinner.libs.rest_permissions import CapsulerPermission
+from stationspinner.libs.drf_extensions import CapsulerPermission
 
 
 class CorporationSheetViewset(viewsets.ReadOnlyModelViewSet):
