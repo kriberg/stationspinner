@@ -102,7 +102,7 @@ class EveAPIHandler():
 
         return obj
 
-    def autoparseList(self,
+    def autoparse_list(self,
                       result,
                       objClass,
                       unique_together=(),
@@ -111,6 +111,19 @@ class EveAPIHandler():
                       exclude=(),
                       pre_save=False,
                       pre_delete=False):
+        """
+        This will take most rowsets from the eveapi and create or update model objects,
+        as long as the model attributes match those of from the api.
+        :param result:
+        :param objClass:
+        :param unique_together:
+        :param extra_selectors:
+        :param owner:
+        :param exclude:
+        :param pre_save:
+        :param pre_delete:
+        :return:
+        """
 
         if pre_delete:
             objClass.objects.all().delete()
@@ -143,6 +156,78 @@ class EveAPIHandler():
 
             if owner:
                 obj.owner = owner
+
+            if pre_save:
+                obj.save()
+
+            if hasattr(obj, 'update_from_api'):
+                obj.update_from_api(entry, self)
+
+            obj_list.append(obj.pk)
+
+        return obj_list
+
+    def autoparse_shared_list(self,
+                              result,
+                              objClass,
+                              unique_together,
+                              owner,
+                              extra_selectors={},
+                              exclude=(),
+                              pre_save=False):
+        """
+        This works more or less like autoparse_list, but it will handle M2M relationships
+        in the database, to avoid storing identical items like eve mails, which can take a
+        lot of space. A big difference though, is that this will do nothing except adding
+        a new owner, if the object already exists, instead of trying to update it.
+
+        :param result:
+        :param objClass:
+        :param unique_together:
+        :param owner:
+        :param extra_selectors:
+        :param exclude:
+        :param pre_save:
+        :return:
+        """
+        obj_list = []
+        for entry in result:
+            selectors = {}
+            for column in unique_together:
+                selectors[column] = getattr(entry, column)
+
+            for key, value in extra_selectors.items():
+                selectors[key] = value
+
+
+            try:
+                obj = objClass.objects.get(**selectors)
+                # This means the object is already indexed, so let's just add the extra
+                # owner
+                obj.owners.add(owner)
+                obj.save()
+                continue
+            except objClass.DoesNotExist:
+                pass
+
+            defaults = self._create_defaults(entry,
+                                            objClass._meta.get_all_field_names())
+
+            for field in exclude:
+                if field in defaults:
+                    defaults.pop(field)
+
+            if len(selectors) > 0:
+                try:
+                    obj, created = objClass.objects.update_or_create(defaults=defaults,
+                                                                     **selectors)
+                except ValueError, ve:
+                    print defaults, selectors
+                    raise ve
+            else:
+                obj = objClass(**defaults)
+
+            obj.owners.add(owner)
 
             if pre_save:
                 obj.save()

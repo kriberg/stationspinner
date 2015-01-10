@@ -130,7 +130,7 @@ def fetch_membertracking(apiupdate_pk):
         ))
         target.delete()
         return
-    handler.autoparseList(api_data.members,
+    handler.autoparse_list(api_data.members,
                           MemberTracking,
                           unique_together=('characterID',),
                           extra_selectors={'owner': corporation},
@@ -159,7 +159,7 @@ def fetch_starbaselist(apiupdate_pk):
         target.delete()
         return
 
-    handler.autoparseList(api_data.starbases,
+    handler.autoparse_list(api_data.starbases,
                           Starbase,
                           unique_together=('locationID', 'moonID'),
                           extra_selectors={'owner': corporation},
@@ -188,7 +188,7 @@ def fetch_blueprints(apiupdate_pk):
         target.delete()
         return
 
-    blueprintsIDs = handler.autoparseList(api_data.blueprints,
+    blueprintsIDs = handler.autoparse_list(api_data.blueprints,
                           Blueprint,
                           unique_together=('itemID',),
                           extra_selectors={'owner': corporation},

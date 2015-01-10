@@ -34,14 +34,14 @@ class CorporationSheet(models.Model):
         self.enabled = True
         self.save()
 
-        handler.autoparseList(sheet.divisions,
+        handler.autoparse_list(sheet.divisions,
                               Division,
                               unique_together=('accountKey',),
                               extra_selectors={'owner': self},
                               owner=self,
                               pre_save=True)
 
-        handler.autoparseList(sheet.walletDivisions,
+        handler.autoparse_list(sheet.walletDivisions,
                               WalletDivision,
                               unique_together=('accountKey',),
                               extra_selectors={'owner': self},

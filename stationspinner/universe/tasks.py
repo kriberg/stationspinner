@@ -34,7 +34,7 @@ def fetch_alliances():
     handler = EveAPIHandler()
     api = handler.get_eveapi()
     apiData = api.eve.AllianceList()
-    allianceIDs = handler.autoparseList(apiData.alliances,
+    allianceIDs = handler.autoparse_list(apiData.alliances,
                                       Alliance,
                                       unique_together=('allianceID',))
     log.info('Updated {0} alliances.'.format(len(allianceIDs)))
@@ -55,7 +55,7 @@ def fetch_reftypes():
     handler = EveAPIHandler()
     api = handler.get_eveapi()
     apiData = api.eve.RefTypes()
-    rIDs = handler.autoparseList(apiData.refTypes,
+    rIDs = handler.autoparse_list(apiData.refTypes,
                           RefType,
                           unique_together=('refTypeID',),
                           pre_save=True)
@@ -69,7 +69,7 @@ def fetch_conquerable_stations():
     handler = EveAPIHandler()
     api = handler.get_eveapi()
     apiData = api.eve.ConquerableStationList()
-    stationIDs = handler.autoparseList(apiData.outposts,
+    stationIDs = handler.autoparse_list(apiData.outposts,
                           ConquerableStation,
                           unique_together=('stationID',),
                           pre_save=True)
@@ -83,7 +83,7 @@ def fetch_sovereignty():
     handler = EveAPIHandler()
     api = handler.get_eveapi()
     apiData = api.map.Sovereignty()
-    sovIDs = handler.autoparseList(apiData.solarSystems,
+    sovIDs = handler.autoparse_list(apiData.solarSystems,
                           Sovereignty,
                           unique_together=('solarSystemID',),
                           pre_save=True)
@@ -97,11 +97,11 @@ def fetch_apicalls():
     handler = EveAPIHandler()
     api = handler.get_eveapi()
     apiData = api.api.CallList()
-    cgIDs = handler.autoparseList(apiData.callGroups,
+    cgIDs = handler.autoparse_list(apiData.callGroups,
                           APICallGroup,
                           unique_together=('groupID',),
                           pre_save=True)
-    cIDs = handler.autoparseList(apiData.calls,
+    cIDs = handler.autoparse_list(apiData.calls,
                           APICall,
                           unique_together=('accessMask', 'type'),
                           pre_save=True)

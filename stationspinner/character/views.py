@@ -54,5 +54,5 @@ class MailMessageViewset(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return MailMessage.objects.filter(
-            owner__in=CharacterSheet.objects.filter(owner=self.request.user)
+            owners__in=CharacterSheet.objects.filter(owner=self.request.user)
         ).order_by('-sentDate')

@@ -102,7 +102,7 @@ def fetch_blueprints(apiupdate_pk):
         target.delete()
         return
 
-    blueprintsIDs = handler.autoparseList(api_data.blueprints,
+    blueprintsIDs = handler.autoparse_list(api_data.blueprints,
                           Blueprint,
                           unique_together=('itemID',),
                           extra_selectors={'owner': character},
@@ -135,21 +135,21 @@ def fetch_contacts(apiupdate_pk):
         target.delete()
         return
 
-    cIDs = handler.autoparseList(api_data.contactList,
+    cIDs = handler.autoparse_list(api_data.contactList,
                           Contact,
                           unique_together=('contactID',),
                           extra_selectors={'owner': character,
                                            'listType': 'Private'},
                           owner=character,
                           pre_save=True)
-    cIDs.extend(handler.autoparseList(api_data.corporateContactList,
+    cIDs.extend(handler.autoparse_list(api_data.corporateContactList,
                           Contact,
                           unique_together=('contactID',),
                           extra_selectors={'owner': character,
                                            'listType': 'Corporate'},
                           owner=character,
                           pre_save=True))
-    cIDs.extend(handler.autoparseList(api_data.allianceContactList,
+    cIDs.extend(handler.autoparse_list(api_data.allianceContactList,
                           Contact,
                           unique_together=('contactID',),
                           extra_selectors={'owner': character,
@@ -180,7 +180,7 @@ def fetch_research(apiupdate_pk):
             ))
             target.delete()
             return
-    rIDs = handler.autoparseList(api_data.research,
+    rIDs = handler.autoparse_list(api_data.research,
                           Research,
                           unique_together=('agentID',),
                           extra_selectors={'owner': character},
@@ -210,7 +210,7 @@ def fetch_marketorders(apiupdate_pk):
         target.delete()
         return
 
-    handler.autoparseList(api_data.orders,
+    handler.autoparse_list(api_data.orders,
                           MarketOrder,
                           unique_together=('orderID',),
                           extra_selectors={'owner': character},
@@ -241,13 +241,13 @@ def fetch_medals(apiupdate_pk):
         target.delete()
         return
 
-    mIDs = handler.autoparseList(api_data.currentCorporation,
+    mIDs = handler.autoparse_list(api_data.currentCorporation,
                           Medal,
                           unique_together=('medalID',),
                           extra_selectors={'owner': character},
                           owner=character,
                           pre_save=True)
-    mIDs.extend(handler.autoparseList(api_data.otherCorporations,
+    mIDs.extend(handler.autoparse_list(api_data.otherCorporations,
                           Medal,
                           unique_together=('medalID',),
                           extra_selectors={'owner': character},
@@ -309,7 +309,7 @@ def fetch_walletjournal(apiupdate_pk):
         ))
         target.delete()
         return
-    handler.autoparseList(api_data.transactions,
+    handler.autoparse_list(api_data.transactions,
                           WalletJournal,
                           unique_together=('refID',),
                           extra_selectors={'owner': character},
@@ -337,7 +337,7 @@ def fetch_skillqueue(apiupdate_pk):
         ))
         target.delete()
         return
-    skills = handler.autoparseList(api_data.skillqueue,
+    skills = handler.autoparse_list(api_data.skillqueue,
                           SkillQueue,
                           owner=character,
                           pre_save=True)
@@ -394,7 +394,7 @@ def fetch_notifications(apiupdate_pk):
         target.delete()
         return
 
-    notifications = handler.autoparseList(api_data.notifications,
+    notifications = handler.autoparse_list(api_data.notifications,
                           Notification,
                           unique_together=('notificationID',),
                           extra_selectors={'owner': character},
@@ -451,15 +451,14 @@ def fetch_mails(apiupdate_pk):
         target.delete()
         return
 
-    mails = handler.autoparseList(api_data.messages,
+    mails = handler.autoparse_shared_list(api_data.messages,
                           MailMessage,
-                          unique_together=('messageID',),
-                          extra_selectors={'owner': character},
-                          owner=character,
+                          ('messageID',),
+                          character,
                           pre_save=True)
 
     unfetched_mails = MailMessage.objects.filter(
-        owner=character,
+        owners__in=[character.pk],
         pk__in=mails,
         broken=False,
         raw_message=None)
@@ -471,8 +470,7 @@ def fetch_mails(apiupdate_pk):
 
         for mail_body in mail_bodies.messages:
             try:
-                mail = MailMessage.objects.get(messageID=mail_body.messageID,
-                                                owner=target.owner)
+                mail = MailMessage.objects.get(messageID=mail_body.messageID)
                 mail.raw_message = mail_body.data
                 mail.save()
             except MailMessage.DoesNotExist:

@@ -84,7 +84,7 @@ class CharacterSheet(models.Model):
         self.save()
 
 
-        implants = handler.autoparseList(sheet.implants,
+        implants = handler.autoparse_list(sheet.implants,
                               CharacterImplant,
                               unique_together=('typeID',),
                               extra_selectors={'owner': self},
@@ -92,7 +92,7 @@ class CharacterSheet(models.Model):
                               pre_save=True)
         CharacterImplant.objects.filter(owner=self).exclude(pk__in=implants).delete()
 
-        handler.autoparseList(sheet.skills,
+        handler.autoparse_list(sheet.skills,
                               Skill,
                               unique_together=('typeID',),
                               extra_selectors={'owner': self},
@@ -101,7 +101,7 @@ class CharacterSheet(models.Model):
 
         self.recalculate_skillpoints()
 
-        clones = handler.autoparseList(sheet.jumpClones,
+        clones = handler.autoparse_list(sheet.jumpClones,
                               JumpClone,
                               unique_together=('jumpCloneID',),
                               extra_selectors={'owner': self},
@@ -109,7 +109,7 @@ class CharacterSheet(models.Model):
                               pre_save=True)
         JumpClone.objects.filter(owner=self).exclude(pk__in=clones).delete()
 
-        clone_implants = handler.autoparseList(sheet.jumpCloneImplants,
+        clone_implants = handler.autoparse_list(sheet.jumpCloneImplants,
                               JumpCloneImplant,
                               unique_together=('jumpCloneID',),
                               extra_selectors={'owner': self},
@@ -118,25 +118,25 @@ class CharacterSheet(models.Model):
         JumpCloneImplant.objects.filter(owner=self).exclude(pk__in=clone_implants).delete()
 
 
-        roles = handler.autoparseList(sheet.corporationRoles,
+        roles = handler.autoparse_list(sheet.corporationRoles,
                               CorporationRole,
                               unique_together=('roleID', 'roleName'),
                               extra_selectors={'owner': self, 'location': 'Global'},
                               pre_save=True)
 
-        roles += handler.autoparseList(sheet.corporationRolesAtBase,
+        roles += handler.autoparse_list(sheet.corporationRolesAtBase,
                               CorporationRole,
                               unique_together=('roleID', 'roleName'),
                               extra_selectors={'owner': self, 'location': 'Base'},
                               pre_save=True)
 
-        roles += handler.autoparseList(sheet.corporationRolesAtOther,
+        roles += handler.autoparse_list(sheet.corporationRolesAtOther,
                               CorporationRole,
                               unique_together=('roleID', 'roleName'),
                               extra_selectors={'owner': self, 'location': 'Other'},
                               pre_save=True)
 
-        roles += handler.autoparseList(sheet.corporationRolesAtHQ,
+        roles += handler.autoparse_list(sheet.corporationRolesAtHQ,
                               CorporationRole,
                               unique_together=('roleID', 'roleName'),
                               extra_selectors={'owner': self, 'location': 'HQ'},
@@ -145,14 +145,14 @@ class CharacterSheet(models.Model):
         CorporationRole.objects.filter(owner=self).exclude(pk__in=roles).delete()
 
 
-        titles = handler.autoparseList(sheet.corporationTitles,
+        titles = handler.autoparse_list(sheet.corporationTitles,
                               CorporationTitle,
                               unique_together=('titleID', 'titleName'),
                               extra_selectors={'owner': self},
                               pre_save=True)
         CorporationTitle.objects.filter(owner=self).exclude(pk__in=titles).delete()
 
-        certificates = handler.autoparseList(sheet.certificates,
+        certificates = handler.autoparse_list(sheet.certificates,
                               Certificate,
                               unique_together=('titleID', 'titleName'),
                               extra_selectors={'owner': self},
@@ -561,19 +561,19 @@ class Certificate(models.Model):
 
 
 class MailMessage(models.Model):
+    messageID = models.BigIntegerField(primary_key=True)
     title = models.CharField(max_length=255, blank=True, null=True)
     senderName = models.CharField(max_length=255, blank=True, null=True)
     senderID = models.IntegerField()
     toCorpOrAllianceID = models.TextField(blank=True, default='')
     sentDate = custom.DateTimeField()
-    messageID = models.BigIntegerField(db_index=True)
     toListID = models.TextField(blank=True, default='')
     toCharacterIDs = models.TextField(blank=True, default='')
     raw_message = models.TextField(null=True)
     parsed_message = models.TextField(null=True)
     broken = models.BooleanField(default=False)
 
-    owner = models.ForeignKey('CharacterSheet')
+    owners = models.ManyToManyField(CharacterSheet)
 
     def __unicode__(self):
         return self.title
@@ -582,9 +582,6 @@ class MailMessage(models.Model):
         if self.raw_message:
             self.parsed_message = self.raw_message
             self.save()
-
-    class Meta:
-        unique_together = ('messageID', 'owner')
 
 
 class SkillInTraining(models.Model):
