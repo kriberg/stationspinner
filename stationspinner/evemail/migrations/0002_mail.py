@@ -30,34 +30,4 @@ class Migration(migrations.Migration):
             },
             bases=(models.Model,),
         ),
-        migrations.RunSQL(
-            sql='''
-            CREATE VIEW
-                evemail_mail
-            AS
-                SELECT
-                  mail.*,
-                  status.read,
-                  status.owner_id
-
-                FROM
-                  evemail_mailstatus status,
-                  (SELECT
-                     msg."messageID",
-                     msg.title,
-                     msg."senderName",
-                     msg."senderID",
-                     msg."sentDate",
-                     msg.parsed_message,
-                     coalesce (string_agg(names.name, ', '))
-                   FROM character_mailmessage msg
-                   JOIN character_mailrecipient recp ON recp.mail_id = msg."messageID"
-                   JOIN universe_evename names ON names.id = recp.receiver
-                   --WHERE msg."messageID"=250516321
-                   GROUP BY msg."messageID" ORDER BY msg."messageID") AS mail
-
-            WHERE status.message_id = mail."messageID";
-            ''',
-            reverse_sql='DROP VIEW evemail_mail'
-        ),
     ]

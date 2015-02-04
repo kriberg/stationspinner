@@ -9,7 +9,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('evemail', '0002_mail'),
-        ('character', '0019_auto_20150114_2158')
     ]
 
     operations = [
