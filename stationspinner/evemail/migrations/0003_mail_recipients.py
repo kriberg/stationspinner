@@ -14,7 +14,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             sql='''
-            DROP VIEW evemail_mail;
             CREATE VIEW
                 evemail_mail
             AS
