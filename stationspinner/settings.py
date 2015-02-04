@@ -138,6 +138,7 @@ INSTALLED_APPS = [
     'grappelli',
     'django.contrib.admin',
     'django.contrib.admindocs',
+
     # Stationspinner apps
     'stationspinner.sde',
     'stationspinner.universe',
@@ -145,6 +146,7 @@ INSTALLED_APPS = [
     'stationspinner.character',
     'stationspinner.corporation',
     'stationspinner.evecentral',
+    'stationspinner.evemail',
     'registration',
     'bootstrapform',
 
@@ -211,6 +213,12 @@ ACCOUNT_ACTIVATION_DAYS = 3
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'localhost'
 EMAIL_PORT = 25
+
+
+
+EVEMAIL_SEARCH_LANGUAGES = (
+    'english',
+)
 
 
 # Local settings ...

@@ -7,6 +7,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'^char/', include('stationspinner.character.urls')),
     url(r'^corp/', include('stationspinner.corporation.urls')),
+    url(r'^evemail/', include('stationspinner.evemail.urls')),
     url(r'^accounting/', include('stationspinner.accounting.urls')),
     url(r'^prices/', include('stationspinner.evecentral.urls')),
     url(r'^universe/', include('stationspinner.universe.urls')),

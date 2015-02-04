@@ -11,8 +11,8 @@ class CorporationSheetSerializer(serializers.ModelSerializer):
 class CorporationSheetListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CorporationSheet
-        include = ('corporationID', 'corporationName', 'allianceID', 'allianceName')
-        exclude = (
-            'owner', 'owner_key', 'enabled', 'description', 'memberLimit', 'taxRate', 'factionID', 'ceoName',
-            'ceoID', 'stationName', 'stationID', 'memberCount', 'shares', 'url'
-        )
+        fields = ('corporationID', 'corporationName', 'allianceID', 'allianceName')
+        #exclude = (
+        #    'owner', 'owner_key', 'enabled', 'description', 'memberLimit', 'taxRate', 'factionID', 'ceoName',
+        #    'ceoID', 'stationName', 'stationID', 'memberCount', 'shares', 'url'
+        #)

@@ -1,5 +1,5 @@
-from rest_framework import permissions
-from rest_framework import viewsets
+from rest_framework import permissions, viewsets, serializers
+import json
 
 class CapsulerPermission(permissions.BasePermission):
     """
@@ -19,3 +19,11 @@ class CapsulerViewset(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+
+class JSONField(serializers.Field):
+    def to_representation(self, obj):
+        return obj
+
+    def to_internal_value(self, data):
+        return data

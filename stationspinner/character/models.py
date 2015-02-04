@@ -1,7 +1,9 @@
 from django.db import models
 from django.db.models import Sum
 from stationspinner.accounting.models import APIKey, Capsuler
-from stationspinner.libs import fields as custom, notification_parser
+from stationspinner.universe.models import EveName
+from stationspinner.libs import fields as custom, api_parser
+from stationspinner.libs.api_parser import parse_evemail
 from django_pgjson.fields import JsonBField
 from stationspinner.sde.models import InvType
 from django.db.models.signals import post_save
@@ -79,6 +81,7 @@ class CharacterSheet(models.Model):
     def update_from_api(self, sheet, handler):
         handler.autoparse(sheet, self, ignore=('skills',))
         handler.autoparse(sheet.attributes, self)
+        EveName.objects.register(self.pk, self.name)
 
         self.enabled = True
         self.save()
@@ -386,10 +389,10 @@ class Notification(models.Model):
     owner = models.ForeignKey('CharacterSheet')
 
     def __unicode__(self):
-        if self.typeID in notification_parser.NOTIFICATION_CODES:
+        if self.typeID in api_parser.NOTIFICATION_CODES:
             return u'{0} -> {1}'.format(
                 self.senderName,
-                notification_parser.NOTIFICATION_CODES[self.typeID]
+                api_parser.NOTIFICATION_CODES[self.typeID]
             )
         else:
             return u'{0} -> {1}'.format(
@@ -402,7 +405,7 @@ class Notification(models.Model):
         unique_together = ('owner', 'notificationID')
 
     def update_from_api(self, notification, handler):
-        self.parsed_message = notification_parser.parse_notification(
+        self.parsed_message = api_parser.parse_notification(
             self.typeID,
             self.raw_message
         )
@@ -494,10 +497,10 @@ class SkillQueue(models.Model):
 
 
 class MailingList(models.Model):
-    listID = models.IntegerField()
+    listID = models.BigIntegerField(primary_key=True)
     displayName = models.CharField(max_length=255)
 
-    owner = models.ForeignKey('CharacterSheet')
+    owners = models.ManyToManyField('CharacterSheet')
 
 
 
@@ -560,28 +563,78 @@ class Certificate(models.Model):
         unique_together = ('certificateID', 'owner')
 
 
+
+
 class MailMessage(models.Model):
     messageID = models.BigIntegerField(primary_key=True)
     title = models.CharField(max_length=255, blank=True, null=True)
     senderName = models.CharField(max_length=255, blank=True, null=True)
     senderID = models.IntegerField()
-    toCorpOrAllianceID = models.TextField(blank=True, default='')
     sentDate = custom.DateTimeField()
-    toListID = models.TextField(blank=True, default='')
-    toCharacterIDs = models.TextField(blank=True, default='')
     raw_message = models.TextField(null=True)
     parsed_message = models.TextField(null=True)
     broken = models.BooleanField(default=False)
+    receivers = JsonBField(default=[], null=True)
 
     owners = models.ManyToManyField(CharacterSheet)
 
     def __unicode__(self):
         return self.title
 
+    def populate_receivers(self):
+        new_receivers = []
+        if not self.receivers:
+            self.receivers = []
+        for entity in self.receivers:
+            if not entity['type'] == 2:
+                name = EveName.objects.get_name(entity['id'])
+            else:
+                try:
+                    mailing_list = MailingList.objects.get(pk=entity['id'])
+                    name = mailing_list.displayName
+                except:
+                    name = 'Mailing list {0}'.format(entity['id'])
+            new_receivers.append({'name': name,
+                               'id': entity['id'],
+                               'type': entity['type']})
+        self.receivers = new_receivers
+
+
+
     def update_from_api(self, msg, handler):
-        if self.raw_message:
-            self.parsed_message = self.raw_message
-            self.save()
+        def purge(l):
+            o = []
+            for i in l:
+                if i == u'' or not i:
+                    continue
+                o.append(i)
+            return o
+
+        lists = unicode(msg.toListID).split(',')
+        characters = unicode(msg.toCharacterIDs).split(',')
+        corpalls = unicode(msg.toCorpOrAllianceID).split(',')
+
+        api_receivers = (
+            (2, purge(lists)),
+            (0, purge(characters)),
+            (1, purge(corpalls)),
+        )
+        recipients = []
+
+        for receiver_type, receiverIDs in api_receivers:
+            for receiverID in receiverIDs:
+                if not receiver_type == 2:
+                    EveName.objects.get_or_create(pk=receiverID)
+                recipients.append({'name': receiverID,
+                                   'id': receiverID,
+                                   'type': receiver_type})
+
+        if self.raw_message and not self.parsed_message:
+            self.parse_message()
+        self.save()
+
+    def parse_message(self):
+        self.parsed_message = parse_evemail(self.raw_message)
 
 
 class SkillInTraining(models.Model):

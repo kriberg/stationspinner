@@ -161,7 +161,7 @@ def fetch_starbaselist(apiupdate_pk):
 
     handler.autoparse_list(api_data.starbases,
                           Starbase,
-                          unique_together=('locationID', 'moonID'),
+                          unique_together=('itemID',),
                           extra_selectors={'owner': corporation},
                           owner=corporation,
                           pre_save=True)

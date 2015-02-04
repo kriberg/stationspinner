@@ -1,6 +1,7 @@
 from django.db import models
 from django_pgjson.fields import JsonField, JsonBField
 from stationspinner.accounting.models import APIKey, Capsuler
+from stationspinner.universe.models import EveName
 from stationspinner.libs import fields as custom
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -33,7 +34,7 @@ class CorporationSheet(models.Model):
         handler.autoparse(sheet, self)
         self.enabled = True
         self.save()
-
+        EveName.objects.register(self.pk, self.corporationName)
         handler.autoparse_list(sheet.divisions,
                               Division,
                               unique_together=('accountKey',),

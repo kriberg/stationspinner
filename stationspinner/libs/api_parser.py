@@ -1,5 +1,6 @@
 from stationspinner.libs.eveapihandler import EveAPIHandler
-import re
+from bs4 import BeautifulSoup
+import warnings
 
 NOTIFICATION_CODES = {
     1: 'Legacy',
@@ -149,3 +150,17 @@ def parse_notification(code, msg):
         )
     else:
         return msg
+
+def parse_evemail(msg):
+    if not msg or not len(msg) > 0:
+        return msg
+    # bs4 gives warnings when parsing strings that only contains an URL
+    # We want to treat that as plain text, so we can safely ignore it.
+    warnings.filterwarnings('ignore')
+    soup = BeautifulSoup(msg)
+    for font_element in soup.find_all('font'):
+        font_element.unwrap()
+    for a_element in soup.find_all('a'):
+        if 'showinfo' in a_element.attrs.get('href', ''):
+            a_element.name = 'eve-info'
+    return unicode(soup)

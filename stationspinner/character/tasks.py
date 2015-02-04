@@ -5,7 +5,7 @@ from stationspinner.character.models import CharacterSheet, WalletJournal, \
     WalletTransaction, PlanetaryColony, Contract, ContractItem, ContractBid, \
     SkillQueue, MailingList, ContactNotification, MailMessage, \
     SkillInTraining, IndustryJob, IndustryJobHistory, NPCStanding, Asset
-
+from stationspinner.universe.models import EveName
 from stationspinner.libs.eveapihandler import EveAPIHandler
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
 
@@ -464,6 +464,7 @@ def fetch_mails(apiupdate_pk):
         raw_message=None)
 
 
+    EveName.objects.populate()
     if unfetched_mails.count() > 0:
         mail_bodies = auth.char.MailBodies(characterID=target.owner,
                                                IDs=[mail.messageID for mail in unfetched_mails])
@@ -472,6 +473,7 @@ def fetch_mails(apiupdate_pk):
             try:
                 mail = MailMessage.objects.get(messageID=mail_body.messageID)
                 mail.raw_message = mail_body.data
+                mail.populate_receivers()
                 mail.save()
             except MailMessage.DoesNotExist:
                 log.error('Could not fetch message body for messageID {0} belonging to character "{1}".'.format(
@@ -482,6 +484,41 @@ def fetch_mails(apiupdate_pk):
             #    note.broken = True
             #    note.save()
 
+
+
+
+    target.updated(api_data)
+
+
+@app.task(name='character.fetch_mailinglists')
+def fetch_mailinglists(apiupdate_pk):
+    try:
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.char.MailingLists(characterID=target.owner)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    listIDs = handler.autoparse_shared_list(api_data.mailingLists,
+                          MailingList,
+                          ('listID',),
+                          character,
+                          pre_save=True)
+
+    unsubscribed = character.mailinglist_set.exclude(listID__in=listIDs)
+    for desub in unsubscribed:
+        desub.owners.remove(character)
 
     target.updated(api_data)
 
@@ -497,4 +534,5 @@ API_MAP = {
         'SkillInTraining': (fetch_skill_in_training,),
         'Notifications': (fetch_notifications,),
         'MailMessages': (fetch_mails,),
+        'MailingLists': (fetch_mailinglists,),
     }

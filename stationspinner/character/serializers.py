@@ -83,4 +83,16 @@ class NotificationSerializer(serializers.ModelSerializer):
 class MailMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = MailMessage
-        fields = ('title', 'senderName', 'parsed_message', 'sentDate')
+        fields = ('messageID', 'title', 'senderName', 'parsed_message', 'sentDate', 'recipients')
+
+
+class ShortformCorporationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CharacterSheet
+        fields = ('corporationID', 'corporationName')
+
+
+class ShortformAllianceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CharacterSheet
+        fields = ('allianceID', 'allianceName')

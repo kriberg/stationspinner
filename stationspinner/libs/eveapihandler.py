@@ -26,7 +26,7 @@ class EveAPIHandler():
         api = eveapi.EVEAPIConnection(cacheHandler=RedisCache())
         return api.auth(keyID=apikey.keyID, vCode=apikey.vCode)
 
-    def _create_defaults(self, result, field_names):
+    def _create_defaults(self, result, field_names, exclude=()):
         """
 
         :param result: The data from eveapi
@@ -42,7 +42,7 @@ class EveAPIHandler():
             attributes = ()
 
         for attribute in attributes:
-            if attribute in field_names:
+            if attribute in field_names and not attribute in exclude:
                 defaults[attribute] = getattr(result, attribute)
         return defaults
 
@@ -79,11 +79,8 @@ class EveAPIHandler():
             selectors[key] = value
 
         defaults = self._create_defaults(entry,
-                                        objClass._meta.get_all_field_names())
-
-        for field in exclude:
-            if field in defaults:
-                defaults.pop(field)
+                                        objClass._meta.get_all_field_names(),
+                                        exclude)
 
         if len(selectors) > 0:
             obj, created = objClass.objects.update_or_create(defaults=defaults,
@@ -138,11 +135,8 @@ class EveAPIHandler():
                 selectors[key] = value
 
             defaults = self._create_defaults(entry,
-                                            objClass._meta.get_all_field_names())
-
-            for field in exclude:
-                if field in defaults:
-                    defaults.pop(field)
+                                             objClass._meta.get_all_field_names(),
+                                             exclude)
 
             if len(selectors) > 0:
                 try:
@@ -205,17 +199,18 @@ class EveAPIHandler():
                 # This means the object is already indexed, so let's just add the extra
                 # owner
                 obj.owners.add(owner)
+                if hasattr(obj, 'update_from_api'):
+                    obj.update_from_api(entry, self)
                 obj.save()
                 continue
             except objClass.DoesNotExist:
                 pass
 
             defaults = self._create_defaults(entry,
-                                            objClass._meta.get_all_field_names())
+                                             objClass._meta.get_all_field_names(),
+                                             exclude)
 
-            for field in exclude:
-                if field in defaults:
-                    defaults.pop(field)
+
 
             if len(selectors) > 0:
                 try:

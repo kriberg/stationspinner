@@ -110,6 +110,12 @@ def fetch_apicalls():
     update, created = UniverseUpdate.objects.get_or_create(apicall='CallList')
     update.updated(apiData)
 
+
+@app.task(name='universe.fetch_corporation_names')
+def fetch_corporation_names():
+    handler = EveAPIHandler()
+    api = handler.get_eveapi()
+
 API_MAP = {
     'CallList': fetch_apicalls,
     'RefTypes': fetch_reftypes,

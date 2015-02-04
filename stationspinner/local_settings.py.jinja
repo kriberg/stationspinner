@@ -53,3 +53,8 @@ CACHES = {
 BROKER_URL = "redis://{{ stationspinner.redis.host }}:{{ stationspinner.redis.port }}/{{ stationspinner.redis.celerydb }}"
 CELERY_RESULT_BACKEND = "redis://{{ stationspinner.redis.host }}:{{ stationspinner.redis.port }}/{{ stationspinner.redis.celerydb }}"
 SECRET_KEY = '{{ stationspinner.secret_key }}'
+EVEMAIL_SEARCH_LANGUAGES = (
+    {%- for language in stationspinner.evemail_search_languages %}
+    '{{language}}',
+    {%- endfor %}
+)

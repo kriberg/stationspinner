@@ -2,7 +2,8 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from stationspinner.character.serializers import CharacterSheetSerializer, \
     AssetListSerializer, CharacterSheetListSerializer, NotificationSerializer, \
-    SkillInTrainingSerializer, MailMessageSerializer
+    SkillInTrainingSerializer, MailMessageSerializer, ShortformAllianceSerializer, \
+    ShortformCorporationSerializer
 from stationspinner.character.models import CharacterSheet, \
     AssetList, Notification, SkillInTraining, MailMessage
 from stationspinner.libs.drf_extensions import CapsulerPermission
@@ -23,7 +24,7 @@ class CharacterSheetViewset(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return CharacterSheet.objects.filter(owner=self.request.user,
-                                             enabled=True)
+                                             enabled=True).order_by('-skillPoints')
 
 #class AssetListViewset(viewsets.ReadOnlyModelViewSet):
 #    serializer_class = AssetListSerializer
@@ -56,3 +57,31 @@ class MailMessageViewset(viewsets.ReadOnlyModelViewSet):
         return MailMessage.objects.filter(
             owners__in=CharacterSheet.objects.filter(owner=self.request.user)
         ).order_by('-sentDate')
+
+
+class DistinctAllianceViewset(viewsets.ReadOnlyModelViewSet):
+    serializer_class = ShortformAllianceSerializer
+    permission_classes = [CapsulerPermission]
+    model = CharacterSheet
+
+    def get_queryset(self):
+        characters = CharacterSheet.objects.filter(owner=self.request.user)
+
+        return characters.exclude(allianceID=None) \
+            .exclude(allianceID=0) \
+            .distinct('allianceID', 'allianceName') \
+            .values('allianceID', 'allianceName') \
+            .order_by('allianceName')
+
+
+class DistinctCorporationViewset(viewsets.ReadOnlyModelViewSet):
+    serializer_class = ShortformCorporationSerializer
+    permission_classes = [CapsulerPermission]
+    model = CharacterSheet
+
+    def get_queryset(self):
+        characters = CharacterSheet.objects.filter(owner=self.request.user)
+
+        return characters.distinct('corporationID', 'corporationName') \
+            .values('corporationID', 'corporationName') \
+            .order_by('corporationName')
