@@ -9,6 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('evemail', '0001_initial'),
+        ('character', '0020_mailmessage_receivers'),
     ]
 
     operations = [
