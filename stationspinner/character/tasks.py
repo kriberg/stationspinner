@@ -87,6 +87,9 @@ def fetch_blueprints(apiupdate_pk):
     except CharacterSheet.DoesNotExist:
         log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
         return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
 
@@ -120,6 +123,9 @@ def fetch_contacts(apiupdate_pk):
         target, character = _get_character_auth(apiupdate_pk)
     except CharacterSheet.DoesNotExist:
         log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
         return
 
     handler = EveAPIHandler()
@@ -168,6 +174,9 @@ def fetch_research(apiupdate_pk):
     except CharacterSheet.DoesNotExist:
         log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
         return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(target.apikey)
@@ -197,6 +206,9 @@ def fetch_marketorders(apiupdate_pk):
     except CharacterSheet.DoesNotExist:
         log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
         return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(target.apikey)
@@ -225,6 +237,9 @@ def fetch_medals(apiupdate_pk):
         target, character = _get_character_auth(apiupdate_pk)
     except CharacterSheet.DoesNotExist:
         log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
         return
 
     handler = EveAPIHandler()
@@ -265,6 +280,9 @@ def fetch_assetlist(apiupdate_pk):
     except CharacterSheet.DoesNotExist:
         log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
         return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(target.apikey)
@@ -297,6 +315,9 @@ def fetch_walletjournal(apiupdate_pk):
     except CharacterSheet.DoesNotExist:
         log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
         return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(target.apikey)
@@ -325,6 +346,9 @@ def fetch_skillqueue(apiupdate_pk):
     except CharacterSheet.DoesNotExist:
         log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
         return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(target.apikey)
@@ -351,6 +375,9 @@ def fetch_skill_in_training(apiupdate_pk):
         target, character = _get_character_auth(apiupdate_pk)
     except CharacterSheet.DoesNotExist:
         log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
         return
 
     handler = EveAPIHandler()
@@ -380,6 +407,9 @@ def fetch_notifications(apiupdate_pk):
         target, character = _get_character_auth(apiupdate_pk)
     except CharacterSheet.DoesNotExist:
         log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
         return
 
     handler = EveAPIHandler()
@@ -437,6 +467,9 @@ def fetch_mails(apiupdate_pk):
         target, character = _get_character_auth(apiupdate_pk)
     except CharacterSheet.DoesNotExist:
         log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
         return
 
     handler = EveAPIHandler()
@@ -496,6 +529,9 @@ def fetch_mailinglists(apiupdate_pk):
         target, character = _get_character_auth(apiupdate_pk)
     except CharacterSheet.DoesNotExist:
         log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
         return
 
     handler = EveAPIHandler()

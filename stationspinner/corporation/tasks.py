@@ -87,6 +87,9 @@ def fetch_assetlist(apiupdate_pk):
     except CorporationSheet.DoesNotExist:
         log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
         return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
@@ -117,6 +120,9 @@ def fetch_membertracking(apiupdate_pk):
     except CorporationSheet.DoesNotExist:
         log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
         return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
@@ -146,6 +152,9 @@ def fetch_starbaselist(apiupdate_pk):
     except CorporationSheet.DoesNotExist:
         log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
         return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
 
     handler = EveAPIHandler()
     auth = handler.get_authed_eveapi(corporation.owner_key)
@@ -173,6 +182,9 @@ def fetch_blueprints(apiupdate_pk):
         target, corporation = _get_corporation_auth(apiupdate_pk)
     except CorporationSheet.DoesNotExist:
         log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
         return
 
     handler = EveAPIHandler()
