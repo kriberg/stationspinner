@@ -628,9 +628,11 @@ class MailMessage(models.Model):
                 recipients.append({'name': receiverID,
                                    'id': receiverID,
                                    'type': receiver_type})
+        self.receivers = recipients
 
         if self.raw_message and not self.parsed_message:
             self.parse_message()
+
         self.save()
 
     def parse_message(self):
