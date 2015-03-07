@@ -57,7 +57,42 @@ class MailStatus(models.Model):
 
 
 class MailManager(models.Manager):
-    def search(self, query, capsuler, language='english'):
+    def received_by(self, owners, capsuler):
+        # This is the tricky part about getting mails. We first have to find
+        # all mails that match any of the chosen filtered IDs, for the given
+        # capsuler.
+        query = Mail.objects.raw('''
+            SELECT
+                mail."messageID",
+                mail.title,
+                mail."senderName",
+                mail."senderID",
+                mail."sentDate",
+                mail.parsed_message,
+                mail.read,
+                mail.owner_id,
+                mail.receivers,
+                1.0 AS relevancy
+            FROM
+                evemail_mail AS mail
+            WHERE
+                "messageID" IN
+                    (SELECT
+                        "messageID"
+                    FROM
+                        (SELECT
+                            jsonb_array_elements(receivers) AS receiver,
+                            "messageID"
+                        FROM
+                            evemail_mail
+                        WHERE
+                            owner_id = %s ) AS t
+                    WHERE
+                        receiver::JSONB#>'{id}' <@ %s::JSONB)
+            ORDER BY "sentDate" DESC;
+        ''', [capsuler.pk, owners])
+        return query
+    def search(self, query, owners, capsuler, language='english'):
         # For some reason, psycopg2 throws ProgrammingError if there's quotes
         # in the search string.
         query = query.replace("'","")
@@ -73,17 +108,31 @@ class MailManager(models.Manager):
               mail.read,
               mail.owner_id,
               mail.receivers,
-              ts_rank(index.document, to_tsquery(unaccent( %(query)s ))) as relevancy
+              ts_rank(index.document, to_tsquery(unaccent( %s ))) as relevancy
             FROM
               evemail_mail mail,
               evemail_searchindex index
             WHERE
+              mail."messageID" IN
+                (SELECT
+                    "messageID"
+                 FROM
+                    (SELECT
+                        jsonb_array_elements(receivers) AS receiver,
+                        "messageID"
+                     FROM
+                        evemail_mail
+                     WHERE
+                        owner_id = %s ) AS t
+                 WHERE
+                    receiver::JSONB#>'{id}' <@ %s::JSONB) AND
               mail."messageID" = index."messageID" AND
-              mail.owner_id = %(capsuler)s AND
-              index.index_language = %(language)s::REGCONFIG AND
-              index.document @@ to_tsquery(unaccent( %(query)s ))
-            ORDER BY ts_rank(index.document, to_tsquery(unaccent( %(query)s ))) DESC;
-            ''', {'query': query, 'capsuler': capsuler.pk, 'language': language})
+              mail.owner_id = %s AND
+              index.index_language = %s::REGCONFIG AND
+              index.document @@ to_tsquery(unaccent( %s ))
+            ORDER BY ts_rank(index.document, to_tsquery(unaccent( %s ))) DESC;
+            ''', [query, capsuler.pk, owners, capsuler.pk, language, query, query])
+                            #{'query': query, 'capsuler': capsuler.pk, 'language': language, 'owners': owners})
         except:
             return []
 

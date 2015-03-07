@@ -14,20 +14,24 @@ class MailViewset(viewsets.ReadOnlyModelViewSet):
     serializer_class = MailSerializer
     model = Mail
     permission_classes = [CapsulerPermission]
-    #paginate_by = 50
-    #max_paginate_by = 200
-    #paginate_by_param = 'page_size'
 
     def get_queryset(self):
         search_query = self.request.query_params.get('search', None)
         query_language = self.request.query_params.get('language', 'english')
+        owners = self.request.query_params.get('owners', None)
+
+
+        if owners is None:
+            return Mail.objects.filter(
+                owner=self.request.user
+            ).order_by('-sentDate')
+
+        owners = "[%s]" % ", ".join(owners.split(','))
 
         if search_query is not None:
-            return Mail.objects.search(search_query, self.request.user, language=query_language)
-
-        return Mail.objects.filter(
-            owner=self.request.user
-        ).order_by('-sentDate')
+            return Mail.objects.search(search_query, owners, self.request.user, language=query_language)
+        else:
+            return Mail.objects.received_by(owners, self.request.user)
 
 
 class MailStatusViewset(viewsets.ViewSet):
