@@ -20,7 +20,6 @@ class Capsuler(AbstractUser):
         return APIKey.objects.filter(owner=self.pk, expired=False)
 
     def is_owner(self, obj):
-        print obj, type(obj.owner)
         if type(obj.owner) is Capsuler:
             return obj.owner == self
         else:

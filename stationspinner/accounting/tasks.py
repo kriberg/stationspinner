@@ -242,6 +242,7 @@ def validate_key(apikey_pk):
         expires = datetime.fromtimestamp(2000000000, tz=UTC)
     else:
         expires = datetime.fromtimestamp(keyinfo.key.expires, tz=UTC)
+
     if expires < datetime.now(tz=UTC):
         apikey.expired = True
         apikey.save()
