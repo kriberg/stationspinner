@@ -339,6 +339,38 @@ def fetch_walletjournal(apiupdate_pk):
     target.updated(api_data)
 
 
+@app.task(name='character.fetch_wallettransactions')
+def fetch_wallettransactions(apiupdate_pk):
+    try:
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.char.WalletTransactions(characterID=target.owner, rowCount=2560)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+    handler.autoparse_list(api_data.transactions,
+                          WalletTransaction,
+                          unique_together=('transactionID',),
+                          extra_selectors={'owner': character},
+                          owner=character,
+                          exclude=['transactionType', 'transactionFor'],
+                          pre_save=True)
+    target.updated(api_data)
+
+
 @app.task(name='character.fetch_skillqueue')
 def fetch_skillqueue(apiupdate_pk):
     try:
@@ -566,9 +598,11 @@ API_MAP = {
         'Medals': (fetch_medals,),
         'AssetList': (fetch_assetlist, fetch_blueprints),
         'WalletJournal': (fetch_walletjournal,),
+        'WalletTransactions': (fetch_wallettransactions,),
         'SkillQueue': (fetch_skillqueue,),
         'SkillInTraining': (fetch_skill_in_training,),
         'Notifications': (fetch_notifications,),
         'MailMessages': (fetch_mails,),
         'MailingLists': (fetch_mailinglists,),
     }
+

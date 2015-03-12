@@ -515,22 +515,51 @@ class ContactNotification(models.Model):
 
 
 class WalletTransaction(models.Model):
+    TRANSACTION_TYPES = (
+        ('b', 'Buy'),
+        ('s', 'Sell')
+    )
+    TRANSACTION_ISSUER = (
+        ('p', 'Personal'),
+        ('c', 'Corporation')
+    )
+
     typeID = models.IntegerField(null=True)
     clientTypeID = models.IntegerField(null=True)
-    transactionFor = models.CharField(max_length=255, blank=True, null=True)
+    transactionFor = models.CharField(max_length=1, choices=TRANSACTION_ISSUER, blank=True, null=True)
     price = models.DecimalField(max_digits=30, decimal_places=2, null=True)
-    clientID = models.IntegerField(null=True)
-    journalTransactionID = models.IntegerField(null=True)
+    clientID = models.BigIntegerField(null=True)
+    journalTransactionID = models.BigIntegerField(null=True)
     typeName = models.CharField(max_length=255, blank=True, null=True)
     stationID = models.IntegerField(null=True)
     stationName = models.CharField(max_length=255, blank=True, null=True)
-    transactionID = models.IntegerField(null=True)
+    transactionID = models.BigIntegerField(null=True)
     quantity = models.IntegerField(null=True)
     transactionDateTime = custom.DateTimeField(null=True)
     clientName = models.CharField(max_length=255, blank=True, null=True)
-    transactionType = models.CharField(max_length=255, blank=True, null=True)
+    transactionType = models.CharField(max_length=1, choices=TRANSACTION_TYPES, blank=True, null=True)
 
     owner = models.ForeignKey('CharacterSheet')
+
+    def client_type(self):
+        if self.clientTypeID == 2:
+            return 'corp'
+        else:
+            return 'char'
+
+    def update_from_api(self, transaction, handler):
+        if transaction.transactionType == 'buy':
+            self.transactionType = 'b'
+        else:
+            self.transactionType = 's'
+        if transaction.transactionFor == 'personal':
+            self.transactionFor = 'p'
+        else:
+            self.transactionFor = 'c'
+        self.save()
+
+    class Meta:
+        unique_together = ('owner', 'transactionID')
 
 
 class CorporationRole(models.Model):
