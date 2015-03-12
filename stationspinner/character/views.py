@@ -1,11 +1,14 @@
 from rest_framework import viewsets
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+
 from stationspinner.character.serializers import CharacterSheetSerializer, \
     AssetListSerializer, CharacterSheetListSerializer, NotificationSerializer, \
     SkillInTrainingSerializer, MailMessageSerializer, ShortformAllianceSerializer, \
-    ShortformCorporationSerializer
+    ShortformCorporationSerializer, WalletTransactionSerializer
 from stationspinner.character.models import CharacterSheet, \
-    AssetList, Notification, SkillInTraining, MailMessage
+    AssetList, Notification, SkillInTraining, MailMessage, WalletTransaction, \
+    WalletJournal
 from stationspinner.libs.drf_extensions import CapsulerPermission
 
 
@@ -85,3 +88,26 @@ class DistinctCorporationViewset(viewsets.ReadOnlyModelViewSet):
         return characters.distinct('corporationID', 'corporationName') \
             .values('corporationID', 'corporationName') \
             .order_by('corporationName')
+
+class WalletTransactionsViewset(viewsets.ReadOnlyModelViewSet):
+    class WalletTransactionPagination(PageNumberPagination):
+        page_size = 50
+        ordering = '-transactionDateTime'
+
+    serializer_class = WalletTransactionSerializer
+    permission_classes = [CapsulerPermission]
+    model = WalletTransaction
+    pagination_class = WalletTransactionPagination
+
+    def get_queryset(self):
+        characterID = self.request.query_params.get('characterID', None)
+
+        if characterID is not None:
+            try:
+                character = CharacterSheet.objects.get(owner=self.request.user,
+                                                       characterID=characterID)
+            except CharacterSheet.DoesNotExist:
+                return []
+            return WalletTransaction.objects.filter(owner=character).order_by('-transactionDateTime')
+        else:
+            return []

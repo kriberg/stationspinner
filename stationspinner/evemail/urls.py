@@ -4,9 +4,9 @@ from stationspinner.evemail.views import MailViewset, SearchLanguagesViewset, \
     MailStatusViewset
 
 router = routers.DefaultRouter()
-router.register(r'Mail', MailViewset)
-router.register(r'Languages', SearchLanguagesViewset, base_name='evemail_languages')
-router.register(r'MailStatus', MailStatusViewset, base_name='mail_status')
+router.register(r'Mail', MailViewset, 'Mail')
+router.register(r'Languages', SearchLanguagesViewset, 'Languages')
+router.register(r'MailStatus', MailStatusViewset, 'MailStatus')
 
 urlpatterns = [
     url(r'^', include(router.urls)),

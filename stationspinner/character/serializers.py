@@ -1,14 +1,14 @@
 from rest_framework import serializers
 from stationspinner.character.models import CharacterSheet, Skill, \
     SkillInTraining, SkillQueue, AssetList, Asset, CharacterImplant, \
-    JumpClone, JumpCloneImplant, Notification, MailMessage
+    JumpClone, JumpCloneImplant, Notification, MailMessage, WalletJournal, \
+    WalletTransaction
 
 
 class SkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Skill
-        exclude = ('owner',)
-
+        exclude = ('owner', 'published', 'id')
 
 class SkillQueueSerializer(serializers.ModelSerializer):
     class Meta:
@@ -96,3 +96,11 @@ class ShortformAllianceSerializer(serializers.ModelSerializer):
     class Meta:
         model = CharacterSheet
         fields = ('allianceID', 'allianceName')
+
+class WalletTransactionSerializer(serializers.ModelSerializer):
+    client_type = serializers.CharField()
+    class Meta:
+        model = WalletTransaction
+        fields = ('transactionDateTime', 'transactionFor', 'transactionType',
+                  'typeName', 'stationName', 'quantity', 'price', 'clientName',
+                  'client_type')

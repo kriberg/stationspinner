@@ -4,9 +4,9 @@ from stationspinner.accounting.views import APIKeyViewset, \
     CapsulerViewset, LogoutView, MissingTrainingViewset
 
 router = routers.DefaultRouter()
-router.register(r'capsuler', CapsulerViewset)
-router.register(r'missing-training', MissingTrainingViewset)
-router.register(r'apikeys', APIKeyViewset)
+router.register(r'capsuler', CapsulerViewset, 'capsuler')
+router.register(r'missing-training', MissingTrainingViewset, 'missing-training')
+router.register(r'apikeys', APIKeyViewset, 'apikeys')
 
 urlpatterns = [
     url(r'^logout/$', LogoutView.as_view()),
