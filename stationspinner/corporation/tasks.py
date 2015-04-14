@@ -211,8 +211,39 @@ def fetch_blueprints(apiupdate_pk):
         .exclude(pk__in=blueprintsIDs).delete()
     target.updated(api_data)
 
+@app.task(name='corporation.fetch_accountbalance')
+def fetch_accountbalance(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(corporation.owner_key)
+    try:
+        api_data = auth.corp.AccountBalance(characterID=corporation.owner_key.characterID)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+    handler.autoparse_list(api_data.accounts,
+                          AccountBalance,
+                          unique_together=('accountKey',),
+                          extra_selectors={'owner': corporation},
+                          owner=corporation,
+                          pre_save=True)
+    target.updated(api_data)
+
 API_MAP = {
         'AssetList': (fetch_assetlist, fetch_blueprints),
+        'AccountBalance': (fetch_accountbalance,),
         'MemberTrackingExtended': (fetch_membertracking,),
         'StarbaseList': (fetch_starbaselist,),
     }

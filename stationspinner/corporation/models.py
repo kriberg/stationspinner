@@ -6,7 +6,8 @@ from stationspinner.libs import fields as custom
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from stationspinner.celery import app
-
+from datetime import datetime
+import pytz
 
 class CorporationSheet(models.Model):
     owner_key = models.ForeignKey(APIKey)
@@ -576,12 +577,16 @@ class AccountBalance(models.Model):
     accountKey = models.IntegerField()
     balance = models.DecimalField(max_digits=30, decimal_places=2, null=True)
     accountID = models.IntegerField(null=True)
+    updated = models.DateTimeField(auto_now=True, null=True)
 
     owner = models.ForeignKey(CorporationSheet)
 
     def get_division(self):
-        return WalletDivision.objects.get(accountKey=self.accountKey,
-                                          owner=self.owner)
+        try:
+            return WalletDivision.objects.get(accountKey=self.accountKey,
+                                              owner=self.owner)
+        except WalletDivision.DoesNotExist:
+            return self.accountKey
 
     class Meta:
         unique_together = ('accountID', 'owner')
