@@ -8,7 +8,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if APICall.objects.all().count() == 0:
-            result = app.send_task('update_universe', [], **options).get()
+            result = app.send_task('universe.update_universe', [], **options).get()
             if result:
                 self.stdout.write('Result: {0}'.format(result))
         else:
