@@ -48,7 +48,7 @@ class APIKey(models.Model):
     owner = models.ForeignKey(Capsuler)
 
     def __unicode__(self):
-        return self.name
+        return '{0} ({1})'.format(self.name, self.keyID)
 
     def can_call(self, apicall):
         if apicall.accessMask & self.accessMask > 0:
