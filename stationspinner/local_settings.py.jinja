@@ -59,3 +59,8 @@ EVEMAIL_SEARCH_LANGUAGES = (
     {%- endfor %}
 )
 STATIC_ROOT = '{{ stationspinner.static_root }}'
+{% if stationspinner.debug %}
+STATIC_URL = '/api/static/'
+{% else %}
+STATIC_URL = '/static/'
+{% endif %}
