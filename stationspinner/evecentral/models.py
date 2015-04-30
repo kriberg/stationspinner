@@ -38,7 +38,7 @@ class MarketItem(models.Model):
     def __unicode__(self):
         try:
             return u'{0} @ {1}'.format(
-                InvType.objects.get(pk=self.locationID).typeName,
+                self.typeName,
                 get_location_name(self.locationID))
         except:
-            return u'{0} @ {1}'.format(self.typeID, self.locationID)
+            return u'{0} @ {1}'.format(self.typeName, self.locationID)

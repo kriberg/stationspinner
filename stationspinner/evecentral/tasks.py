@@ -1,8 +1,9 @@
 from stationspinner.celery import app
-from celery import group
+from celery import chord
 from stationspinner.evecentral.models import Market, MarketItem
 from stationspinner.libs.pragma import get_location_name
 from stationspinner.sde.models import InvType
+from stationspinner.settings import STATIC_ROOT
 from evelink.thirdparty.eve_central import EVECentral
 from urllib2 import urlopen
 from datetime import datetime
@@ -10,6 +11,8 @@ from pytz import UTC
 from django.db.models import Q
 from celery.utils.log import get_task_logger
 from traceback import format_exc
+from os.path import join
+import csv
 
 log = get_task_logger(__name__)
 
@@ -22,6 +25,28 @@ def _market_items():
     for i in xrange(0, len(typeIDs), 100):
         yield typeIDs[i:i+100]
 
+@app.task(name='evecentral.write_static_prices')
+def write_static_prices():
+    for market in Market.objects.all():
+        market_items = MarketItem.objects.filter(locationID=market.locationID).order_by('typeName')
+        with open(join(STATIC_ROOT, '{0}.csv'.format(market.locationID)), 'wb') as output:
+            csvprices = csv.writer(output, delimiter=';')
+            for item in market_items:
+                try:
+                    csvprices.writerow((item.typeID,
+                                       item.typeName,
+                                       item.buy_max,
+                                       item.buy_min,
+                                       item.buy_percentile,
+                                       item.buy_volume,
+                                       item.sell_max,
+                                       item.sell_min,
+                                       item.sell_percentile,
+                                       item.sell_volume))
+                except:
+                    print item
+
+
 
 @app.task(name='evecentral.update_all_markets')
 def update_all_markets():
@@ -31,7 +56,7 @@ def update_all_markets():
         market_updates.extend(update_market(market.locationID))
         market.updated()
         log.info('Updating "{0}" market'.format(get_location_name(market.locationID)))
-    group(market_updates).apply_async()
+    chord(market_updates, write_static_prices.s()).apply_async()
 
 
 def update_market(locationID):
