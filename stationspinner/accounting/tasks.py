@@ -156,6 +156,12 @@ def queue_character_tasks(keys):
         targets = APIUpdate.objects.filter(apicall=apicall,
                                            apikey__in=keys)
         targets = targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
+        for target in targets:
+            log.debug('Queued {0} with keyID {1} with APIUpdate {2}'.format(
+                name,
+                target.apikey.pk,
+                target.pk
+            ))
 
         if targets.count() > 0:
             log.info('Queued {0} {1}'.format(
@@ -223,6 +229,7 @@ def validate_key(apikey_pk):
     except AuthenticationError:
         apikey.expired = True
         apikey.save()
+        APIUpdate.objects.filter(apikey=apikey).delete()
         log.info('APIKey "{0}" owned by "{1}" is disabled according to the eveapi.'.format(
             apikey.name,
             apikey.owner
@@ -231,6 +238,7 @@ def validate_key(apikey_pk):
     except Exception, ex:
         apikey.expired = True
         apikey.save()
+        APIUpdate.objects.filter(apikey=apikey).delete()
         log.info('Unexpected error while validating APIKey "{0}" owned by "{1}": {2}.'.format(
             apikey.name,
             apikey.owner,
