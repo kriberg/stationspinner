@@ -259,23 +259,23 @@ DATABASE_ROUTERS = ['stationspinner.dbrouter.DBRouter',]
 CELERYBEAT_SCHEDULE = {
     'evecentral.update_all_markets': {
         'task': 'evecentral.update_all_markets',
-        'schedule': timedelta(hours=6)
+        'schedule': TASK_INTERVALS['evecentral.update_all_markets']
     },
     'universe.update_universe': {
         'task': 'universe.update_universe',
-        'schedule': timedelta(hours=24)
+        'schedule': TASK_INTERVALS['universe.update_universe']
     },
     'accounting.update_capsuler_keys': {
         'task': 'accounting.update_capsuler_keys',
-        'schedule': timedelta(hours=24)
+        'schedule': TASK_INTERVALS['accounting.update_capsuler_keys']
     },
     'accounting.update_all_sheets': {
         'task': 'accounting.update_all_sheets',
-        'schedule': timedelta(hours=24)
+        'schedule': TASK_INTERVALS['accounting.update_all_sheets']
     },
     'accounting.update_all_apidata': {
         'task': 'accounting.update_all_apidata',
-        'schedule': timedelta(minutes=30)
+        'schedule': TASK_INTERVALS['accounting.update_all_apidata']
     },
 }
 
