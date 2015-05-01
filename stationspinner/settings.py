@@ -228,6 +228,15 @@ BROKER_TRANSPORT_OPTIONS = {
     'fanout_patterns': True
     }
 
+TASK_INTERVALS = {
+    'evecentral.update_all_markets': timedelta(hours=6),
+    'universe.update_universe': timedelta(hours=24),
+    'accounting.update_capsuler_keys': timedelta(hours=24),
+    'accounting.update_all_sheets': timedelta(hours=24),
+    'accounting.update_all_apidata': timedelta(minutes=30),
+}
+
+
 # Local settings ...
 
 try:

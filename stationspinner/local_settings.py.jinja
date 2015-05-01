@@ -64,3 +64,11 @@ STATIC_URL = '/api/static/'
 {% else %}
 STATIC_URL = '/static/'
 {% endif %}
+
+TASK_INTERVALS = {
+    'evecentral.update_all_markets': {{ stationspinner.task_intervals.evecentral.update_all_markets }},
+    'universe.update_universe': {{ stationspinner.task_intervals.universe.update_universe }}
+    'accounting.update_capsuler_keys': {{ stationspinner.task_intervals.accounting.update_capsuler_keys }},
+    'accounting.update_all_sheets': {{ stationspinner.task_intervals.accounting.update_all_sheets }},
+    'accounting.update_all_apidata': {{ stationspinner.task_intervals.accounting.update_all_apidata }},
+}
