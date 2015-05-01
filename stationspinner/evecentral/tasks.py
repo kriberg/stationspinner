@@ -29,22 +29,25 @@ def _market_items():
 def write_static_prices(*args, **kwargs):
     for market in Market.objects.all():
         market_items = MarketItem.objects.filter(locationID=market.locationID).order_by('typeName')
-        with open(join(STATIC_ROOT, '{0}.csv'.format(market.locationID)), 'wb') as output:
-            csvprices = csv.writer(output, delimiter=';')
+        with open(join(STATIC_ROOT, '{0}.html'.format(market.locationID)), 'wb') as output:
+            output.write('<table>\n')
             for item in market_items:
+                output.write('<tr>')
                 try:
-                    csvprices.writerow((item.typeID,
-                                       item.typeName,
-                                       item.buy_max,
-                                       item.buy_min,
-                                       item.buy_percentile,
-                                       item.buy_volume,
-                                       item.sell_max,
-                                       item.sell_min,
-                                       item.sell_percentile,
-                                       item.sell_volume))
+                    output.write("<td>{0}</td>".format("</td><td>".join(item.typeID,
+                                                                        item.typeName,
+                                                                        item.buy_max,
+                                                                        item.buy_min,
+                                                                        item.buy_percentile,
+                                                                        item.buy_volume,
+                                                                        item.sell_max,
+                                                                        item.sell_min,
+                                                                        item.sell_percentile,
+                                                                        item.sell_volume)))
                 except:
                     log.debug('Failed to render csv row for {0} at {1}.'.format(item, market.locationID))
+                output.write('</tr>\n')
+            output.write('</table>\n')
 
 
 
