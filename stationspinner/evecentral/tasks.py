@@ -44,7 +44,7 @@ def write_static_prices():
                                        item.sell_percentile,
                                        item.sell_volume))
                 except:
-                    print item
+                    log.debug('Failed to render csv row for {0} at {1}.'.format(item, market.locationID))
 
 
 
