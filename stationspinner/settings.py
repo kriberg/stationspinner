@@ -221,6 +221,12 @@ EVEMAIL_SEARCH_LANGUAGES = (
 )
 
 PRICE_INDEX_SYSTEM = 'Jita'
+CELERY_TIMEZONE = 'UTC'
+CELERY_IGNORE_RESULT = True
+BROKER_TRANSPORT_OPTIONS = {
+    'fanout_prefix': True,
+    'fanout_patterns': True
+    }
 
 # Local settings ...
 
@@ -255,7 +261,7 @@ CELERYBEAT_SCHEDULE = {
     },
     'accounting.update_all_sheets': {
         'task': 'accounting.update_all_sheets',
-        'schedule': timedelta(hours=2)
+        'schedule': timedelta(hours=24)
     },
     'accounting.update_all_apidata': {
         'task': 'accounting.update_all_apidata',
@@ -263,12 +269,6 @@ CELERYBEAT_SCHEDULE = {
     },
 }
 
-CELERY_TIMEZONE = 'UTC'
-CELERY_IGNORE_RESULT = True
-BROKER_TRANSPORT_OPTIONS = {
-    'fanout_prefix': True,
-    'fanout_patterns': True
-    }
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
