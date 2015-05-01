@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 ADMINS = (
     {%- for admin in stationspinner.admins %}
     ('{{ admin.full_name }}', '{{ admin.email }}'),
