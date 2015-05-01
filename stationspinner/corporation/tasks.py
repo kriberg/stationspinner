@@ -26,7 +26,7 @@ def _get_corporation_auth(apiupdate_pk):
 
     return target, corporation
 
-@app.task(name='corporation.fetch_corporationsheet')
+@app.task(name='corporation.fetch_corporationsheet', max_retries=0)
 def fetch_corporationsheet(apiupdate_pk):
     try:
         target = APIUpdate.objects.get(pk=apiupdate_pk)
@@ -80,7 +80,7 @@ def fetch_corporationsheet(apiupdate_pk):
     return corporation.pk
 
 
-@app.task(name='corporation.fetch_assetlist')
+@app.task(name='corporation.fetch_assetlist', max_retries=0)
 def fetch_assetlist(apiupdate_pk):
     try:
         target, corporation = _get_corporation_auth(apiupdate_pk)
@@ -113,7 +113,7 @@ def fetch_assetlist(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='corporation.fetch_membertracking')
+@app.task(name='corporation.fetch_membertracking', max_retries=0)
 def fetch_membertracking(apiupdate_pk):
     try:
         target, corporation = _get_corporation_auth(apiupdate_pk)
@@ -145,7 +145,7 @@ def fetch_membertracking(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='corporation.fetch_startbaselist')
+@app.task(name='corporation.fetch_startbaselist', max_retries=0)
 def fetch_starbaselist(apiupdate_pk):
     try:
         target, corporation = _get_corporation_auth(apiupdate_pk)
@@ -176,7 +176,7 @@ def fetch_starbaselist(apiupdate_pk):
                           pre_save=True)
     target.updated(api_data)
 
-@app.task(name='corporation.fetch_blueprints')
+@app.task(name='corporation.fetch_blueprints', max_retries=0)
 def fetch_blueprints(apiupdate_pk):
     try:
         target, corporation = _get_corporation_auth(apiupdate_pk)
@@ -211,7 +211,7 @@ def fetch_blueprints(apiupdate_pk):
         .exclude(pk__in=blueprintsIDs).delete()
     target.updated(api_data)
 
-@app.task(name='corporation.fetch_accountbalance')
+@app.task(name='corporation.fetch_accountbalance', max_retries=0)
 def fetch_accountbalance(apiupdate_pk):
     try:
         target, corporation = _get_corporation_auth(apiupdate_pk)

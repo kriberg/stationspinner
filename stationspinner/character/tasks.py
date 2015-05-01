@@ -8,6 +8,7 @@ from stationspinner.character.models import CharacterSheet, WalletJournal, \
 from stationspinner.universe.models import EveName
 from stationspinner.libs.eveapihandler import EveAPIHandler
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
+from django.dispatch import Signal
 
 from celery.utils.log import get_task_logger
 
@@ -25,7 +26,7 @@ def _get_character_auth(apiupdate_pk):
     return target, character
 
 
-@app.task(name='character.fetch_charactersheet')
+@app.task(name='character.fetch_charactersheet', max_retries=0)
 def fetch_charactersheet(apiupdate_pk):
     try:
         target = APIUpdate.objects.get(pk=apiupdate_pk)
@@ -80,7 +81,7 @@ def fetch_charactersheet(apiupdate_pk):
     return character.pk
 
 
-@app.task(name='character.fetch_blueprints')
+@app.task(name='character.fetch_blueprints', max_retries=0)
 def fetch_blueprints(apiupdate_pk):
     try:
         target, character = _get_character_auth(apiupdate_pk)
@@ -117,7 +118,7 @@ def fetch_blueprints(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='character.fetch_contacts')
+@app.task(name='character.fetch_contacts', max_retries=0)
 def fetch_contacts(apiupdate_pk):
     try:
         target, character = _get_character_auth(apiupdate_pk)
@@ -167,7 +168,7 @@ def fetch_contacts(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='character.fetch_research')
+@app.task(name='character.fetch_research', max_retries=0)
 def fetch_research(apiupdate_pk):
     try:
         target, character = _get_character_auth(apiupdate_pk)
@@ -199,7 +200,7 @@ def fetch_research(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='character.fetch_marketorders')
+@app.task(name='character.fetch_marketorders', max_retries=0)
 def fetch_marketorders(apiupdate_pk):
     try:
         target, character = _get_character_auth(apiupdate_pk)
@@ -231,7 +232,7 @@ def fetch_marketorders(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='character.fetch_medals')
+@app.task(name='character.fetch_medals', max_retries=0)
 def fetch_medals(apiupdate_pk):
     try:
         target, character = _get_character_auth(apiupdate_pk)
@@ -273,7 +274,7 @@ def fetch_medals(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='character.fetch_assetlist')
+@app.task(name='character.fetch_assetlist', max_retries=0)
 def fetch_assetlist(apiupdate_pk):
     try:
         target, character = _get_character_auth(apiupdate_pk)
@@ -308,7 +309,7 @@ def fetch_assetlist(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='character.fetch_walletjournal')
+@app.task(name='character.fetch_walletjournal', max_retries=0)
 def fetch_walletjournal(apiupdate_pk):
     try:
         target, character = _get_character_auth(apiupdate_pk)
@@ -339,7 +340,7 @@ def fetch_walletjournal(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='character.fetch_wallettransactions')
+@app.task(name='character.fetch_wallettransactions', max_retries=0)
 def fetch_wallettransactions(apiupdate_pk):
     try:
         target, character = _get_character_auth(apiupdate_pk)
@@ -371,7 +372,7 @@ def fetch_wallettransactions(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='character.fetch_skillqueue')
+@app.task(name='character.fetch_skillqueue', max_retries=0)
 def fetch_skillqueue(apiupdate_pk):
     try:
         target, character = _get_character_auth(apiupdate_pk)
@@ -401,7 +402,7 @@ def fetch_skillqueue(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='character.fetch_skill_in_training')
+@app.task(name='character.fetch_skill_in_training', max_retries=0)
 def fetch_skill_in_training(apiupdate_pk):
     try:
         target, character = _get_character_auth(apiupdate_pk)
@@ -433,7 +434,7 @@ def fetch_skill_in_training(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='character.fetch_notifications')
+@app.task(name='character.fetch_notifications', max_retries=0)
 def fetch_notifications(apiupdate_pk):
     try:
         target, character = _get_character_auth(apiupdate_pk)
@@ -493,7 +494,7 @@ def fetch_notifications(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='character.fetch_mails')
+@app.task(name='character.fetch_mails', max_retries=0)
 def fetch_mails(apiupdate_pk):
     try:
         target, character = _get_character_auth(apiupdate_pk)
@@ -555,7 +556,7 @@ def fetch_mails(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='character.fetch_mailinglists')
+@app.task(name='character.fetch_mailinglists', max_retries=0)
 def fetch_mailinglists(apiupdate_pk):
     try:
         target, character = _get_character_auth(apiupdate_pk)

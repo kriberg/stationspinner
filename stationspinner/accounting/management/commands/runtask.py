@@ -7,6 +7,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         task_name = args[0]
-        result = app.send_task(task_name, list(args[1:]), **options).get()
-        if result:
-            self.stdout.write('Result: {0}'.format(result))
+        app.send_task(task_name, list(args[1:]), **options)

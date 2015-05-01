@@ -25,8 +25,8 @@ def _market_items():
     for i in xrange(0, len(typeIDs), 100):
         yield typeIDs[i:i+100]
 
-@app.task(name='evecentral.write_static_prices')
-def write_static_prices():
+@app.task(name='evecentral.write_static_prices', max_retries=0)
+def write_static_prices(*args, **kwargs):
     for market in Market.objects.all():
         market_items = MarketItem.objects.filter(locationID=market.locationID).order_by('typeName')
         with open(join(STATIC_ROOT, '{0}.csv'.format(market.locationID)), 'wb') as output:
@@ -48,8 +48,8 @@ def write_static_prices():
 
 
 
-@app.task(name='evecentral.update_all_markets')
-def update_all_markets():
+@app.task(name='evecentral.update_all_markets', max_retries=0)
+def update_all_markets(*args, **kwargs):
     market_updates = []
     for market in Market.objects.filter(
                     Q(cached_until__lte=datetime.now(tz=UTC)) | Q(cached_until=None)):
@@ -65,7 +65,7 @@ def update_market(locationID):
         tasks.append(parse_market_data.s(typeIDs, locationID))
     return tasks
 
-@app.task(name='evecentral.parse_market_data')
+@app.task(name='evecentral.parse_market_data', ignore_result=False, max_retries=0)
 def parse_market_data(typeIDs, locationID):
     ec = EVECentral(url_fetch_func=lambda url: urlopen(url).read())
     try:

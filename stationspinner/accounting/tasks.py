@@ -19,11 +19,11 @@ from celery.utils.log import get_task_logger
 
 log = get_task_logger(__name__)
 
-@app.task(name='accounting.update_capsulers')
+@app.task(name='accounting.update_capsulers', max_retries=0)
 def update_capsulers():
     chain(update_capsuler_keys.s(), update_all_sheets.s(), update_all_apidata.s())()
 
-@app.task(name='accounting.update_capsuler_keys')
+@app.task(name='accounting.update_capsuler_keys', max_retries=0)
 def update_capsuler_keys(*args, **kwargs):
     capsulers = Capsuler.objects.filter(is_active=True)
 
@@ -41,7 +41,7 @@ def queue_capsuler_keys(capsuler):
 
     return validate_key.map([apikey.pk for apikey in keys])
 
-@app.task(name='accounting.update_apikey_sheets')
+@app.task(name='accounting.update_apikey_sheets', max_retries=0)
 def update_apikey_sheets(apikey_pk):
     tasks = []
     try:
@@ -82,7 +82,7 @@ def update_apikey_sheets(apikey_pk):
 
     group(tasks).apply_async()
 
-@app.task(name='accounting.update_all_sheets')
+@app.task(name='accounting.update_all_sheets', max_retries=0)
 def update_all_sheets(*args, **kwargs):
     tasks = []
     #### Characters
@@ -121,14 +121,14 @@ def update_all_sheets(*args, **kwargs):
 
     group(tasks).apply_async()
 
-@app.task(name='accounting.update_all_apidata')
+@app.task(name='accounting.update_all_apidata', max_retries=0)
 def update_all_apidata(*args, **kwargs):
     character_keys = APIKey.objects.filter(expired=False).exclude(type='Corporation')
     corpkeys = APIKey.objects.filter(expired=False, type='Corporation')
     group(queue_character_tasks(character_keys) + queue_corporation_tasks(corpkeys)).apply_async()
 
 @app.task(name='accounting.update_character_apidata')
-def update_character_apidata(character_pk):
+def update_character_apidata(character_pk, max_retries=0):
     try:
         character = CharacterSheet.objects.get(pk=character_pk)
     except CharacterSheet.DoesNotExist:
@@ -138,7 +138,7 @@ def update_character_apidata(character_pk):
 
 
 @app.task(name='accounting.update_corporation_apidata')
-def update_corporation_apidata(corporation_pk):
+def update_corporation_apidata(corporation_pk, max_retries=0):
     try:
         corporation = CorporationSheet.objects.get(pk=corporation_pk)
     except CorporationSheet.DoesNotExist:
