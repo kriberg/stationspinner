@@ -189,7 +189,7 @@ def queue_corporation_tasks(corpkeys):
         targets = targets.filter(Q(cached_until__lte=current_time) | Q(cached_until=None))
 
         if targets.count() > 0:
-            log.info('Queued {0} {1}'.format(
+            log.debug('Queued {0} {1}'.format(
                 targets.count(),
                 apicall
             ))
