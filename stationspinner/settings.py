@@ -228,6 +228,7 @@ BROKER_TRANSPORT_OPTIONS = {
     'fanout_patterns': True
     }
 
+from datetime import timedelta
 TASK_INTERVALS = {
     'evecentral.update_all_markets': timedelta(hours=6),
     'universe.update_universe': timedelta(hours=24),
@@ -253,7 +254,7 @@ if DEBUG:
 
 DATABASE_ROUTERS = ['stationspinner.dbrouter.DBRouter',]
 
-from datetime import timedelta
+
 
 CELERYBEAT_SCHEDULE = {
     'evecentral.update_all_markets': {
