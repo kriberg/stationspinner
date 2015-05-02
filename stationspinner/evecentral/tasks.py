@@ -34,16 +34,23 @@ def write_static_prices(*args, **kwargs):
             for item in market_items:
                 output.write('<tr>')
                 try:
-                    output.write("<td>{0}</td>".format("</td><td>".join([item.typeID,
-                                                                        item.typeName,
-                                                                        item.buy_max,
-                                                                        item.buy_min,
-                                                                        item.buy_percentile,
-                                                                        item.buy_volume,
-                                                                        item.sell_max,
-                                                                        item.sell_min,
-                                                                        item.sell_percentile,
-                                                                        item.sell_volume])))
+                    output.write("<td>{0}</td>".format(
+                        "</td><td>".join(
+                            map(str,
+                                [item.typeID,
+                                 item.typeName,
+                                 item.buy_max,
+                                 item.buy_min,
+                                 item.buy_percentile,
+                                 item.buy_volume,
+                                 item.sell_max,
+                                 item.sell_min,
+                                 item.sell_percentile,
+                                 item.sell_volume]
+                                )
+                           )
+                        )
+                    )
                 except:
                     log.debug('Failed to render csv row for {0} at {1}.'.format(item, market.locationID))
                 output.write('</tr>\n')
