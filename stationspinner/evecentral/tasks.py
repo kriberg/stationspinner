@@ -30,7 +30,18 @@ def write_static_prices(*args, **kwargs):
     for market in Market.objects.all():
         market_items = MarketItem.objects.filter(locationID=market.locationID).order_by('typeName')
         with open(join(STATIC_ROOT, '{0}.html'.format(market.locationID)), 'wb') as output:
-            output.write('<table>\n')
+            output.write('''
+            <table>
+                <tr>
+                    <th>typeID</th>
+                    <th>typeName</th>
+                    <th>buy max</th>
+                    <th>sell min</th>
+                    <th>buy percentile</th>
+                    <th>sell percentile</th>
+                    <th>buy volume</th>
+                    <th>sell volume</th>
+                </tr>''')
             for item in market_items:
                 output.write('<tr>')
                 try:
@@ -40,12 +51,10 @@ def write_static_prices(*args, **kwargs):
                                 [item.typeID,
                                  item.typeName,
                                  item.buy_max,
-                                 item.buy_min,
-                                 item.buy_percentile,
-                                 item.buy_volume,
-                                 item.sell_max,
                                  item.sell_min,
+                                 item.buy_percentile,
                                  item.sell_percentile,
+                                 item.buy_volume,
                                  item.sell_volume]
                                 )
                            )
