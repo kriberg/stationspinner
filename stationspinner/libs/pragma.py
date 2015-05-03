@@ -101,3 +101,85 @@ def get_current_time():
     #    return datetime.fromtimestamp(status._meta.currentTime, tz=UTC)
     #except:
     return datetime.now(tz=UTC)
+
+
+PACKAGED_VOLUME = {
+    12: {  # Cargo Container
+           3296: 65,  # Large Standard Container
+           3293: 33,  # Medium Standard Container
+           3297: 10  # Small Standard Container
+           },
+    340: {  # Secure Cargo Container
+            11489: 300,  # Giant Secure Container
+            11488: 150,  # Huge Secure Container
+            3465: 65,  # Large Secure Container
+            3466: 33,  # Medium Secure Container
+            3467: 10  # Small Secure Container
+            },
+    448: {  # Audit Log Secure Container
+            17368: 100000,  # Station Warehouse Container
+            17367: 50000,  # Station Vault Container
+            17366: 10000,  # Station Container
+            17365: 65,  # Large Audit Log Secure Container
+            17364: 33,  # Medium Audit Log Secure Container
+            17363: 10  # Small Audit Log Secure Container
+            },
+    649: {  # Freight Container
+            33005: 5000,  # Huge Freight Container
+            33003: 2500,  # Enormous Freight Container
+            24445: 1200,  # Giant Freight Container
+            33007: 1000,  # Large Freight Container
+            33009: 500,  # Medium Freight Container
+            33011: 100  # Small Freight Container
+            },
+    25: 2500,  # Frigate
+    26: 10000,  # Cruiser
+    27: 50000,  # Battleship
+    28: 20000,  # Industrial
+    30: 10000000,  # Titan
+    31: 500,  # Shuttle
+    237: 2500,  # Rookie ship
+    324: 2500,  # Assault Frigate
+    358: 10000,  # Heavy Assault Cruiser
+    380: 20000,  # Deep Space Transport
+    419: 15000,  # Combat Battlecruiser
+    420: 5000,  # Destroyer
+    463: 3750,  # Mining Barge
+    485: 1300000,  # Dreadnought
+    513: 1300000,  # Freighter
+    540: 15000,  # Command Ship
+    541: 5000,  # Interdictor
+    543: 3750,  # Exhumer
+    547: 1300000,  # Carrier
+    659: 1300000,  # Supercarrier
+    830: 2500,  # Covert Ops
+    831: 2500,  # Interceptor
+    832: 10000,  # Logistics
+    833: 10000,  # Force Recon Ship
+    834: 2500,  # Stealth Bomber
+    883: 1300000,  # Capital Industrial Ship
+    893: 2500,  # Electronic Attack Ship
+    894: 10000,  # Heavy Interdiction Cruiser
+    898: 50000,  # Black Ops
+    900: 50000,  # Marauder
+    902: 1300000,  # Jump Freighter
+    906: 10000,  # Combat Recon Ship
+    941: 500000,  # Industrial Command Ship
+    963: 5000,  # Strategic Cruiser
+    1022: 500,  # Prototype Exploration Ship
+    1201: 15000,  # Attack Battlecruiser
+    1202: 20000  # Blockade Runner
+}
+
+class UnknownPackagedItem(BaseException):
+    pass
+
+def get_item_packaged_volume(groupID, typeID):
+    if groupID in PACKAGED_VOLUME:
+        if PACKAGED_VOLUME[groupID] is int:
+            return PACKAGED_VOLUME[groupID]
+        else:
+            if typeID in PACKAGED_VOLUME[groupID]:
+                return PACKAGED_VOLUME[groupID][typeID]
+    raise UnknownPackagedItem('typeID {0} with groupID {1} is unknown.'.format(typeID, groupID))
+

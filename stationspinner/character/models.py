@@ -9,6 +9,9 @@ from stationspinner.sde.models import InvType
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from stationspinner.celery import app
+from stationspinner.settings import PRICE_INDEX_SYSTEM
+from stationspinner.libs.pragma import get_location_id, get_item_packaged_volume, PACKAGED_VOLUME
+from stationspinner.evecentral.models import MarketItem
 
 class Skill(models.Model):
     skillpoints = models.IntegerField(default=0)
@@ -273,6 +276,10 @@ class Asset(models.Model):
     path = models.CharField(max_length=255, default='')
     parent_id = models.BigIntegerField(null=True)
 
+    item_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
+    item_volume = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
+    container_volume = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
+
     owner = models.ForeignKey(CharacterSheet)
 
     def from_item(self, item, path):
@@ -292,9 +299,45 @@ class Asset(models.Model):
         if 'parent' in item:
             self.parent_id = item['parent']
 
+    def get_contents(self):
+        return self.objects.filter(owner=self.owner,
+                                   parent_id=self.itemID)
+
+    def get_volume(self):
+        if self.singleton:
+            return self.item_volume + self.container_volume
+        else:
+            return self.item_volume
+
+    def compute_statistics(self):
+        item = InvType.objects.get(pk=self.typeID)
+
+        if item.marketGroupID < 35000 and item.published:
+            index_location = get_location_id(PRICE_INDEX_SYSTEM)
+            index_value = MarketItem.objects.get(typeID=self.typeID,
+                                                    locationID=index_location.pk).sell_percentile
+            self.item_value = self.quantity * index_value
+
+        if not self.singleton and item.groupID in PACKAGED_VOLUME.keys():
+            self.item_volume = get_item_packaged_volume(item.groupID, item.pk) * self.quantity
+        else:
+            self.item_volume = item.volume * self.quantity
+
+
+    def compute_container_volume(self):
+        self.container_volume = 0.0
+        if self.singleton:
+            contents = self.get_contents()
+            for item in contents:
+                self.container_volume += item.get_volume()
+
+    def update_from_api(self, item, handler):
+        self.compute_statistics()
+        self.save()
 
     class Meta:
         managed = False
+
 
 class MarketOrder(models.Model):
     orderID = models.BigIntegerField()
