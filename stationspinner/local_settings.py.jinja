@@ -52,8 +52,10 @@ CACHES = {
         }
     }
 }
-BROKER_URL = "redis://{{ stationspinner.redis.host }}:{{ stationspinner.redis.port }}/{{ stationspinner.redis.celerydb }}"
-CELERY_RESULT_BACKEND = "redis://{{ stationspinner.redis.host }}:{{ stationspinner.redis.port }}/{{ stationspinner.redis.celerydb }}"
+
+BROKER_URL = "amqp://{{ stationspinner.rabbitmq.user }}:{{ stationspinner.rabbitmq.password }}@{{ stationspinner.rabbitmq.host }}:{{ stationspinner.rabbitmq.port }}/{{ stationspinner.rabbitmq.vhost }}"
+CELERY_RESULT_BACKEND = "amqp"
+CELERY_TASK_RESULT_EXPIRES = 86400
 SECRET_KEY = '{{ stationspinner.secret_key }}'
 EVEMAIL_SEARCH_LANGUAGES = (
     {%- for language in stationspinner.evemail_search_languages %}

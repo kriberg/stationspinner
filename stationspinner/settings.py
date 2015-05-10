@@ -255,6 +255,9 @@ if DEBUG:
 DATABASE_ROUTERS = ['stationspinner.dbrouter.DBRouter',]
 
 
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 
 CELERYBEAT_SCHEDULE = {
     'evecentral.update_all_markets': {

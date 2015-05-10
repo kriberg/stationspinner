@@ -5,7 +5,7 @@ django-extensions
 djangorestframework
 pyyaml
 django-filter
-celery[redis]>=3.1.18
+celery>=3.1.18
 django-grappelli
 django-pgjson
 https://github.com/mher/flower/zipball/master
