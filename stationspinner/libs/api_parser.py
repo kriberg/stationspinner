@@ -1,6 +1,11 @@
 from stationspinner.libs.eveapihandler import EveAPIHandler
 from bs4 import BeautifulSoup
-import warnings
+import warnings, logging, re
+from datetime import datetime
+from stationspinner.universe.models import EveName
+from stationspinner.libs.pragma import get_location_name
+
+log = logging.getLogger(__name__)
 
 NOTIFICATION_CODES = {
     1: 'Legacy',
@@ -12,7 +17,10 @@ NOTIFICATION_CODES = {
     7: 'Alliance war retracted',
     8: 'Alliance war invalidated by Concord',
     9: 'Bill issued to a character',
-    10: 'Bill issued to corporation or alliance',
+    10: (
+        'Bill issued to corporation or alliance',
+        re.compile('''amount: (?P<amount>\d+)\s+billTypeID: (?P<billTypeID>\d)\s+creditorID: (?P<creditorID>\d+)\s+currentDate: (?P<currentDate>\d+)\s+debtorID: (?P<debtorID>\d+)\s+dueDate: (?P<dueDate>\d+)\s+externalID: (?P<externalID>\d+)\s+externalID2: (?P<externalID2>\d+)''')
+    ),
     11: 'Bill not paid because there\'s not enough ISK available',
     12: 'Bill, issued by a character, paid',
     13: 'Bill, issued by a corporation or alliance, paid',
@@ -136,14 +144,36 @@ NOTIFICATION_CODES = {
     137: 'Team Auction lost'
 }
 
-def _parse_dates(msg):
-    pass
 
-def parse_notification(code, msg):
-    handler = EveAPIHandler()
-    api = handler.get_eveapi()
 
-    if code in NOTIFICATION_CODES:
+
+def _parse_windows_dates(v):
+    return datetime.fromtimestamp((int(v)/10000000)-11644473600)
+
+def _format_datetime(d):
+    return d.strftime('%A, %B %d, %Y')
+
+def parse_notification(code, msg, notificationID):
+    if code in NOTIFICATION_CODES and not msg is None:
+        #try:
+        if code == 10:
+            # bill issued to corp or alliance
+            r = NOTIFICATION_CODES[code][1]
+            parameters = [m.groupdict() for m in r.finditer(msg)]
+            if not len(parameters) == 1:
+                return msg
+            else:
+                parameters = parameters[0]
+            return '''A bill of {0:,} ISK, due {1} owed by you to {2} was issued {3}. This bill is for extending the lease on your office at {4}.'''.format(
+                int(parameters['amount']),
+                _format_datetime(_parse_windows_dates(parameters['dueDate'])),
+                EveName.objects.get_name(parameters['creditorID']),
+                _format_datetime(_parse_windows_dates(parameters['currentDate'])),
+                get_location_name(parameters['externalID2'])
+            )
+        #except:
+        #    log.warning('Could not decode notificationID {0}'.format(notificationID))
+        #    pass
         return '{0}:\n{1}'.format(
             NOTIFICATION_CODES[code],
             msg

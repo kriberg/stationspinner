@@ -35,6 +35,11 @@ def get_attributes_by_categories(item):
 #GROUP BY a.locationID;
 
 def get_location_name(location_id):
+    if type(location_id) in (str, unicode):
+        try:
+            location_id = int(location_id)
+        except:
+            return location_id
     if location_id >= 66000000 and location_id <= 66014933:
         try:
             loc = StaStation.objects.get(pk=(int(location_id)-6000001))

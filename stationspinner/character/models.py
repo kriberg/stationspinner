@@ -448,12 +448,15 @@ class Notification(models.Model):
         unique_together = ('owner', 'notificationID')
 
     def update_from_api(self, notification, handler):
+        self.reparse()
+
+    def reparse(self):
         self.parsed_message = api_parser.parse_notification(
             self.typeID,
-            self.raw_message
+            self.raw_message,
+            self.notificationID
         )
         self.save()
-
 
 
 class Contract(models.Model):

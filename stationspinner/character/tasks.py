@@ -592,6 +592,11 @@ def fetch_mailinglists(apiupdate_pk):
     target.updated(api_data)
 
 
+@app.task(name='character.reparse_notifications')
+def reparse_notifications():
+    for note in Notification.objects.all():
+        note.reparse()
+
 API_MAP = {
         'ContactList': (fetch_contacts,),
         'Research': (fetch_research,),
