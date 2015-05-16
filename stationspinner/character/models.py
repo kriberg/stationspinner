@@ -5,7 +5,7 @@ from stationspinner.universe.models import EveName
 from stationspinner.libs import fields as custom, api_parser
 from stationspinner.libs.api_parser import parse_evemail
 from django_pgjson.fields import JsonBField
-from stationspinner.sde.models import InvType
+from stationspinner.sde.models import InvType, InvGroup
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from stationspinner.celery import app
@@ -19,11 +19,14 @@ class Skill(models.Model):
     typeID = models.IntegerField()
     typeName = models.CharField(max_length=255, null=True)
     published = models.BooleanField(default=True)
+    skill_group = models.CharField(max_length=50, null=True)
 
     owner = models.ForeignKey('CharacterSheet', related_name='skills')
 
     def update_from_api(self, data, handler):
-        self.typeName = InvType.objects.get(pk=self.typeID).typeName
+        skill = InvType.objects.get(pk=self.typeID)
+        self.typeName = skill.typeName
+        self.skill_group = InvGroup.objects.get(pk=skill.groupID).groupName
         self.save()
 
     class Meta:
