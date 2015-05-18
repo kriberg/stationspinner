@@ -11,6 +11,7 @@ if DEBUG:
         url(r'^api/', include([
             url(r'^char/', include('stationspinner.character.urls')),
             url(r'^corp/', include('stationspinner.corporation.urls')),
+            url(r'^sde/', include('stationspinner.sde.urls')),
             url(r'^evemail/', include('stationspinner.evemail.urls')),
             url(r'^accounting/', include('stationspinner.accounting.urls')),
             url(r'^prices/', include('stationspinner.evecentral.urls')),
@@ -27,6 +28,7 @@ else:
     urlpatterns = patterns('',
         url(r'^char/', include('stationspinner.character.urls')),
         url(r'^corp/', include('stationspinner.corporation.urls')),
+        url(r'^sde/', include('stationspinner.sde.urls')),
         url(r'^evemail/', include('stationspinner.evemail.urls')),
         url(r'^accounting/', include('stationspinner.accounting.urls')),
         url(r'^prices/', include('stationspinner.evecentral.urls')),
