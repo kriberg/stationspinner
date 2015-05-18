@@ -10,7 +10,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from stationspinner.celery import app
 from stationspinner.settings import PRICE_INDEX_SYSTEM
-from stationspinner.libs.pragma import get_location_id, get_item_packaged_volume, PACKAGED_VOLUME
+from stationspinner.libs.pragma import get_location_id, \
+    get_item_packaged_volume, PACKAGED_VOLUME, get_location_name
 from stationspinner.evecentral.models import MarketItem
 
 class Skill(models.Model):
@@ -80,6 +81,9 @@ class CharacterSheet(models.Model):
     intelligence = models.IntegerField()
     memory = models.IntegerField()
     willpower = models.IntegerField()
+
+    def homeStation(self):
+        return get_location_name(self.homeStationID)
 
     def __unicode__(self):
         return self.name
@@ -174,24 +178,27 @@ class CharacterSheet(models.Model):
 
 
 class CharacterImplant(models.Model):
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey(CharacterSheet, related_name='implants')
     typeID = models.IntegerField()
     typeName = models.CharField(max_length=255)
 
 
 class JumpClone(models.Model):
     jumpCloneID = models.IntegerField(primary_key=True)
-    owner = models.ForeignKey(CharacterSheet)
+    owner = models.ForeignKey(CharacterSheet, related_name='jumpClones')
     typeID = models.IntegerField()
     locationID = models.BigIntegerField()
     cloneName = models.CharField(max_length=255, blank=True, default='')
+
+    def location(self):
+        return get_location_name(self.locationID)
 
     class Meta:
         unique_together = ('owner', 'jumpCloneID')
 
 
 class JumpCloneImplant(models.Model):
-    jumpCloneID = models.IntegerField()
+    jumpCloneID = models.ForeignKey(JumpClone, related_name='jumpCloneImplants')
     typeID = models.IntegerField()
     typeName = models.CharField(max_length=255)
     owner = models.ForeignKey(CharacterSheet)

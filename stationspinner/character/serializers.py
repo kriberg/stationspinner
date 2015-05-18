@@ -28,16 +28,17 @@ class CharacterImplantSerializer(serializers.ModelSerializer):
         exclude = ('owner',)
 
 
-class JumpCloneSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = JumpClone
-        exclude = ('owner',)
-
-
 class JumpCloneImplantSerializer(serializers.ModelSerializer):
     class Meta:
         model = JumpCloneImplant
-        exclude = ('owner',)
+        fields = ('typeID', 'typeName')
+
+
+class JumpCloneSerializer(serializers.ModelSerializer):
+    jumpCloneImplants = JumpCloneImplantSerializer(many=True)
+    class Meta:
+        model = JumpClone
+        fields = ('location', 'jumpCloneImplants')
 
 
 class CharacterSheetListSerializer(serializers.ModelSerializer):
@@ -46,14 +47,60 @@ class CharacterSheetListSerializer(serializers.ModelSerializer):
         model = CharacterSheet
         exclude = ('owner', 'enabled', 'owner_key')
 
+
+class CharacterImplantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CharacterImplant
+        fields = ('typeID', 'typeName')
+
+
 class CharacterSheetSerializer(serializers.ModelSerializer):
     skills = SkillSerializer(many=True)
     skillQueue = SkillQueueSerializer(many=True)
     skillInTraining = SkillInTrainingSerializer(many=True)
+    implants = CharacterImplantSerializer(many=True)
+    jumpClones = JumpCloneSerializer(many=True)
 
     class Meta:
         model = CharacterSheet
-        exclude = ('owner', 'enabled', 'owner_key')
+        fields = (
+            'characterID',
+            'name',
+            'corporationID',
+            'corporationName',
+            'bloodLine',
+            'factionID',
+            'factionName',
+            'allianceID',
+            'allianceName',
+            'ancestry',
+            'balance',
+            'DoB',
+            'gender',
+            'race',
+            'cloneJumpDate',
+            'freeRespecs',
+            'lastRespecDate',
+            'lastTimedRespec',
+            'freeSkillPoints',
+            'homeStationID',
+            'homeStation',
+            'jumpActivation',
+            'jumpFatigue',
+            'jumpLastUpdate',
+            'remoteStationDate',
+            'skillPoints',
+            'charisma',
+            'perception',
+            'intelligence',
+            'memory',
+            'willpower',
+            'skills',
+            'skillQueue',
+            'skillInTraining',
+            'implants',
+            'jumpClones',
+        )
 
 
 class CharacterSheetShort(serializers.ModelSerializer):
