@@ -41,9 +41,13 @@ class CharacterSheetViewset(viewsets.ReadOnlyModelViewSet):
 
 
 class NotificationViewset(viewsets.ReadOnlyModelViewSet):
+    class NotificationPagination(PageNumberPagination):
+        page_size = 10
+        ordering = '-sentDate'
     serializer_class = NotificationSerializer
     model = Notification
     permission_classes = [CapsulerPermission]
+    pagination_class = NotificationPagination
 
     def get_queryset(self):
         return Notification.objects.filter(
