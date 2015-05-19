@@ -19,7 +19,18 @@ class SkillQueueSerializer(serializers.ModelSerializer):
 class SkillInTrainingSerializer(serializers.ModelSerializer):
     class Meta:
         model = SkillInTraining
-        exclude = ('owner',)
+        fields = (
+            'trainingStartSP',
+            'trainingTypeID',
+            'trainingDestinationSP',
+            'currentTQTime',
+            'trainingEndTime',
+            'skillInTraining',
+            'trainingStartTime',
+            'trainingToLevel',
+            'typeName',
+            'typeID',
+        )
 
 
 class CharacterImplantSerializer(serializers.ModelSerializer):

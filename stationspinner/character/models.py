@@ -737,6 +737,9 @@ class SkillInTraining(models.Model):
 
     owner = models.ForeignKey('CharacterSheet', related_name='skillInTraining')
 
+    def typeID(self):
+        return self.trainingTypeID
+
     def update_from_api(self, sheet, handler):
         try:
             self.typeName = InvType.objects.get(pk=self.trainingTypeID).typeName
