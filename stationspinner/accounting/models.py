@@ -42,6 +42,7 @@ class APIKey(models.Model):
     type = models.CharField(max_length=11, choices=KEY_TYPES, editable=False, null=True)
     expired = models.BooleanField(default=False, editable=False)
     expires = models.DateTimeField(editable=False, null=True)
+    brokeness = models.IntegerField(default=0)
     characterID = models.IntegerField(null=True, blank=True)
     corporationID = models.IntegerField(null=True, blank=True)
 

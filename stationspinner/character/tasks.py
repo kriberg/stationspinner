@@ -554,6 +554,7 @@ def fetch_mails(apiupdate_pk):
 
 
     target.updated(api_data)
+    return 'Pulled {0} mails for {1}'.format(len(mails), character)
 
 
 @app.task(name='character.fetch_mailinglists', max_retries=0)

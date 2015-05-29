@@ -29,7 +29,8 @@ def update_capsuler_keys(*args, **kwargs):
 
     active_keys = APIKey.objects.filter(expired=False, owner__in=capsulers)
     log.info('Validating {0} keys'.format(active_keys.count()))
-    validate_key.map([key.pk for key in active_keys]).apply_async()
+    for key in active_keys:
+        validate_key.s(key.pk).apply_async()
 
 
 def queue_capsuler_keys(capsuler):
@@ -61,7 +62,8 @@ def update_apikey_sheets(apikey_pk):
                     apicall,
                     key.owner
                 ))
-            tasks.append(fetch_charactersheet.map([t.pk for t in targets]))
+            for target in targets:
+                tasks.append(fetch_charactersheet.s(target.pk))
         else:
             log.info('No character sheets need updating.')
     else:
@@ -76,7 +78,8 @@ def update_apikey_sheets(apikey_pk):
                     apicall,
                     key.owner
                 ))
-            tasks.append(fetch_corporationsheet.map([t.pk for t in targets]))
+            for target in targets:
+                tasks.append(fetch_corporationsheet.s(target.pk))
         else:
             log.info('No corporation sheets need updating')
 
@@ -98,7 +101,8 @@ def update_all_sheets(*args, **kwargs):
                 targets.count(),
                 apicall
             ))
-        tasks.append(fetch_charactersheet.map([t.pk for t in targets]))
+        for target in targets:
+            tasks.append(fetch_charactersheet.s(target.pk))
     else:
         log.info('No character sheets need updating.')
 
@@ -115,7 +119,8 @@ def update_all_sheets(*args, **kwargs):
                 targets.count(),
                 apicall
             ))
-        tasks.append(fetch_corporationsheet.map([t.pk for t in targets]))
+        for target in targets:
+            tasks.append(fetch_corporationsheet.s(target.pk))
     else:
         log.info('No corporation sheets need updating')
 
@@ -169,7 +174,8 @@ def queue_character_tasks(keys):
                 apicall
             ))
             for fn in taskfns:
-                tasks.append(fn.map([t.pk for t in targets]))
+                for target in targets:
+                    tasks.append(fn.s(target.pk))
         else:
             log.info('No targets for {0} need updating'.format(
                 apicall
@@ -194,7 +200,8 @@ def queue_corporation_tasks(corpkeys):
                 apicall
             ))
             for fn in taskfns:
-                tasks.append(fn.map([t.pk for t in targets]))
+                for target in targets:
+                    tasks.append(fn(target.pk))
         else:
             log.info('No targets for {0} need updating'.format(
                 apicall
@@ -227,7 +234,9 @@ def validate_key(apikey_pk):
     try:
         keyinfo = auth.account.APIKeyInfo()
     except AuthenticationError:
-        apikey.expired = True
+        apikey.brokeness += 1
+        if apikey.brokeness == 3:
+            apikey.expired = True
         apikey.save()
         APIUpdate.objects.filter(apikey=apikey).delete()
         log.info('APIKey "{0}" owned by "{1}" is disabled according to the eveapi.'.format(
@@ -236,7 +245,9 @@ def validate_key(apikey_pk):
         ))
         return
     except Exception, ex:
-        apikey.expired = True
+        apikey.brokeness += 1
+        if apikey.brokeness == 3:
+            apikey.expired = True
         apikey.save()
         APIUpdate.objects.filter(apikey=apikey).delete()
         log.info('Unexpected error while validating APIKey "{0}" owned by "{1}": {2}.'.format(
@@ -260,6 +271,7 @@ def validate_key(apikey_pk):
     apikey.accessMask = keyinfo.key.accessMask
     apikey.type = keyinfo.key.type
     apikey.expires = expires
+    apikey.brokeness = 0
 
     if keyinfo.key.type == 'Corporation':
         apikey.characterID = keyinfo.key.characters[0].characterID
