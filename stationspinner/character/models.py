@@ -9,10 +9,9 @@ from stationspinner.sde.models import InvType, InvGroup
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from stationspinner.celery import app
-from stationspinner.settings import PRICE_INDEX_SYSTEM
-from stationspinner.libs.pragma import get_location_id, \
-    get_item_packaged_volume, PACKAGED_VOLUME, get_location_name
-from stationspinner.evecentral.models import MarketItem
+from stationspinner.libs.pragma import get_item_packaged_volume, \
+    PACKAGED_VOLUME, get_location_name, UnknownPackagedItem
+
 
 class Skill(models.Model):
     skillpoints = models.IntegerField(default=0)
@@ -320,16 +319,14 @@ class Asset(models.Model):
             return self.item_volume
 
     def compute_statistics(self):
+        from stationspinner.evecentral.pragma import get_item_market_value
+        self.item_value = get_item_market_value(self.typeID) * self.quantity
         item = InvType.objects.get(pk=self.typeID)
-
-        if item.marketGroupID < 35000 and item.published:
-            index_location = get_location_id(PRICE_INDEX_SYSTEM)
-            index_value = MarketItem.objects.get(typeID=self.typeID,
-                                                    locationID=index_location.pk).sell_percentile
-            self.item_value = self.quantity * index_value
-
         if not self.singleton and item.groupID in PACKAGED_VOLUME.keys():
-            self.item_volume = get_item_packaged_volume(item.groupID, item.pk) * self.quantity
+            try:
+                self.item_volume = get_item_packaged_volume(item.groupID, item.pk) * self.quantity
+            except UnknownPackagedItem:
+                pass
         else:
             self.item_volume = item.volume * self.quantity
 
@@ -343,7 +340,6 @@ class Asset(models.Model):
 
     def update_from_api(self, item, handler):
         self.compute_statistics()
-        self.save()
 
     class Meta:
         managed = False

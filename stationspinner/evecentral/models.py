@@ -1,6 +1,5 @@
 from django.db import models
 from stationspinner.libs.pragma import get_location_name
-from stationspinner.sde.models import InvType
 from datetime import datetime, timedelta
 from pytz import UTC
 
@@ -14,6 +13,7 @@ class Market(models.Model):
 
     def __unicode__(self):
         return get_location_name(self.locationID)
+
 
 class MarketItem(models.Model):
     typeID = models.IntegerField()

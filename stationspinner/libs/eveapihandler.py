@@ -276,6 +276,8 @@ class EveAPIHandler():
                 asset = AssetClass()
                 asset.from_item(item, path)
                 asset.owner = owner
+                if hasattr(asset, 'update_from_api'):
+                    asset.update_from_api(item, self)
                 asset.save()
 
                 if hasattr(row, 'contents'):

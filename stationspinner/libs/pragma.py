@@ -5,7 +5,7 @@ from stationspinner.sde.models import MapDenormalize, \
 from stationspinner.universe.models import ConquerableStation
 from datetime import datetime
 from pytz import UTC
-from stationspinner.libs.eveapi import eveapi
+
 
 def get_attributes_by_categories(item):
     type_attributes = DgmTypeAttribute.objects.filter(type=item)
@@ -97,7 +97,7 @@ def get_location_id(location_name):
     except:
         pass
 
-    return MapDenormalize.objects.get(itemName=location_name)
+    return MapDenormalize.objects.get(itemName=location_name).pk
 
 def get_current_time():
     #try:
@@ -181,7 +181,7 @@ class UnknownPackagedItem(BaseException):
 
 def get_item_packaged_volume(groupID, typeID):
     if groupID in PACKAGED_VOLUME:
-        if PACKAGED_VOLUME[groupID] is int:
+        if type(PACKAGED_VOLUME[groupID]) is int:
             return PACKAGED_VOLUME[groupID]
         else:
             if typeID in PACKAGED_VOLUME[groupID]:

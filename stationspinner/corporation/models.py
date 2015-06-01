@@ -6,8 +6,9 @@ from stationspinner.libs import fields as custom
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from stationspinner.celery import app
-from datetime import datetime
-import pytz
+from stationspinner.libs.pragma import get_item_packaged_volume, \
+    PACKAGED_VOLUME, UnknownPackagedItem
+from stationspinner.sde.models import InvType
 
 class CorporationSheet(models.Model):
     owner_key = models.ForeignKey(APIKey)
@@ -351,6 +352,9 @@ class Asset(models.Model):
     path = models.CharField(max_length=255, default='')
     parent_id = models.BigIntegerField(null=True)
 
+    item_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
+    item_volume = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
+    container_volume = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
 
     owner = models.ForeignKey(CorporationSheet)
 
@@ -371,6 +375,38 @@ class Asset(models.Model):
         if 'parent' in item:
             self.parent_id = item['parent']
 
+    def get_contents(self):
+        return self.objects.filter(owner=self.owner,
+                                   parent_id=self.itemID)
+
+    def get_volume(self):
+        if self.singleton:
+            return self.item_volume + self.container_volume
+        else:
+            return self.item_volume
+
+    def compute_statistics(self):
+        from stationspinner.evecentral.pragma import get_item_market_value
+        self.item_value = get_item_market_value(self.typeID) * self.quantity
+        item = InvType.objects.get(pk=self.typeID)
+        if not self.singleton and item.groupID in PACKAGED_VOLUME.keys():
+            try:
+                self.item_volume = get_item_packaged_volume(item.groupID, item.pk) * self.quantity
+            except UnknownPackagedItem:
+                pass
+        else:
+            self.item_volume = item.volume * self.quantity
+
+
+    def compute_container_volume(self):
+        self.container_volume = 0.0
+        if self.singleton:
+            contents = self.get_contents()
+            for item in contents:
+                self.container_volume += item.get_volume()
+
+    def update_from_api(self, item, handler):
+        self.compute_statistics()
 
     class Meta:
         managed = False
