@@ -8,7 +8,6 @@ from stationspinner.character.models import CharacterSheet, WalletJournal, \
 from stationspinner.universe.models import EveName
 from stationspinner.libs.eveapihandler import EveAPIHandler
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
-from django.dispatch import Signal
 
 from celery.utils.log import get_task_logger
 
