@@ -1,4 +1,7 @@
 from stationspinner.sde.models import MapDenormalize, \
+    MapRegion, \
+    MapSolarSystem, \
+    MapConstellation, \
     StaStation, \
     DgmAttributeCategory, \
     DgmTypeAttribute
@@ -98,6 +101,90 @@ def get_location_id(location_name):
         pass
 
     return MapDenormalize.objects.get(itemName=location_name).pk
+
+def get_location(location_id):
+    if type(location_id) in (str, unicode):
+        try:
+            location_id = int(location_id)
+        except:
+            return location_id
+    if location_id >= 66000000 and location_id <= 66014933:
+        try:
+            loc = StaStation.objects.get(pk=(int(location_id)-6000001))
+            return loc
+        except:
+            pass
+    elif location_id >= 66014934 and location_id <= 67999999:
+        try:
+            loc = ConquerableStation.objects.get(pk=(int(location_id)-6000000))
+            return loc
+        except ConquerableStation.DoesNotExist:
+            pass
+    elif location_id >= 60014861 and location_id <= 60014928:
+        try:
+            loc = ConquerableStation.objects.get(pk=location_id)
+            return loc
+        except ConquerableStation.DoesNotExist:
+            pass
+    elif location_id >= 60000000 and location_id <= 61000000:
+        try:
+            loc = StaStation.objects.get(pk=location_id)
+            return loc
+        except:
+            pass
+    elif location_id >= 61000000:
+        try:
+            loc = ConquerableStation.objects.get(pk=location_id)
+            return loc
+        except ConquerableStation.DoesNotExist:
+            pass
+    else:
+        try:
+            loc = MapDenormalize.objects.get(pk=location_id)
+            return loc
+        except MapDenormalize.DoesNotExist:
+            pass
+    return location_id
+
+def get_location_regionName(location):
+    if type(location) in (MapDenormalize, ConquerableStation):
+        return location.regionName()
+    elif type(location) is MapRegion:
+        return location.regionName
+    elif type(location) in (MapConstellation, MapSolarSystem, StaStation):
+        return location.region.regionName
+    elif type(location) is ConquerableStation:
+        return location.regionName()
+
+def get_location_regionID(location):
+    if type(location) in (MapDenormalize, ConquerableStation):
+        return location.regionID()
+    elif type(location) is MapRegion:
+        return location.pk
+    elif type(location) in (MapConstellation, MapSolarSystem, StaStation):
+        return location.region.pk
+    elif type(location) is ConquerableStation:
+        return location.regionID()
+
+def get_location_solarSystemName(location):
+    if type(location) in (MapDenormalize, ConquerableStation):
+        return location.solarSystemName()
+    elif type(location) is MapSolarSystem:
+        return location.solarSystemName
+    elif type(location) is StaStation:
+        return location.solarSystem.solarSystemName
+    elif type(location) is ConquerableStation:
+        return location.solarSystemName()
+
+def get_location_solarSystemID(location):
+    if type(location) is MapDenormalize:
+        return location.solarSystemID()
+    elif type(location) is MapSolarSystem:
+        return location.pk
+    elif type(location) is StaStation:
+        return location.solarSystem.pk
+    elif type(location) is ConquerableStation:
+        return location.solarSystemID
 
 def get_current_time():
     #try:
