@@ -83,7 +83,8 @@ def update_apikey_sheets(apikey_pk):
         else:
             log.info('No corporation sheets need updating')
 
-    group(tasks).apply_async()
+    if len(tasks) > 0:
+        group(tasks).apply_async()
 
 @app.task(name='accounting.update_all_sheets', max_retries=0)
 def update_all_sheets(*args, **kwargs):
@@ -124,13 +125,17 @@ def update_all_sheets(*args, **kwargs):
     else:
         log.info('No corporation sheets need updating')
 
-    group(tasks).apply_async()
+    if len(tasks) > 0:
+        group(tasks).apply_async()
 
 @app.task(name='accounting.update_all_apidata', max_retries=0)
 def update_all_apidata(*args, **kwargs):
     character_keys = APIKey.objects.filter(expired=False).exclude(type='Corporation')
     corpkeys = APIKey.objects.filter(expired=False, type='Corporation')
-    group(queue_character_tasks(character_keys) + queue_corporation_tasks(corpkeys)).apply_async()
+    tasks = queue_character_tasks(character_keys) + queue_corporation_tasks(corpkeys)
+
+    if len(tasks) > 0:
+        group(tasks).apply_async()
 
 @app.task(name='accounting.update_character_apidata')
 def update_character_apidata(character_pk, max_retries=0):
@@ -139,8 +144,10 @@ def update_character_apidata(character_pk, max_retries=0):
     except CharacterSheet.DoesNotExist:
         return
     key_qs = APIKey.objects.filter(pk=character.owner_key.pk)
-    group(queue_character_tasks(key_qs)).apply_async()
 
+    tasks = queue_character_tasks(key_qs)
+    if len(tasks) > 0:
+        group(tasks).apply_async()
 
 @app.task(name='accounting.update_corporation_apidata')
 def update_corporation_apidata(corporation_pk, max_retries=0):
@@ -149,7 +156,9 @@ def update_corporation_apidata(corporation_pk, max_retries=0):
     except CorporationSheet.DoesNotExist:
         return
     key_qs = APIKey.objects.filter(pk=corporation.owner_key.pk)
-    group(queue_corporation_tasks(key_qs)).apply_async()
+    tasks = queue_corporation_tasks(key_qs)
+    if len(tasks) > 0:
+        group(tasks).apply_async()
 
 
 def queue_character_tasks(keys):
