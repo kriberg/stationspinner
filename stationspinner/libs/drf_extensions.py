@@ -1,7 +1,7 @@
 from rest_framework import permissions, viewsets, serializers
 import json
 
-class CapsulerPermission(permissions.BasePermission):
+class CapsulerPermission(permissions.IsAuthenticated):
     """
     Standard capsuler access permission. If the data was pulled from the api
     by one of the api keys registered to this user, this permission class will
@@ -9,9 +9,6 @@ class CapsulerPermission(permissions.BasePermission):
     """
     def has_object_permission(self, request, view, obj):
         return request.user.is_owner(obj)
-
-    def has_permission(self, request, view):
-        return True
 
 
 class CapsulerViewset(viewsets.ModelViewSet):
