@@ -220,7 +220,20 @@ EVEMAIL_SEARCH_LANGUAGES = (
     'english',
 )
 
+# Market stuff
 DEFAULT_MARKET = 'Jita'
+MARKET_VALUE_SUPERS = {
+    11567:          100000000000, #Avatar
+    671:            100000000000, #Erebus
+    3764:           100000000000, #Leviathan
+    23773:          100000000000, #Ragnarok
+    3514:           100000000000, #Revenant
+    23913:          20000000000,  #Nyx
+    22852:          20000000000,  #Hel
+    23917:          20000000000,  #Wyvern
+    23919:          20000000000,  #Aeon
+}
+
 CELERY_TIMEZONE = 'UTC'
 CELERY_IGNORE_RESULT = True
 BROKER_TRANSPORT_OPTIONS = {

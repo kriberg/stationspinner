@@ -12,7 +12,6 @@ from django.db.models import Q
 from celery.utils.log import get_task_logger
 from traceback import format_exc
 from os.path import join
-import csv
 
 log = get_task_logger(__name__)
 
