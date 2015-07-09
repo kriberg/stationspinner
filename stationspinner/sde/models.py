@@ -3,6 +3,8 @@
 # seasoning for importing the SDE dumps generated for postgresql.
 from django.db import models
 
+
+
 class AgtAgentType(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'agentTypeID')
     agentType = models.TextField(blank=True)
@@ -45,7 +47,7 @@ class ChrAncestry(models.Model):
     charisma = models.SmallIntegerField(null=True, blank=True)
     memory = models.SmallIntegerField(null=True, blank=True)
     intelligence = models.SmallIntegerField(null=True, blank=True)
-    iconID = models.BigIntegerField(null=True, blank=True)
+    icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     shortDescription = models.TextField(blank=True)
     class Meta:
         db_table = u'chrAncestries'
@@ -56,7 +58,7 @@ class ChrAttribute(models.Model):
     id = models.SmallIntegerField(primary_key=True, db_column=u'attributeID')
     attributeName = models.TextField(blank=True)
     description = models.TextField(blank=True)
-    iconID = models.BigIntegerField(null=True, blank=True)
+    icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     shortDescription = models.TextField(blank=True)
     notes = models.TextField(blank=True)
     class Meta:
@@ -78,7 +80,7 @@ class ChrBloodline(models.Model):
     charisma = models.SmallIntegerField(null=True, blank=True)
     memory = models.SmallIntegerField(null=True, blank=True)
     intelligence = models.SmallIntegerField(null=True, blank=True)
-    iconID = models.BigIntegerField(null=True, blank=True)
+    icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     shortDescription = models.TextField(blank=True)
     shortMaleDescription = models.TextField(blank=True)
     shortFemaleDescription = models.TextField(blank=True)
@@ -92,13 +94,13 @@ class ChrFaction(models.Model):
     factionName = models.TextField(blank=True)
     description = models.TextField(blank=True)
     raceIDs = models.BigIntegerField(null=True, blank=True)
-    solarSystemID = models.BigIntegerField(null=True, blank=True)
+    solarSystem = models.ForeignKey('MapSolarSystem', null=True, db_column='solarSystemID')
     corporationID = models.BigIntegerField(null=True, blank=True)
     sizeFactor = models.FloatField(null=True, blank=True)
     stationCount = models.SmallIntegerField(null=True, blank=True)
     stationSystemCount = models.SmallIntegerField(null=True, blank=True)
     militiaCorporationID = models.BigIntegerField(null=True, blank=True)
-    iconID = models.BigIntegerField(null=True, blank=True)
+    icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     class Meta:
         db_table = u'chrFactions'
         verbose_name = u'chrFactions'
@@ -108,7 +110,7 @@ class ChrRace(models.Model):
     id = models.SmallIntegerField(primary_key=True, db_column=u'raceID')
     raceName = models.TextField(blank=True)
     description = models.TextField(blank=True)
-    iconID = models.BigIntegerField(null=True, blank=True)
+    icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     shortDescription = models.TextField(blank=True)
     class Meta:
         db_table = u'chrRaces'
@@ -128,7 +130,7 @@ class CrpNPCCorporation(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'corporationID')
     size = models.CharField(max_length=1, blank=True)
     extent = models.CharField(max_length=1, blank=True)
-    solarSystemID = models.BigIntegerField(null=True, blank=True)
+    solarSystem = models.ForeignKey('MapSolarSystem', null=True, db_column='solarSystemID')
     investorID1 = models.BigIntegerField(null=True, blank=True)
     investorShares1 = models.SmallIntegerField(null=True, blank=True)
     investorID2 = models.BigIntegerField(null=True, blank=True)
@@ -152,7 +154,7 @@ class CrpNPCCorporation(models.Model):
     stationCount = models.SmallIntegerField(null=True, blank=True)
     stationSystemCount = models.SmallIntegerField(null=True, blank=True)
     description = models.TextField(blank=True)
-    iconID = models.BigIntegerField(null=True, blank=True)
+    icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     class Meta:
         db_table = u'crpNPCCorporations'
         verbose_name = u'crpNPCCorporations'
@@ -181,7 +183,7 @@ class DgmAttributeType(models.Model):
     id = models.SmallIntegerField(primary_key=True, db_column=u'attributeID')
     attributeName = models.TextField(blank=True)
     description = models.TextField(blank=True)
-    iconID = models.BigIntegerField(null=True, blank=True)
+    icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     defaultValue = models.FloatField(null=True, blank=True)
     published = models.NullBooleanField(null=True, blank=True)
     displayName = models.TextField(blank=True)
@@ -202,7 +204,7 @@ class DgmEffect(models.Model):
     postExpression = models.BigIntegerField(null=True, blank=True)
     description = models.TextField(blank=True)
     guid = models.TextField(blank=True)
-    iconID = models.BigIntegerField(null=True, blank=True)
+    icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     isOffensive = models.NullBooleanField(null=True, blank=True)
     isAssistance = models.NullBooleanField(null=True, blank=True)
     durationAttributeID = models.SmallIntegerField(null=True, blank=True)
@@ -231,6 +233,13 @@ class EveIcon(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'iconID')
     iconFile = models.TextField()
     description = models.TextField(blank=True)
+
+    def to_icon_file(self):
+        try:
+            return '%s_64_%s.PNG' % tuple(self.iconFile.split('_')[-2:])
+        except:
+            return None
+    
     class Meta:
         db_table = u'eveIcons'
         verbose_name = u'eveIcons'
@@ -258,7 +267,7 @@ class InvCategory(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'categoryID')
     categoryName = models.TextField(blank=True)
     description = models.TextField(blank=True)
-    iconID = models.BigIntegerField(null=True, blank=True)
+    icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     published = models.NullBooleanField(null=True, blank=True)
     class Meta:
         db_table = u'invCategories'
@@ -288,7 +297,7 @@ class InvGroup(models.Model):
     categoryID = models.BigIntegerField(null=True, blank=True)
     groupName = models.TextField(blank=True)
     description = models.TextField(blank=True)
-    iconID = models.BigIntegerField(null=True, blank=True)
+    icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     useBasePrice = models.NullBooleanField(null=True, blank=True)
     allowManufacture = models.NullBooleanField(null=True, blank=True)
     allowRecycler = models.NullBooleanField(null=True, blank=True)
@@ -313,13 +322,43 @@ class InvItem(models.Model):
         verbose_name = u'invItems'
 
 
+class InvMarketGroupManager(models.Manager):
+    def get_hierarchy(self, max_depth=None):
+        def group_recurse(group, depth, max_depth):
+            if depth == max_depth:
+                children = None
+            else:
+                children = [group_recurse(child, depth+1, max_depth) for child in self.filter(parentGroup=group)]
+            if group.icon:
+                icon = group.icon.to_icon_file()
+            else:
+                icon = None
+            tree = {
+                "marketGroupName": group.marketGroupName,
+                "marketGroupID": group.pk,
+                "icon": icon,
+                "children": children
+            }
+            return tree
+
+        return [group_recurse(group, 0, max_depth) for group in self.filter(parentGroup=None,
+                                                              pk__lt=35000)]
+
+
+
 class InvMarketGroup(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'marketGroupID')
-    parentGroupID = models.BigIntegerField(null=True, blank=True)
+    parentGroup = models.ForeignKey('InvMarketGroup', null=True, db_column='parentGroupID')
     marketGroupName = models.TextField(blank=True)
     description = models.TextField(blank=True)
-    iconID = models.BigIntegerField(null=True, blank=True)
+    icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     hasTypes = models.NullBooleanField(null=True, blank=True)
+
+    objects = InvMarketGroupManager()
+
+    def get_children(self):
+        return InvMarketGroup.objects.filter(parentGroupID=self.pk)
+
     class Meta:
         db_table = u'invMarketGroups'
         verbose_name = u'invMarketGroups'
@@ -329,7 +368,7 @@ class InvMetaGroup(models.Model):
     id = models.SmallIntegerField(primary_key=True, db_column=u'metaGroupID')
     metaGroupName = models.TextField(blank=True)
     description = models.TextField(blank=True)
-    iconID = models.BigIntegerField(null=True, blank=True)
+    icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     class Meta:
         db_table = u'invMetaGroups'
         verbose_name = u'invMetaGroups'
@@ -420,7 +459,7 @@ class MapCelestialStatistic(models.Model):
 
 
 class MapConstellation(models.Model):
-    regionID = models.BigIntegerField(null=True, blank=True)
+    region = models.ForeignKey('MapRegion', null=True, db_column='regionID')
     id = models.BigIntegerField(primary_key=True, db_column=u'constellationID')
     constellationName = models.TextField(blank=True)
     x = models.FloatField(null=True, blank=True)
@@ -439,27 +478,6 @@ class MapConstellation(models.Model):
         verbose_name = u'mapConstellations'
 
 
-class MapDenormalize(models.Model):
-    id = models.BigIntegerField(primary_key=True, db_column=u'itemID')
-    typeID = models.BigIntegerField(null=True, blank=True)
-    groupID = models.BigIntegerField(null=True, blank=True)
-    solarSystemID = models.BigIntegerField(null=True, blank=True)
-    constellationID = models.BigIntegerField(null=True, blank=True)
-    regionID = models.BigIntegerField(null=True, blank=True)
-    orbitID = models.BigIntegerField(null=True, blank=True)
-    x = models.FloatField(null=True, blank=True)
-    y = models.FloatField(null=True, blank=True)
-    z = models.FloatField(null=True, blank=True)
-    radius = models.FloatField(null=True, blank=True)
-    itemName = models.TextField(blank=True)
-    security = models.FloatField(null=True, blank=True)
-    celestialIndex = models.BigIntegerField(null=True, blank=True)
-    orbitIndex = models.BigIntegerField(null=True, blank=True)
-    class Meta:
-        db_table = u'mapDenormalize'
-        verbose_name = u'mapDenormalize'
-
-
 class MapJump(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'stargateID')
     destinationID = models.BigIntegerField(null=True, blank=True)
@@ -476,7 +494,7 @@ class MapLandmark(models.Model):
     x = models.FloatField(null=True, blank=True)
     y = models.FloatField(null=True, blank=True)
     z = models.FloatField(null=True, blank=True)
-    iconID = models.BigIntegerField(null=True, blank=True)
+    icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     class Meta:
         db_table = u'mapLandmarks'
         verbose_name = u'mapLandmarks'
@@ -518,7 +536,7 @@ class MapRegion(models.Model):
 
 
 class MapSolarSystem(models.Model):
-    regionID = models.BigIntegerField(null=True, blank=True)
+    region = models.ForeignKey('MapRegion', null=True, db_column='regionID')
     constellationID = models.BigIntegerField(null=True, blank=True)
     id = models.BigIntegerField(primary_key=True, db_column=u'solarSystemID')
     solarSystemName = models.TextField(blank=True)
@@ -544,6 +562,7 @@ class MapSolarSystem(models.Model):
     radius = models.FloatField(null=True, blank=True)
     sunTypeID = models.BigIntegerField(null=True, blank=True)
     securityClass = models.TextField(blank=True)
+
     class Meta:
         db_table = u'mapSolarSystems'
         verbose_name = u'mapSolarSystems'
@@ -655,11 +674,11 @@ class StaStation(models.Model):
     maxShipVolumeDockable = models.FloatField(null=True, blank=True)
     officeRentalCost = models.BigIntegerField(null=True, blank=True)
     operationID = models.SmallIntegerField(null=True, blank=True)
-    stationTypeID = models.BigIntegerField(null=True, blank=True)
+    stationType = models.ForeignKey('StaStationType', null=True, db_column='stationTypeID')
     corporationID = models.BigIntegerField(null=True, blank=True)
-    solarSystemID = models.BigIntegerField(null=True, blank=True)
-    constellationID = models.BigIntegerField(null=True, blank=True)
-    regionID = models.BigIntegerField(null=True, blank=True)
+    solarSystem = models.ForeignKey('MapSolarSystem', null=True, db_column='solarSystemID')
+    constellation = models.ForeignKey('MapConstellation', null=True, db_column='constellationID')
+    region = models.ForeignKey('MapRegion', null=True, db_column='regionID')
     stationName = models.TextField(blank=True)
     x = models.FloatField(null=True, blank=True)
     y = models.FloatField(null=True, blank=True)
@@ -667,6 +686,7 @@ class StaStation(models.Model):
     reprocessingEfficiency = models.FloatField(null=True, blank=True)
     reprocessingStationsTake = models.FloatField(null=True, blank=True)
     reprocessingHangarFlag = models.SmallIntegerField(null=True, blank=True)
+
     class Meta:
         db_table = u'staStations'
         verbose_name = u'staStations'
@@ -986,8 +1006,8 @@ class RamAssemblyLineStation(models.Model):
     quantity = models.SmallIntegerField(null=True, blank=True)
     stationTypeID = models.BigIntegerField(null=True, blank=True)
     ownerID = models.BigIntegerField(null=True, blank=True)
-    solarSystemID = models.BigIntegerField(null=True, blank=True)
-    regionID = models.BigIntegerField(null=True, blank=True)
+    solarSystem = models.ForeignKey('MapSolarSystem', null=True, db_column='solarSystemID')
+    region = models.ForeignKey('MapRegion', null=True, db_column='regionID')
     id = models.IntegerField(primary_key=True)
     class Meta:
         db_table = u'ramAssemblyLineStations'
@@ -1049,3 +1069,48 @@ class TranslationTable(models.Model):
         verbose_name = u'translationTables'
 
 
+class MapDenormalize(models.Model):
+    id = models.BigIntegerField(primary_key=True, db_column=u'itemID')
+    type = models.ForeignKey(InvType, null=True, db_column='typeID', related_name='mapdenormalize_type')
+    group = models.ForeignKey(InvGroup, null=True, db_column='groupID', related_name='mapdenormalize_group')
+    solarSystem = models.ForeignKey(MapSolarSystem, null=True, db_column='solarSystemID', related_name='mapdenormalize_solarSystem')
+    constellation = models.ForeignKey(MapConstellation, null=True, db_column='constellationID', related_name='mapdenormalize_constellation')
+    region = models.ForeignKey(MapRegion, null=True, db_column='regionID', related_name='mapdenormalize_region')
+    orbit = models.ForeignKey('self', null=True, db_column='orbitID', related_name='mapdenormalize_orbit')
+    x = models.FloatField(null=True, blank=True)
+    y = models.FloatField(null=True, blank=True)
+    z = models.FloatField(null=True, blank=True)
+    radius = models.FloatField(null=True, blank=True)
+    itemName = models.TextField(blank=True)
+    security = models.FloatField(null=True, blank=True)
+    celestialIndex = models.BigIntegerField(null=True, blank=True)
+    orbitIndex = models.BigIntegerField(null=True, blank=True)
+
+    def regionName(self):
+        return self.region.regionName
+
+    def solarSystemName(self):
+        if self.solarSystem:
+            return self.solarSystem.solarSystemName
+        else:
+            return None
+
+    def regionID(self):
+        if self.region:
+            return self.region.pk
+        else:
+            # Hardcoding this to save a lookup. Hopefully it never chances :)
+            if self.type == 3:
+                return self.pk
+
+    def solarSystemID(self):
+        if self.solarSystem:
+            return self.solarSystem.pk
+        else:
+            if self.type == 5:
+                return self.pk
+
+
+    class Meta:
+        db_table = u'mapDenormalize'
+        verbose_name = u'mapDenormalize'

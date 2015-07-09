@@ -5,7 +5,7 @@ from stationspinner.libs.eveapi_cache import RedisCache
 from stationspinner.libs.eveapi import eveapi
 from celery.utils.log import get_task_logger
 from pytz import UTC
-from traceback import format_exc
+from stationspinner.sde.models import MapSolarSystem
 
 log = get_task_logger(__name__)
 
@@ -64,6 +64,21 @@ class ConquerableStation(models.Model):
     solarSystemID = models.IntegerField()
     corporationID = models.IntegerField()
     corporationName = models.CharField(max_length=255)
+
+    def solarSystem(self):
+        return MapSolarSystem.objects.get(pk=self.solarSystemID)
+
+    def region(self):
+        return self.solarSystem().region
+
+    def regionID(self):
+        return self.region().pk
+
+    def regionName(self):
+        return self.solarSystem().region.regionName
+
+    def solarSystemName(self):
+        return self.solarSystem().solarSystemName
 
     def __unicode__(self):
         return self.stationName
