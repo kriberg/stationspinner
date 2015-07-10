@@ -266,7 +266,6 @@ class IndustryBlueprint(models.Model):
 class InvCategory(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'categoryID')
     categoryName = models.TextField(blank=True)
-    description = models.TextField(blank=True)
     icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     published = models.NullBooleanField(null=True, blank=True)
     class Meta:
