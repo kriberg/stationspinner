@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from stationspinner.character.models import CharacterSheet, Skill, \
-    SkillInTraining, SkillQueue, AssetList, Asset, CharacterImplant, \
+    SkillInTraining, SkillQueue, Asset, CharacterImplant, \
     JumpClone, JumpCloneImplant, Notification, MailMessage, WalletJournal, \
     WalletTransaction
-
+from stationspinner.sde.models import MapDenormalize
+from stationspinner.sde.serializers import RegionSerializer
 
 class SkillSerializer(serializers.ModelSerializer):
     class Meta:
@@ -120,15 +121,22 @@ class CharacterSheetShort(serializers.ModelSerializer):
         fields = ('characterID', 'name', 'corporationName', 'allianceName')
 
 
-class AssetListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AssetList
-        exclude = ('owner',)
-
 class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
-        exclude = ('owner','typeID', 'locationID', 'itemID')
+        fields = (
+            'itemID',
+            'quantity',
+            'locationName',
+            'locationID',
+            'typeID',
+            'typeName',
+            'flag',
+            'singleton',
+            'rawQuantity',
+            'item_value',
+            'item_volume',
+        )
 
 
 class NotificationSerializer(serializers.ModelSerializer):

@@ -7,8 +7,12 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from stationspinner.celery import app
 from stationspinner.libs.pragma import get_item_packaged_volume, \
-    PACKAGED_VOLUME, UnknownPackagedItem
+    PACKAGED_VOLUME, UnknownPackagedItem, get_location, get_location_name, \
+    get_location_regionID, get_location_regionName, \
+    get_location_solarSystemID, get_location_solarSystemName
 from stationspinner.sde.models import InvType
+from celery.utils.log import get_task_logger
+log = get_task_logger(__name__)
 
 class CorporationSheet(models.Model):
     owner_key = models.ForeignKey(APIKey)
@@ -339,11 +343,40 @@ class AssetList(models.Model):
         return "{0}'s assets ({1})".format(self.owner, self.retrieved)
 
 
+class AssetManager(models.Manager):
+    def get_top_level_locations(self, corporationID, regionID=None):
+        asset_locations = self.filter(owner=corporationID)
+
+        if regionID:
+            asset_locations = asset_locations.filter(regionID=regionID)
+
+        asset_locations = asset_locations.distinct('locationID'). \
+            values_list('locationID', flat=True)
+
+        locations = [get_location(locationID) for locationID in asset_locations]
+
+        out = []
+        for location in locations:
+            if type(location) is long:
+                locationID = location
+            else:
+                locationID = location.pk
+            out.append({'regionName': get_location_regionName(location),
+                        'regionID': get_location_regionID(location),
+                        'solarSystemName': get_location_solarSystemName(location),
+                        'solarSystemID': get_location_solarSystemID(location),
+                        'name': get_location_name(locationID),
+                        'locationID': locationID})
+        return out
+
+
 class Asset(models.Model):
     itemID = models.BigIntegerField()
     quantity = models.BigIntegerField()
     locationID = models.BigIntegerField()
     locationName = models.CharField(max_length=255, blank=True, default='')
+    regionID = models.IntegerField(null=True)
+    solarSystemID = models.IntegerField(null=True)
     typeID = models.IntegerField()
     typeName = models.CharField(max_length=255)
     flag = models.IntegerField()
@@ -357,6 +390,8 @@ class Asset(models.Model):
     container_volume = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
 
     owner = models.ForeignKey(CorporationSheet)
+
+    objects = AssetManager()
 
     def from_item(self, item, path):
         self.itemID = item['itemID']
@@ -386,9 +421,19 @@ class Asset(models.Model):
             return self.item_volume
 
     def compute_statistics(self):
+        if self.typeID == 51:
+            # 51 is bookmark
+            return
         from stationspinner.evecentral.pragma import get_item_market_value
         self.item_value = get_item_market_value(self.typeID) * self.quantity
-        item = InvType.objects.get(pk=self.typeID)
+        try:
+            item = InvType.objects.get(pk=self.typeID)
+        except InvType.DoesNotExist:
+            log.warning('TypeID {0} does not exist.'.format(self.typeID))
+            return
+        if not item.volume:
+            log.warning('TypeID {0} has no volume.'.format(self.typeID))
+            return
         if not self.singleton and item.groupID in PACKAGED_VOLUME.keys():
             try:
                 self.item_volume = get_item_packaged_volume(item.groupID, item.pk) * self.quantity
@@ -407,6 +452,12 @@ class Asset(models.Model):
 
     def update_from_api(self, item, handler):
         self.compute_statistics()
+        try:
+            location = get_location(self.locationID)
+            self.regionID = get_location_regionID(location)
+            self.solarSystemID = get_location_solarSystemID(location)
+        except:
+            pass
 
     class Meta:
         managed = False

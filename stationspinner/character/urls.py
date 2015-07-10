@@ -2,7 +2,7 @@ from django.conf.urls import url, include
 from rest_framework import routers
 from stationspinner.character.views import CharacterSheetViewset, \
     NotificationViewset, MailMessageViewset, DistinctAllianceViewset, \
-    DistinctCorporationViewset, WalletTransactionsViewset
+    DistinctCorporationViewset, WalletTransactionsViewset, AssetLocationsView
 
 router = routers.DefaultRouter()
 router.register(r'CharacterSheet', CharacterSheetViewset, 'CharacterSheet')
@@ -14,4 +14,5 @@ router.register(r'WalletTransactions', WalletTransactionsViewset, 'WalletTransac
 
 urlpatterns = [
     url(r'^', include(router.urls)),
+    url(r'^AssetLocations', AssetLocationsView.as_view(), name='character_asset_locations')
 ]

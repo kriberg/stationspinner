@@ -1,13 +1,14 @@
+from django.core.cache import cache
+from rest_framework import views
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-
 from stationspinner.character.serializers import CharacterSheetSerializer, \
-    AssetListSerializer, CharacterSheetListSerializer, NotificationSerializer, \
-    SkillInTrainingSerializer, MailMessageSerializer, ShortformAllianceSerializer, \
+    AssetSerializer, CharacterSheetListSerializer, NotificationSerializer, \
+    MailMessageSerializer, ShortformAllianceSerializer, \
     ShortformCorporationSerializer, WalletTransactionSerializer
 from stationspinner.character.models import CharacterSheet, \
-    AssetList, Notification, SkillInTraining, MailMessage, WalletTransaction, \
+    Asset, Notification, MailMessage, WalletTransaction, \
     WalletJournal
 from stationspinner.libs.drf_extensions import CapsulerPermission
 
@@ -28,17 +29,6 @@ class CharacterSheetViewset(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         return CharacterSheet.objects.filter(owner=self.request.user,
                                              enabled=True).order_by('-skillPoints')
-
-#class AssetListViewset(viewsets.ReadOnlyModelViewSet):
-#    serializer_class = AssetListSerializer
-#    model = AssetList
-#    permission_classes = [CapsulerPermission]
-#
-#    def get_queryset(self):
-#        return AssetList.objects.filter(
-#            owner=self.request.user
-#        )
-
 
 class NotificationViewset(viewsets.ReadOnlyModelViewSet):
     class NotificationPagination(PageNumberPagination):
@@ -115,3 +105,30 @@ class WalletTransactionsViewset(viewsets.ReadOnlyModelViewSet):
             return WalletTransaction.objects.filter(owner=character).order_by('-transactionDateTime')
         else:
             return []
+
+
+
+class AssetLocationsView(views.APIView):
+    permission_classes = [CapsulerPermission]
+
+    def get(self, request, format=None):
+        characterIDs = request.query_params.get('characterIDs', None)
+        regionID = request.query_params.get('regionID', None)
+
+        if characterIDs:
+            try:
+                characterIDs = str(characterIDs).split(',')
+                valid, invalid = CharacterSheet.objects.filter_valid(characterIDs, request.user)
+                characterIDs = valid
+            except:
+                characterIDs = None
+        if not characterIDs:
+            characterIDs = CharacterSheet.objects.filter(owner=request.user).values_list('characterID', flat=True)
+
+        key = hash(('asset_locations', characterIDs.__hash__, regionID))
+        asset_locations = cache.get(key, None)
+        if not asset_locations:
+            asset_locations = Asset.objects.get_top_level_locations(characterIDs, regionID)
+            cache.set(key, asset_locations, 1800)
+
+        return Response(asset_locations)
