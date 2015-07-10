@@ -394,9 +394,11 @@ def fetch_skillqueue(apiupdate_pk):
         target.delete()
         return
     skills = handler.autoparse_list(api_data.skillqueue,
-                          SkillQueue,
-                          owner=character,
-                          pre_save=True)
+                                    SkillQueue,
+                                    unique_together=('typeID', 'level'),
+                                    extra_selectors={'owner': character},
+                                    owner=character,
+                                    pre_save=True)
     SkillQueue.objects.filter(owner=character).exclude(pk__in=skills).delete()
     target.updated(api_data)
 
