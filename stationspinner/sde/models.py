@@ -297,8 +297,6 @@ class InvGroup(models.Model):
     groupName = models.TextField(blank=True)
     icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     useBasePrice = models.NullBooleanField(null=True, blank=True)
-    allowManufacture = models.NullBooleanField(null=True, blank=True)
-    allowRecycler = models.NullBooleanField(null=True, blank=True)
     anchored = models.NullBooleanField(null=True, blank=True)
     anchorable = models.NullBooleanField(null=True, blank=True)
     fittableNonSingleton = models.NullBooleanField(null=True, blank=True)
