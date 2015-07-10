@@ -417,7 +417,7 @@ class InvType(models.Model):
     basePrice = models.DecimalField(null=True, max_digits=19, decimal_places=4, blank=True)
     published = models.NullBooleanField(null=True, blank=True)
     marketGroupID = models.BigIntegerField(null=True, blank=True)
-    chanceOfDuplicating = models.FloatField(null=True, blank=True)
+
     class Meta:
         db_table = u'invTypes'
         verbose_name = u'invTypes'
