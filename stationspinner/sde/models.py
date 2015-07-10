@@ -296,7 +296,6 @@ class InvGroup(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'groupID')
     categoryID = models.BigIntegerField(null=True, blank=True)
     groupName = models.TextField(blank=True)
-    description = models.TextField(blank=True)
     icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     useBasePrice = models.NullBooleanField(null=True, blank=True)
     allowManufacture = models.NullBooleanField(null=True, blank=True)
