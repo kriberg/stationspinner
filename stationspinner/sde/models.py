@@ -1089,21 +1089,23 @@ class MapDenormalize(models.Model):
         if self.solarSystem:
             return self.solarSystem.solarSystemName
         else:
-            return None
+            # This is a solarSystem
+            if self.type.pk == 5:
+                return self.itemName
 
     def regionID(self):
         if self.region:
             return self.region.pk
         else:
             # Hardcoding this to save a lookup. Hopefully it never chances :)
-            if self.type == 3:
+            if self.type.pk == 3:
                 return self.pk
 
     def solarSystemID(self):
         if self.solarSystem:
             return self.solarSystem.pk
         else:
-            if self.type == 5:
+            if self.type.pk == 5:
                 return self.pk
 
 
