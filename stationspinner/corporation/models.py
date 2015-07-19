@@ -457,7 +457,7 @@ class Asset(models.Model):
             self.regionID = get_location_regionID(location)
             self.solarSystemID = get_location_solarSystemID(location)
         except:
-            pass
+            log.warning('Could not determine regionID or solarSystemID of locationID {0}.'.format(self.locationID))
 
     class Meta:
         managed = False
