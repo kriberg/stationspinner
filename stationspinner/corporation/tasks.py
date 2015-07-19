@@ -143,7 +143,7 @@ def fetch_membertracking(apiupdate_pk):
                           owner=corporation,
                           pre_save=True)
     MemberTracking.objects.filter(owner=corporation) \
-        .exclude(pk_in=memberIDs).delete()
+        .exclude(pk__in=memberIDs).delete()
 
     target.updated(api_data)
 
@@ -178,7 +178,7 @@ def fetch_starbaselist(apiupdate_pk):
                           owner=corporation,
                           pre_save=True)
     Starbase.objects.filter(owner=corporation) \
-        .exclude(pk_in=posIDs).delete()
+        .exclude(pk__in=posIDs).delete()
     target.updated(api_data)
 
 @app.task(name='corporation.fetch_blueprints', max_retries=0)
