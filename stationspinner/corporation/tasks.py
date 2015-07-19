@@ -148,7 +148,7 @@ def fetch_membertracking(apiupdate_pk):
     target.updated(api_data)
 
 
-@app.task(name='corporation.fetch_startbaselist', max_retries=0)
+@app.task(name='corporation.fetch_starbaselist', max_retries=0)
 def fetch_starbaselist(apiupdate_pk):
     try:
         target, corporation = _get_corporation_auth(apiupdate_pk)
