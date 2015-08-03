@@ -388,6 +388,7 @@ class Asset(models.Model):
     item_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
     item_volume = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
     container_volume = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
+    container_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
 
     owner = models.ForeignKey(CorporationSheet)
 
