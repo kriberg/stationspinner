@@ -286,6 +286,9 @@ class EveAPIHandler():
                                                     parent=row.itemID,
                                                     path=path+(row.itemID,))
 
+                asset.compute_container_volume()
+                asset.compute_container_value()
+                asset.save()
                 contents.append(item)
 
             return contents
@@ -295,6 +298,7 @@ class EveAPIHandler():
 
         for container in parse_rowset(assets):
             store[container['itemID']] = container
+
 
         return store
 

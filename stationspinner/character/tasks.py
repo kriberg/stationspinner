@@ -304,6 +304,7 @@ def fetch_assetlist(apiupdate_pk):
     assetlist.items = handler.asset_parser(api_data.assets,
                                            Asset,
                                            character)
+
     assetlist.save()
     target.updated(api_data)
 

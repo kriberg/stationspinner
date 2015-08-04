@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.db.models import Sum
 from stationspinner.accounting.models import APIKey, Capsuler
@@ -98,7 +99,10 @@ class CharacterSheet(models.Model):
         return self.name
 
     def update_from_api(self, sheet, handler):
-        handler.autoparse(sheet, self, ignore=('skills',))
+        handler.autoparse(sheet, self, ignore=('skills',
+                                               'jumpClones',
+                                               'jumpCloneImplants',
+                                               'implants'))
         handler.autoparse(sheet.attributes, self)
         EveName.objects.register(self.pk, self.name)
 
@@ -132,11 +136,12 @@ class CharacterSheet(models.Model):
         JumpClone.objects.filter(owner=self).exclude(pk__in=clones).delete()
 
         clone_implants = handler.autoparse_list(sheet.jumpCloneImplants,
-                              JumpCloneImplant,
-                              unique_together=('jumpCloneID',),
-                              extra_selectors={'owner': self},
-                              owner=self,
-                              pre_save=True)
+                                                JumpCloneImplant,
+                                                unique_together=('jumpCloneID', 'typeID'),
+                                                extra_selectors={'owner': self},
+                                                owner=self,
+                                                exclude=['jumpCloneID'],
+                                                pre_save=False)
         JumpCloneImplant.objects.filter(owner=self).exclude(pk__in=clone_implants).delete()
 
 
@@ -211,6 +216,17 @@ class JumpCloneImplant(models.Model):
     typeID = models.IntegerField()
     typeName = models.CharField(max_length=255)
     owner = models.ForeignKey(CharacterSheet)
+
+    def update_from_api(self, implant, handler):
+        try:
+            self.jumpCloneID = JumpClone.objects.get(pk=implant.jumpCloneID)
+        except JumpClone.DoesNotExist:
+            log.warning('Could not save jump clone implant for jump clone {0} belonging to character "{1}" ({2}).'.format(
+                implant.jumpCloneID,
+                self.owner.name,
+                self.owner.pk
+            ))
+        self.save()
 
     class Meta:
         unique_together = ('jumpCloneID', 'typeID')
@@ -351,14 +367,20 @@ class Asset(models.Model):
             self.parent_id = item['parent']
 
     def get_contents(self):
-        return self.objects.filter(owner=self.owner,
-                                   parent_id=self.itemID)
+        return Asset.objects.filter(owner=self.owner,
+                                    parent_id=self.itemID)
 
     def get_volume(self):
         if self.singleton:
             return self.item_volume + self.container_volume
         else:
             return self.item_volume
+
+    def get_value(self):
+        if self.singleton:
+            return self.item_value + self.container_value
+        else:
+            return self.item_value
 
     def compute_statistics(self):
         if self.typeID == 51:
@@ -384,11 +406,18 @@ class Asset(models.Model):
 
 
     def compute_container_volume(self):
-        self.container_volume = 0.0
-        if self.singleton:
-            contents = self.get_contents()
-            for item in contents:
-                self.container_volume += item.get_volume()
+        volume = Decimal(0.0)
+        contents = self.get_contents()
+        for item in contents:
+            volume += item.get_volume()
+        self.container_volume = volume
+
+    def compute_container_value(self):
+        value = Decimal(0.0)
+        contents = self.get_contents()
+        for item in contents:
+            value += item.get_value()
+        self.container_value = value
 
     def update_from_api(self, item, handler):
         self.compute_statistics()
