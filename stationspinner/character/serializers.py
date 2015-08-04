@@ -60,6 +60,12 @@ class CharacterSheetListSerializer(serializers.ModelSerializer):
         exclude = ('owner', 'enabled', 'owner_key')
 
 
+class CharacterSheetShortListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CharacterSheet
+        fields = ('name', 'characterID')
+
+
 class CharacterImplantSerializer(serializers.ModelSerializer):
     class Meta:
         model = CharacterImplant

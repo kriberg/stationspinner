@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from stationspinner.character.serializers import CharacterSheetSerializer, \
     AssetSerializer, CharacterSheetListSerializer, NotificationSerializer, \
     MailMessageSerializer, ShortformAllianceSerializer, \
-    ShortformCorporationSerializer, WalletTransactionSerializer
+    CharacterSheetShortListSerializer, ShortformCorporationSerializer, \
+    WalletTransactionSerializer
 from stationspinner.character.models import CharacterSheet, \
     Asset, Notification, MailMessage, WalletTransaction, \
     WalletJournal
@@ -19,11 +20,18 @@ class CharacterSheetViewset(viewsets.ReadOnlyModelViewSet):
     permission_classes = [CapsulerPermission]
 
     def list(self, request):
-        serializer = CharacterSheetListSerializer(
-            self.get_queryset(),
-            many=True,
-            context={'request': request}
-        )
+        if request.query_params.get('short', False):
+            serializer = CharacterSheetShortListSerializer(
+                self.get_queryset(),
+                many=True,
+                context={'request': request}
+            )
+        else:
+            serializer = CharacterSheetListSerializer(
+                self.get_queryset(),
+                many=True,
+                context={'request': request}
+            )
         return Response(serializer.data)
 
     def get_queryset(self):
