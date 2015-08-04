@@ -43,13 +43,13 @@ def get_location_name(location_id):
             location_id = int(location_id)
         except:
             return location_id
-    if location_id >= 66000000 and location_id <= 66014933:
+    if location_id >= 66000000 and location_id <= 66015152:
         try:
             loc = StaStation.objects.get(pk=(int(location_id)-6000001))
             return loc.stationName
         except:
             pass
-    elif location_id >= 66014934 and location_id <= 67999999:
+    elif location_id >= 66015153 and location_id <= 67999999:
         try:
             loc = ConquerableStation.objects.get(pk=(int(location_id)-6000000))
             return loc.stationName
@@ -108,13 +108,13 @@ def get_location(location_id):
             location_id = int(location_id)
         except:
             return location_id
-    if location_id >= 66000000 and location_id <= 66014933:
+    if location_id >= 66000000 and location_id <= 66015151:
         try:
             loc = StaStation.objects.get(pk=(int(location_id)-6000001))
             return loc
         except:
             pass
-    elif location_id >= 66014934 and location_id <= 67999999:
+    elif location_id >= 66015151 and location_id <= 67999999:
         try:
             loc = ConquerableStation.objects.get(pk=(int(location_id)-6000000))
             return loc
