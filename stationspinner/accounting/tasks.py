@@ -289,10 +289,15 @@ def validate_key(apikey_pk):
         targets = []
         for call_type in APICall.objects.filter(type='Corporation'):
             if call_type.accessMask & apikey.accessMask > 0:
-                target, created = APIUpdate.objects.update_or_create(owner=apikey.corporationID,
-                                                   apicall=call_type,
-                                                   defaults={'apikey': apikey})
-                targets.append(target.pk)
+                # We have now found a APICall and an APIKey capable to do that call
+                # Check if there's already an APIUpdate with another key that does
+                # this call, if not update/create for this key
+                if APIUpdate.objects.filter(owner=apikey.corporationID,
+                                            apicall=call_type).count() == 0:
+                    target, created = APIUpdate.objects.update_or_create(owner=apikey.corporationID,
+                                                       apicall=call_type,
+                                                       defaults={'apikey': apikey})
+                    targets.append(target.pk)
 
         # If a key access mask is changed, there could be residual targets
         # registered with that key, so we'll delete those
@@ -309,10 +314,12 @@ def validate_key(apikey_pk):
         targets = []
         for call_type in APICall.objects.filter(type='Character'):
             if call_type.accessMask & apikey.accessMask > 0:
-                target, created = APIUpdate.objects.update_or_create(owner=apikey.characterID,
-                                                   apicall=call_type,
-                                                   defaults={'apikey': apikey})
-                targets.append(target.pk)
+                if APIUpdate.objects.filter(owner=apikey.characterID,
+                                            apicall=call_type).count() == 0:
+                    target, created = APIUpdate.objects.update_or_create(owner=apikey.characterID,
+                                                       apicall=call_type,
+                                                       defaults={'apikey': apikey})
+                    targets.append(target.pk)
         APIUpdate.objects.filter(owner=apikey.corporationID).exclude(pk__in=targets).delete()
     elif keyinfo.key.type == 'Account':
         apikey.save()
@@ -320,10 +327,12 @@ def validate_key(apikey_pk):
         for char in keyinfo.key.characters:
             for call_type in APICall.objects.filter(type='Character'):
                 if call_type.accessMask & apikey.accessMask > 0:
-                    target, created = APIUpdate.objects.update_or_create(owner=char.characterID,
-                                                       apicall=call_type,
-                                                       defaults={'apikey': apikey})
-                    targets.append(target.pk)
+                    if APIUpdate.objects.filter(owner=char.characterID,
+                                                apicall=call_type).count() == 0:
+                        target, created = APIUpdate.objects.update_or_create(owner=char.characterID,
+                                                           apicall=call_type,
+                                                           defaults={'apikey': apikey})
+                        targets.append(target.pk)
         APIUpdate.objects.filter(owner=apikey.corporationID).exclude(pk__in=targets).delete()
     else:
         apikey.save()
