@@ -12,6 +12,9 @@ from stationspinner.character.models import CharacterSheet, \
     Asset, Notification, MailMessage, WalletTransaction, \
     WalletJournal
 from stationspinner.libs.drf_extensions import CapsulerPermission
+from stationspinner.libs.assethandlers import CharacterAssetHandler
+from datetime import datetime
+
 
 
 class CharacterSheetViewset(viewsets.ReadOnlyModelViewSet):
@@ -118,6 +121,7 @@ class WalletTransactionsViewset(viewsets.ReadOnlyModelViewSet):
 
 class AssetLocationsView(views.APIView):
     permission_classes = [CapsulerPermission]
+    handler = CharacterAssetHandler()
 
     def get(self, request, format=None):
         characterIDs = request.query_params.get('characterIDs', None)
@@ -133,10 +137,5 @@ class AssetLocationsView(views.APIView):
         if not characterIDs:
             characterIDs = CharacterSheet.objects.filter(owner=request.user).values_list('characterID', flat=True)
 
-        key = hash(('asset_locations', characterIDs.__hash__, regionID))
-        asset_locations = cache.get(key, None)
-        if not asset_locations:
-            asset_locations = Asset.objects.get_top_level_locations(characterIDs, regionID)
-            cache.set(key, asset_locations, 1800)
-
+        asset_locations = self.handler.get_merged_asset_locations(tuple(characterIDs))
         return Response(asset_locations)

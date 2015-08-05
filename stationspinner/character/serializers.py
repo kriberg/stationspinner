@@ -142,6 +142,8 @@ class AssetSerializer(serializers.ModelSerializer):
             'rawQuantity',
             'item_value',
             'item_volume',
+            'container_value',
+            'container_volume'
         )
 
 

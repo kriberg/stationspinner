@@ -10,6 +10,7 @@ from stationspinner.corporation.models import CorporationSheet, AssetList, \
     Blueprint
 
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
+from stationspinner.libs.assethandlers import CorporationAssetHandler
 
 from celery.utils.log import get_task_logger
 
@@ -110,6 +111,8 @@ def fetch_assetlist(apiupdate_pk):
                                            Asset,
                                            corporation)
     assetlist.save()
+    handler = CorporationAssetHandler()
+    handler.invalidate_entity(corporation.pk)
     target.updated(api_data)
 
 

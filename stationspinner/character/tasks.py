@@ -8,6 +8,7 @@ from stationspinner.character.models import CharacterSheet, WalletJournal, \
 from stationspinner.universe.models import EveName
 from stationspinner.libs.eveapihandler import EveAPIHandler
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
+from stationspinner.libs.assethandlers import CharacterAssetHandler
 
 from celery.utils.log import get_task_logger
 
@@ -304,8 +305,9 @@ def fetch_assetlist(apiupdate_pk):
     assetlist.items = handler.asset_parser(api_data.assets,
                                            Asset,
                                            character)
-
     assetlist.save()
+    handler = CharacterAssetHandler()
+    handler.invalidate_entity(character.pk)
     target.updated(api_data)
 
 

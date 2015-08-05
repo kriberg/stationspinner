@@ -316,6 +316,7 @@ class AssetManager(models.Manager):
                 locationID = location
             else:
                 locationID = location.pk
+
             out.append({'regionName': get_location_regionName(location),
                         'regionID': get_location_regionID(location),
                         'solarSystemName': get_location_solarSystemName(location),
