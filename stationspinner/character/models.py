@@ -99,7 +99,7 @@ class CharacterSheet(models.Model):
         return self.name
 
     def update_from_api(self, sheet, handler):
-        handler.autoparse(sheet, self, ignore=('skills',
+        handler.autoparse(sheet, self, exclude=('skills',
                                                'jumpClones',
                                                'jumpCloneImplants',
                                                'implants'))
@@ -139,8 +139,8 @@ class CharacterSheet(models.Model):
                                                 JumpCloneImplant,
                                                 unique_together=('jumpCloneID', 'typeID'),
                                                 extra_selectors={'owner': self},
+                                                exclude=('jumpCloneID',),
                                                 owner=self,
-                                                exclude=['jumpCloneID'],
                                                 pre_save=False)
         JumpCloneImplant.objects.filter(owner=self).exclude(pk__in=clone_implants).delete()
 
@@ -216,17 +216,6 @@ class JumpCloneImplant(models.Model):
     typeID = models.IntegerField()
     typeName = models.CharField(max_length=255)
     owner = models.ForeignKey(CharacterSheet)
-
-    def update_from_api(self, implant, handler):
-        try:
-            self.jumpCloneID = JumpClone.objects.get(pk=implant.jumpCloneID)
-        except JumpClone.DoesNotExist:
-            log.warning('Could not save jump clone implant for jump clone {0} belonging to character "{1}" ({2}).'.format(
-                implant.jumpCloneID,
-                self.owner.name,
-                self.owner.pk
-            ))
-        self.save()
 
     class Meta:
         unique_together = ('jumpCloneID', 'typeID')
