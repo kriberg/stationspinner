@@ -46,7 +46,7 @@ class EveAPIHandler():
                 defaults[attribute] = getattr(result, attribute)
         return defaults
 
-    def autoparse(self, result, obj, ignore=()):
+    def autoparse(self, result, obj, exclude=()):
         """
         Tries to match the field names of the django model with the results
         from the eveapi. If the names match up, set the model values for those
@@ -55,9 +55,9 @@ class EveAPIHandler():
         :param obj: The target django model
         :return: None
         """
-        kwargs = self._create_defaults(result, obj._meta.get_all_field_names())
+        kwargs = self._create_defaults(result, obj._meta.get_all_field_names(), exclude)
         for attribute, value in kwargs.items():
-            if attribute in ignore:
+            if attribute in exclude:
                 continue
             setattr(obj, attribute, value)
         return obj
@@ -66,10 +66,10 @@ class EveAPIHandler():
                      entry,
                      objClass,
                      unique_together=(),
-                      extra_selectors={},
-                      owner=None,
-                      exclude=(),
-                      pre_save=False):
+                     extra_selectors={},
+                     owner=None,
+                     exclude=(),
+                     pre_save=False):
 
         selectors = {}
         for column in unique_together:
@@ -143,7 +143,6 @@ class EveAPIHandler():
                     obj, created = objClass.objects.update_or_create(defaults=defaults,
                                                                      **selectors)
                 except ValueError, ve:
-                    print defaults, selectors
                     raise ve
             else:
                 obj = objClass(**defaults)
@@ -217,7 +216,6 @@ class EveAPIHandler():
                     obj, created = objClass.objects.update_or_create(defaults=defaults,
                                                                      **selectors)
                 except ValueError, ve:
-                    print defaults, selectors
                     raise ve
             else:
                 obj = objClass(**defaults)
