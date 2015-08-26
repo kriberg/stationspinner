@@ -293,7 +293,7 @@ class InvFlag(models.Model):
 
 class InvGroup(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'groupID')
-    categoryID = models.BigIntegerField(null=True, blank=True)
+    category = models.ForeignKey('InvCategory', null=True, db_column=u'categoryID')
     groupName = models.TextField(blank=True)
     icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     useBasePrice = models.NullBooleanField(null=True, blank=True)
@@ -402,17 +402,18 @@ class InvPosition(models.Model):
 
 class InvType(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'typeID')
-    groupID = models.BigIntegerField(null=True, blank=True)
+    group = models.ForeignKey('InvGroup', null=True, db_column=u'groupID')
     typeName = models.TextField(blank=True)
     description = models.TextField(blank=True)
     mass = models.FloatField(null=True, blank=True)
     volume = models.FloatField(null=True, blank=True)
     capacity = models.FloatField(null=True, blank=True)
     portionSize = models.BigIntegerField(null=True, blank=True)
-    raceID = models.SmallIntegerField(null=True, blank=True)
+    race = models.ForeignKey('ChrRace', null=True, db_column=u'raceID')
+    icon = models.ForeignKey('EveIcon', null=True, db_column=u'iconID')
     basePrice = models.DecimalField(null=True, max_digits=19, decimal_places=4, blank=True)
     published = models.NullBooleanField(null=True, blank=True)
-    marketGroupID = models.BigIntegerField(null=True, blank=True)
+    marketGroup = models.ForeignKey('InvMarketGroup', null=True, db_column=u'marketGroupID')
 
     class Meta:
         db_table = u'invTypes'
