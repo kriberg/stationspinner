@@ -124,18 +124,56 @@ class AssetLocationsView(views.APIView):
     handler = CharacterAssetHandler()
 
     def get(self, request, format=None):
-        characterIDs = request.query_params.get('characterIDs', None)
-        regionID = request.query_params.get('regionID', None)
+        characterIDs = request.query_params.get('characterIDs', [])
+        locationIDs = request.query_params.get('locationIDs', None)
+        locationID = request.query_params.get('locationID', None)
 
-        if characterIDs:
+        if locationID and not locationIDs:
+            locationIDs = locationID
+
+        if locationIDs:
+            locationIDs = str(locationIDs).split(',')
+        else:
+            locationIDs = []
+
+        if len(characterIDs) > 0:
             try:
                 characterIDs = str(characterIDs).split(',')
                 valid, invalid = CharacterSheet.objects.filter_valid(characterIDs, request.user)
                 characterIDs = valid
             except:
-                characterIDs = None
-        if not characterIDs:
-            characterIDs = CharacterSheet.objects.filter(owner=request.user).values_list('characterID', flat=True)
+                characterIDs = []
+            asset_locations = self.handler.get_merged_asset_locations(characterIDs,
+                                                                      locationIDs=locationIDs)
+        else:
+            asset_locations = []
 
-        asset_locations = self.handler.get_merged_asset_locations(tuple(characterIDs))
         return Response(asset_locations)
+
+
+class AssetsView(views.APIView):
+    permission_classes = [CapsulerPermission]
+    handler = CharacterAssetHandler()
+
+    def get(self, request, format=None):
+        characterIDs = request.query_params.get('characterIDs', [])
+        locationID = request.query_params.get('locationID', None)
+        parentID = request.query_params.get('parentID', None)
+
+        if len(characterIDs) > 0 and locationID:
+            try:
+                characterIDs = str(characterIDs).split(',')
+                valid, invalid = CharacterSheet.objects.filter_valid(characterIDs, request.user)
+                characterIDs = valid
+            except:
+                characterIDs = []
+
+            assets = self.handler.get_location_assets(
+                tuple(characterIDs),
+                locationID=locationID,
+                parent_id=parentID
+            )
+        else:
+            assets = []
+
+        return Response(assets)

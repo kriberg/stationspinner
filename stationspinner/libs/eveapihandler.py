@@ -235,6 +235,7 @@ class EveAPIHandler():
     def asset_parser(self, assets, AssetClass, owner):
         location_cache = {}
         type_cache = {}
+        category_cache = {}
         def parse_rowset(rowset, locationID=None, parent=None, path=()):
             contents = []
             for row in rowset:
@@ -247,14 +248,20 @@ class EveAPIHandler():
                     locationName = get_location_name(locationID)
                     location_cache[locationID] = locationName
 
-                if row.typeID in type_cache:
+                if row.typeID in type_cache and row.typeID in category_cache:
                     typeName = type_cache[row.typeID]
+                    category = category_cache[row.typeID]
                 else:
                     try:
                         item_type = InvType.objects.get(pk=row.typeID)
                         typeName = item_type.typeName
+                        category = item_type.group.category.pk
+                        type_cache[row.typeID] = typeName
+                        category_cache[row.typeID] = category
                     except InvType.DoesNotExist:
                         typeName = None
+                    except:
+                        category = None
 
                 item = {
                     'itemID': row.itemID,
@@ -264,6 +271,7 @@ class EveAPIHandler():
                     'typeName': typeName,
                     'quantity': row.quantity,
                     'flag': row.flag,
+                    'category': category,
                     'singleton': row.singleton,
                     'parent': parent,
                 }

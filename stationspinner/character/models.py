@@ -287,34 +287,6 @@ class AssetList(models.Model):
         return "{0}'s assets ({1})".format(self.owner, self.retrieved)
 
 
-class AssetManager(models.Manager):
-    def get_top_level_locations(self, characterIDs, regionID=None):
-        asset_locations = self.filter(owner__in=characterIDs)
-
-        if regionID:
-            asset_locations = asset_locations.filter(regionID=regionID)
-
-        asset_locations = asset_locations.distinct('locationID'). \
-            values_list('locationID', flat=True)
-
-        locations = [get_location(locationID) for locationID in asset_locations]
-
-        out = []
-        for location in locations:
-            if type(location) is long:
-                locationID = location
-            else:
-                locationID = location.pk
-
-            out.append({'regionName': get_location_regionName(location),
-                        'regionID': get_location_regionID(location),
-                        'solarSystemName': get_location_solarSystemName(location),
-                        'solarSystemID': get_location_solarSystemID(location),
-                        'name': get_location_name(locationID),
-                        'locationID': locationID})
-        return out
-
-
 class Asset(models.Model):
     itemID = models.BigIntegerField()
     quantity = models.BigIntegerField()
@@ -329,6 +301,7 @@ class Asset(models.Model):
     rawQuantity = models.IntegerField(default=0)
     path = models.CharField(max_length=255, default='')
     parent_id = models.BigIntegerField(null=True)
+    category = models.IntegerField(null=True)
 
     item_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
     item_volume = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
@@ -336,8 +309,6 @@ class Asset(models.Model):
     container_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
 
     owner = models.ForeignKey(CharacterSheet)
-
-    objects = AssetManager()
 
     def from_item(self, item, path):
         self.itemID = item['itemID']
@@ -349,12 +320,16 @@ class Asset(models.Model):
         self.flag = item['flag']
         self.singleton = item['singleton']
         self.path = ".".join(map(str, path))
+        self.category = item['category']
 
         if 'rawQuantity' in item:
             self.rawQuantity = item['rawQuantity']
 
         if 'parent' in item:
             self.parent_id = item['parent']
+
+    def categorize(self):
+        self.category = InvType.objects.get(pk=self.typeID).group.category.pk
 
     def get_contents(self):
         return Asset.objects.filter(owner=self.owner,
@@ -377,7 +352,8 @@ class Asset(models.Model):
             # 51 is bookmark
             return
         from stationspinner.evecentral.pragma import get_item_market_value
-        self.item_value = get_item_market_value(self.typeID) * self.quantity
+        if self.rawQuantity > -2:
+            self.item_value = get_item_market_value(self.typeID) * self.quantity
         try:
             item = InvType.objects.get(pk=self.typeID)
         except InvType.DoesNotExist:
@@ -386,9 +362,9 @@ class Asset(models.Model):
         if not item.volume:
             log.warning('TypeID {0} has no volume.'.format(self.typeID))
             return
-        if not self.singleton and item.groupID in PACKAGED_VOLUME.keys():
+        if not self.singleton and item.group.pk in PACKAGED_VOLUME.keys():
             try:
-                self.item_volume = get_item_packaged_volume(item.groupID, item.pk) * self.quantity
+                self.item_volume = get_item_packaged_volume(item.group.pk, item.pk) * self.quantity
             except UnknownPackagedItem:
                 pass
         else:

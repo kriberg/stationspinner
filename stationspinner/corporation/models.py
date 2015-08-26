@@ -385,6 +385,7 @@ class Asset(models.Model):
     rawQuantity = models.IntegerField(default=0)
     path = models.CharField(max_length=255, default='')
     parent_id = models.BigIntegerField(null=True)
+    category = models.IntegerField(null=True)
 
     item_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
     item_volume = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
@@ -405,12 +406,16 @@ class Asset(models.Model):
         self.flag = item['flag']
         self.singleton = item['singleton']
         self.path = ".".join(map(str, path))
+        self.category = item['category']
 
         if 'rawQuantity' in item:
             self.rawQuantity = item['rawQuantity']
 
         if 'parent' in item:
             self.parent_id = item['parent']
+
+    def categorize(self):
+        self.category = InvType.objects.get(pk=self.typeID).group.category.pk
 
     def get_contents(self):
         return Asset.objects.filter(owner=self.owner,
@@ -442,9 +447,9 @@ class Asset(models.Model):
         if not item.volume:
             log.warning('TypeID {0} has no volume.'.format(self.typeID))
             return
-        if not self.singleton and item.groupID in PACKAGED_VOLUME.keys():
+        if not self.singleton and item.group.pk in PACKAGED_VOLUME.keys():
             try:
-                self.item_volume = get_item_packaged_volume(item.groupID, item.pk) * self.quantity
+                self.item_volume = get_item_packaged_volume(item.group.pk, item.pk) * self.quantity
             except UnknownPackagedItem:
                 pass
         else:

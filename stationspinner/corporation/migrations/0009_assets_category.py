@@ -7,13 +7,13 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('character', '0030_assetsummary_init'),
+        ('corporation', '0008_assetsummary_init'),
     ]
 
     operations = [
         migrations.RunSQL(
             sql = '''
-            ALTER TABLE character_asset ADD COLUMN category BIGINT;
+            ALTER TABLE corporation_asset ADD COLUMN category BIGINT;
             COMMIT;
             '''
         ),
