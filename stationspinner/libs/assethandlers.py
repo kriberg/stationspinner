@@ -129,7 +129,6 @@ class BaseAssetHandler():
                         'locationIDs': tuple(locationIDs)
                      }
                 )
-                print cursor.query
                 asset_locations = cursor.fetchone()[0]
                 self.annotate_locations(asset_locations)
                 self._cache_data(keyset, asset_locations)
@@ -183,7 +182,6 @@ class BaseAssetHandler():
                     'locationID': locationID,
                     'parent_id': parent_id
                 })
-                print cursor.query
                 assets = cursor.fetchone()[0]
                 self._cache_data(keyset, assets)
         return assets
