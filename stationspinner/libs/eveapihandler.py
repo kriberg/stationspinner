@@ -232,10 +232,40 @@ class EveAPIHandler():
 
         return obj_list
 
-    def asset_parser(self, assets, AssetClass, owner):
+    def asset_parser(self, assets, AssetClass, owner, api_update):
         location_cache = {}
         type_cache = {}
         category_cache = {}
+        itemIDs_to_names = []
+
+        def asset_with_name(asset):
+            '''
+            Checks if this asset might have given name.
+            :param asset:
+            :return:
+            '''
+
+            # only singletons have names
+            if not asset.singleton:
+                return False
+
+            # 5:  bookmarks
+            # 7:  modules
+            # 8:  ammo
+            # 9:  blueprints
+            # 17: commodities
+            # 18: drones
+            # 32: subsystems
+            if asset.category in (5, 7, 8, 9, 17, 18, 32):
+                return False
+
+            # 25: corpses
+            # 27: offices, need to use the corp endpoints for this
+            if asset.typeID in (25, 27):
+                return False
+
+            return True
+
         def parse_rowset(rowset, locationID=None, parent=None, path=()):
             contents = []
             for row in rowset:
@@ -286,6 +316,9 @@ class EveAPIHandler():
                     asset.update_from_api(item, self)
                 asset.save()
 
+                if asset_with_name(asset):
+                    itemIDs_to_names.append(str(asset.itemID))
+
                 if hasattr(row, 'contents'):
                     item['contents'] = parse_rowset(row.contents,
                                                     locationID=locationID,
@@ -306,5 +339,4 @@ class EveAPIHandler():
             store[container['itemID']] = container
 
 
-        return store
-
+        return store, itemIDs_to_names

@@ -15,6 +15,7 @@ from stationspinner.libs.pragma import get_item_packaged_volume, \
     get_location_regionID, get_location_regionName, \
     get_location_solarSystemID, get_location_solarSystemName
 from celery.utils.log import get_task_logger
+from django.db import connections
 log = get_task_logger(__name__)
 
 class Skill(models.Model):
@@ -30,7 +31,7 @@ class Skill(models.Model):
     def update_from_api(self, data, handler):
         skill = InvType.objects.get(pk=self.typeID)
         self.typeName = skill.typeName
-        self.skill_group = InvGroup.objects.get(pk=skill.groupID).groupName
+        self.skill_group = skill.group.groupName
         self.save()
 
     class Meta:
@@ -302,6 +303,7 @@ class Asset(models.Model):
     path = models.CharField(max_length=255, default='')
     parent_id = models.BigIntegerField(null=True)
     category = models.IntegerField(null=True)
+    search_tokens = models.TextField(null=True)
 
     item_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
     item_volume = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
@@ -309,6 +311,45 @@ class Asset(models.Model):
     container_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
 
     owner = models.ForeignKey(CharacterSheet)
+
+    def update_search_tokens(self):
+        with connections['default'].cursor() as cursor:
+            if self.singleton:
+                fitted = 'fitted'
+            else:
+                fitted = 'unfitted'
+            try:
+                cursor.execute('''
+                UPDATE
+                    character_asset
+                SET
+                    search_tokens =
+                        setweight(to_tsvector(unaccent(%(typeName)s)), 'B') ||
+                        setweight(to_tsvector(unaccent(%(locationName)s)), 'B') ||
+                        setweight(to_tsvector(unaccent(%(itemName)s)), 'A') ||
+                        setweight(to_tsvector(unaccent(%(groupName)s)), 'D') ||
+                        setweight(to_tsvector(unaccent(%(categoryName)s)), 'D') ||
+                        setweight(to_tsvector(unaccent(%(fitted)s)), 'C')
+                WHERE
+                    id = %(pk)s''',
+                               {
+                                   'pk': self.pk,
+                                   'typeName': self.typeName,
+                                   'locationName': self.locationName,
+                                   'itemName': self.item_name(),
+                                   'groupName': self.get_type().group.groupName,
+                                   'categoryName': self.get_type().group.category.categoryName,
+                                   'fitted': fitted
+                               })
+            except:
+                print cursor.query
+
+    def item_name(self):
+        try:
+            return ItemLocationName.objects.get(itemID=self.itemID,
+                                                owner=self.owner).itemName
+        except ItemLocationName.DoesNotExist:
+            return ''
 
     def from_item(self, item, path):
         self.itemID = item['itemID']
@@ -329,7 +370,7 @@ class Asset(models.Model):
             self.parent_id = item['parent']
 
     def categorize(self):
-        self.category = InvType.objects.get(pk=self.typeID).group.category.pk
+        self.category = self.get_type().group.category.pk
 
     def get_contents(self):
         return Asset.objects.filter(owner=self.owner,
@@ -393,6 +434,9 @@ class Asset(models.Model):
             self.solarSystemID = get_location_solarSystemID(location)
         except:
             pass
+
+    def get_type(self):
+        return InvType.objects.get(pk=self.typeID)
 
     class Meta:
         managed = False
@@ -879,6 +923,22 @@ class NPCStanding(models.Model):
 
     class Meta:
         unique_together = ('fromID', 'owner')
+
+
+class ItemLocationName(models.Model):
+    itemID = models.BigIntegerField(primary_key=True)
+    itemName = models.CharField(max_length=255)
+    owner = models.ForeignKey(CharacterSheet)
+    x = models.BigIntegerField(default=0)
+    y = models.BigIntegerField(default=0)
+    z = models.BigIntegerField(default=0)
+
+    def __unicode__(self):
+        return self.itemName
+
+    class Meta:
+        unique_together = ('itemID', 'owner')
+
 
 @receiver(post_save, sender=CharacterSheet)
 def update_apidata(sender, instance=None, created=False, **kwargs):

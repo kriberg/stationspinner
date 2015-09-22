@@ -7,14 +7,19 @@ from stationspinner.corporation.models import CorporationSheet, AssetList, \
     ContainerLog, Contract, ContractBid, NPCStanding, Facilities, \
     OutpostService, Shareholder, Starbase, StarbaseFuel, IndustryJob, \
     IndustryJobHistory, Outpost, WalletTransaction, WalletJournal, Asset, \
-    Blueprint
+    Blueprint, ItemLocationName
 
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
 from stationspinner.libs.assethandlers import CorporationAssetHandler
 
 from celery.utils.log import get_task_logger
+from traceback import format_exc
 
 log = get_task_logger(__name__)
+
+def _blocker(itr, size):
+    for i in xrange(0, len(itr), size):
+        yield itr[i:i+size]
 
 def _get_corporation_auth(apiupdate_pk):
     try:
@@ -107,10 +112,45 @@ def fetch_assetlist(apiupdate_pk):
     assetlist = AssetList(owner=corporation,
                           retrieved=api_data._meta.currentTime)
 
-    assetlist.items = handler.asset_parser(api_data.assets,
+    assetlist.items, itemIDs_with_names = handler.asset_parser(api_data.assets,
                                            Asset,
-                                           corporation)
+                                           corporation,
+                                           target)
     assetlist.save()
+    names_registered = 0
+    log.info('Fetching the item name of {0} items for "{1}".'.format(
+        len(itemIDs_with_names),
+        corporation
+    ))
+
+    for block in _blocker(itemIDs_with_names, 1000):
+        try:
+            api_data = auth.corp.Locations(IDs=','.join(block))
+        except Exception, ex:
+            log.warning('Could not fetch names for itemIDs "{0}", with APIKey {1}.\n{2}'.format(
+                block,
+                target.apikey.pk,
+                format_exc(ex)
+            ))
+            continue
+        IDs = handler.autoparse_list(api_data.locations,
+                               ItemLocationName,
+                               unique_together=('itemID',),
+                               extra_selectors={'owner': corporation},
+                               owner=corporation,
+                               pre_save=True)
+        names_registered += len(IDs)
+    old_names = ItemLocationName.objects.filter(owner=corporation).exclude(pk__in=itemIDs_with_names)
+    log.debug('Fetched {0} names and deleted {1} for "{2}"'.format(
+        names_registered,
+        old_names.count(),
+        corporation
+    ))
+    old_names.delete()
+
+    for asset in Asset.objects.filter(owner=corporation):
+        asset.update_search_tokens()
+
     handler = CorporationAssetHandler()
     handler.invalidate_entity(corporation.pk)
     target.updated(api_data)

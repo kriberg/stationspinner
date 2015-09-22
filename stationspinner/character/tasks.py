@@ -4,11 +4,13 @@ from stationspinner.character.models import CharacterSheet, WalletJournal, \
     Blueprint, Contact, Research, AssetList, MarketOrder, Medal, Notification, \
     WalletTransaction, PlanetaryColony, Contract, ContractItem, ContractBid, \
     SkillQueue, MailingList, ContactNotification, MailMessage, \
-    SkillInTraining, IndustryJob, IndustryJobHistory, NPCStanding, Asset
+    SkillInTraining, IndustryJob, IndustryJobHistory, NPCStanding, Asset, \
+    ItemLocationName
 from stationspinner.universe.models import EveName
 from stationspinner.libs.eveapihandler import EveAPIHandler
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
 from stationspinner.libs.assethandlers import CharacterAssetHandler
+from traceback import format_exc
 
 from celery.utils.log import get_task_logger
 
@@ -25,6 +27,9 @@ def _get_character_auth(apiupdate_pk):
 
     return target, character
 
+def _blocker(itr, size):
+    for i in xrange(0, len(itr), size):
+        yield itr[i:i+size]
 
 @app.task(name='character.fetch_charactersheet', max_retries=0)
 def fetch_charactersheet(apiupdate_pk):
@@ -302,10 +307,47 @@ def fetch_assetlist(apiupdate_pk):
     assetlist = AssetList(owner=character,
                           retrieved=api_data._meta.currentTime)
 
-    assetlist.items = handler.asset_parser(api_data.assets,
-                                           Asset,
-                                           character)
+    assetlist.items, itemIDs_with_names = handler.asset_parser(api_data.assets,
+                                                               Asset,
+                                                               character,
+                                                               target)
     assetlist.save()
+    names_registered = 0
+    log.debug('Fetching the item name of {0} items.'.format(len(itemIDs_with_names)))
+
+    for block in _blocker(itemIDs_with_names, 1000):
+        try:
+            if target.apikey.type == 'Account':
+
+                api_data = auth.char.Locations(characterID=character.pk,
+                                               IDs=','.join(block))
+            else:
+                api_data = auth.char.Locations(IDs=','.join(block))
+        except Exception, ex:
+            log.warning('Could not fetch names for itemIDs "{0}", with APIKey {1}.\n{2}'.format(
+                block,
+                target.apikey.pk,
+                format_exc(ex)
+            ))
+            continue
+        IDs = handler.autoparse_list(api_data.locations,
+                               ItemLocationName,
+                               unique_together=('itemID',),
+                               extra_selectors={'owner': character},
+                               owner=character,
+                               pre_save=True)
+        names_registered += len(IDs)
+    old_names = ItemLocationName.objects.filter(owner=character).exclude(pk__in=itemIDs_with_names)
+    log.debug('Fetched {0} names and deleted {1} for "{2}"'.format(
+        names_registered,
+        old_names.count(),
+        character
+    ))
+    old_names.delete()
+
+    for asset in Asset.objects.filter(owner=character):
+        asset.update_search_tokens()
+
     handler = CharacterAssetHandler()
     handler.invalidate_entity(character.pk)
     target.updated(api_data)

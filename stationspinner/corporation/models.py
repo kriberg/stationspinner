@@ -13,6 +13,7 @@ from stationspinner.libs.pragma import get_item_packaged_volume, \
     get_location_solarSystemID, get_location_solarSystemName
 from stationspinner.sde.models import InvType
 from celery.utils.log import get_task_logger
+from django.db import connections
 log = get_task_logger(__name__)
 
 class CorporationSheet(models.Model):
@@ -344,33 +345,6 @@ class AssetList(models.Model):
         return "{0}'s assets ({1})".format(self.owner, self.retrieved)
 
 
-class AssetManager(models.Manager):
-    def get_top_level_locations(self, corporationID, regionID=None):
-        asset_locations = self.filter(owner=corporationID)
-
-        if regionID:
-            asset_locations = asset_locations.filter(regionID=regionID)
-
-        asset_locations = asset_locations.distinct('locationID'). \
-            values_list('locationID', flat=True)
-
-        locations = [get_location(locationID) for locationID in asset_locations]
-
-        out = []
-        for location in locations:
-            if type(location) is long:
-                locationID = location
-            else:
-                locationID = location.pk
-            out.append({'regionName': get_location_regionName(location),
-                        'regionID': get_location_regionID(location),
-                        'solarSystemName': get_location_solarSystemName(location),
-                        'solarSystemID': get_location_solarSystemID(location),
-                        'name': get_location_name(locationID),
-                        'locationID': locationID})
-        return out
-
-
 class Asset(models.Model):
     itemID = models.BigIntegerField()
     quantity = models.BigIntegerField()
@@ -386,6 +360,7 @@ class Asset(models.Model):
     path = models.CharField(max_length=255, default='')
     parent_id = models.BigIntegerField(null=True)
     category = models.IntegerField(null=True)
+    search_tokens = models.TextField(null=True)
 
     item_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
     item_volume = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
@@ -394,7 +369,41 @@ class Asset(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
-    objects = AssetManager()
+    def update_search_tokens(self):
+        with connections['default'].cursor() as cursor:
+            if self.singleton:
+                fitted = 'fitted'
+            else:
+                fitted = 'unfitted'
+            cursor.execute('''
+            UPDATE
+                corporation_asset
+            SET
+                    search_tokens =
+                        setweight(to_tsvector(unaccent(%(typeName)s)), 'B') ||
+                        setweight(to_tsvector(unaccent(%(locationName)s)), 'B') ||
+                        setweight(to_tsvector(unaccent(%(itemName)s)), 'A') ||
+                        setweight(to_tsvector(unaccent(%(groupName)s)), 'D') ||
+                        setweight(to_tsvector(unaccent(%(categoryName)s)), 'D') ||
+                        setweight(to_tsvector(unaccent(%(fitted)s)), 'C')
+                WHERE
+                    id = %(pk)s''',
+                               {
+                                   'pk': self.pk,
+                                   'typeName': self.typeName,
+                                   'locationName': self.locationName,
+                                   'itemName': self.item_name(),
+                                   'groupName': self.get_type().group.groupName,
+                                   'categoryName': self.get_type().group.category.categoryName,
+                                   'fitted': fitted
+                               })
+
+    def item_name(self):
+        try:
+            return ItemLocationName.objects.get(itemID=self.itemID,
+                                                owner=self.owner).itemName
+        except ItemLocationName.DoesNotExist:
+            return ''
 
     def from_item(self, item, path):
         self.itemID = item['itemID']
@@ -415,7 +424,7 @@ class Asset(models.Model):
             self.parent_id = item['parent']
 
     def categorize(self):
-        self.category = InvType.objects.get(pk=self.typeID).group.category.pk
+        self.category = self.get_type().group.category.pk
 
     def get_contents(self):
         return Asset.objects.filter(owner=self.owner,
@@ -438,7 +447,8 @@ class Asset(models.Model):
             # 51 is bookmark
             return
         from stationspinner.evecentral.pragma import get_item_market_value
-        self.item_value = get_item_market_value(self.typeID) * self.quantity
+        if self.rawQuantity > -2:
+            self.item_value = get_item_market_value(self.typeID) * self.quantity
         try:
             item = InvType.objects.get(pk=self.typeID)
         except InvType.DoesNotExist:
@@ -476,7 +486,10 @@ class Asset(models.Model):
             self.regionID = get_location_regionID(location)
             self.solarSystemID = get_location_solarSystemID(location)
         except:
-            log.warning('Could not determine regionID or solarSystemID of locationID {0}.'.format(self.locationID))
+            pass
+
+    def get_type(self):
+        return InvType.objects.get(pk=self.typeID)
 
     class Meta:
         managed = False
@@ -696,6 +709,21 @@ class AccountBalance(models.Model):
 
     class Meta:
         unique_together = ('accountID', 'owner')
+
+
+class ItemLocationName(models.Model):
+    itemID = models.BigIntegerField(primary_key=True)
+    itemName = models.CharField(max_length=255)
+    owner = models.ForeignKey(CorporationSheet)
+    x = models.BigIntegerField(default=0)
+    y = models.BigIntegerField(default=0)
+    z = models.BigIntegerField(default=0)
+
+    def __unicode__(self):
+        return self.itemName
+
+    class Meta:
+        unique_together = ('itemID', 'owner')
 
 
 @receiver(post_save, sender=CorporationSheet)

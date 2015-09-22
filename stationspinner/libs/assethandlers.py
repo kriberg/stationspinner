@@ -77,7 +77,8 @@ class BaseAssetHandler():
                 item_volume as volume,
                 item_value as value,
                 container_value,
-                container_volume
+                container_volume,
+                owner_id as owner
             FROM
                 {0}
             WHERE
