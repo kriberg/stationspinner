@@ -147,7 +147,7 @@ INSTALLED_APPS = [
     'stationspinner.corporation',
     'stationspinner.evecentral',
     'stationspinner.evemail',
-    'registration',
+#   'registration',
     'bootstrapform',
 
 ]
@@ -186,20 +186,25 @@ LOGGING = {
     }
 }
 
+
+
 CACHES = {
     "default": {
-        "BACKEND": "redis_cache.cache.RedisCache",
-        "LOCATION": "127.0.0.1:6379:1",
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
         "OPTIONS": {
-            "CLIENT_CLASS": "redis_cache.client.DefaultClient",
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     }
 }
 
+
+
 # Celery settings
 
-BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+BROKER_URL = "amqp://armada:password@localhost:5672/armada"
+CELERY_RESULT_BACKEND = "amqp"
+CELERY_TASK_RESULT_EXPIRES = 86400
 AUTH_USER_MODEL = 'accounting.Capsuler'
 
 # Django rest framework settings

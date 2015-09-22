@@ -43,15 +43,19 @@ ALLOWED_HOSTS = [
     {%- endfor %}
 ]
 
+
+
 CACHES = {
     "default": {
-        "BACKEND": "redis_cache.cache.RedisCache",
-        "LOCATION": "{{ stationspinner.redis.host }}:{{ stationspinner.redis.port }}:{{ stationspinner.redis.cachedb }}",
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
         "OPTIONS": {
-            "CLIENT_CLASS": "redis_cache.client.DefaultClient",
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     }
 }
+
+
 
 BROKER_URL = "amqp://{{ stationspinner.rabbitmq.user }}:{{ stationspinner.rabbitmq.password }}@{{ stationspinner.rabbitmq.host }}:{{ stationspinner.rabbitmq.port }}/{{ stationspinner.rabbitmq.vhost }}"
 CELERY_RESULT_BACKEND = "amqp"
