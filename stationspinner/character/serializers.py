@@ -147,6 +147,27 @@ class AssetSerializer(serializers.ModelSerializer):
         )
 
 
+class AssetSearchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Asset
+        fields = (
+            'itemID',
+            'quantity',
+            'locationName',
+            'locationID',
+            'typeID',
+            'typeName',
+            'flag',
+            'singleton',
+            'rawQuantity',
+            'item_value',
+            'item_volume',
+            'item_name',
+            'container_value',
+            'container_volume',
+            'parent_list'
+        )
+
 class NotificationSerializer(serializers.ModelSerializer):
     owner = CharacterSheetShort(many=False)
     class Meta:

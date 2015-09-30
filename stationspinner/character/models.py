@@ -16,7 +16,9 @@ from stationspinner.libs.pragma import get_item_packaged_volume, \
     get_location_solarSystemID, get_location_solarSystemName
 from celery.utils.log import get_task_logger
 from django.db import connections
+
 log = get_task_logger(__name__)
+
 
 class Skill(models.Model):
     skillpoints = models.IntegerField(default=0)
@@ -56,20 +58,20 @@ class CharacterSheet(models.Model):
     enabled = models.BooleanField(default=False)
 
     # From the api
-    characterID = models.IntegerField(primary_key=True)                                     # auto
-    name = models.CharField(max_length=255)                                                 # auto
-    corporationID = models.IntegerField()                                                   # auto
-    corporationName = models.CharField(max_length=255)                                      # auto
-    bloodLine = models.CharField(max_length=50)                                             # auto
-    factionID = models.IntegerField(null=True, default=None)                                # auto
-    factionName = models.CharField(max_length=100, null=True, default=None)                 # auto
-    allianceName = models.CharField(max_length=255, blank=True, null=True, default=None)    # auto
-    ancestry = models.CharField(max_length=100)                                             # auto
-    balance = models.DecimalField(max_digits=30, decimal_places=2, null=True)               # auto
-    DoB = custom.DateTimeField()                                                            # auto
-    gender = models.CharField(max_length=6, choices=GENDER)                                 # auto
-    race = models.CharField(max_length=20)                                                  # auto
-    allianceID = models.IntegerField(null=True)                                             # auto
+    characterID = models.IntegerField(primary_key=True)  # auto
+    name = models.CharField(max_length=255)  # auto
+    corporationID = models.IntegerField()  # auto
+    corporationName = models.CharField(max_length=255)  # auto
+    bloodLine = models.CharField(max_length=50)  # auto
+    factionID = models.IntegerField(null=True, default=None)  # auto
+    factionName = models.CharField(max_length=100, null=True, default=None)  # auto
+    allianceName = models.CharField(max_length=255, blank=True, null=True, default=None)  # auto
+    ancestry = models.CharField(max_length=100)  # auto
+    balance = models.DecimalField(max_digits=30, decimal_places=2, null=True)  # auto
+    DoB = custom.DateTimeField()  # auto
+    gender = models.CharField(max_length=6, choices=GENDER)  # auto
+    race = models.CharField(max_length=20)  # auto
+    allianceID = models.IntegerField(null=True)  # auto
     cloneJumpDate = custom.DateTimeField(null=True)
     freeRespecs = models.IntegerField(default=0)
     lastRespecDate = custom.DateTimeField(null=True)
@@ -101,90 +103,86 @@ class CharacterSheet(models.Model):
 
     def update_from_api(self, sheet, handler):
         handler.autoparse(sheet, self, exclude=('skills',
-                                               'jumpClones',
-                                               'jumpCloneImplants',
-                                               'implants'))
+                                                'jumpClones',
+                                                'jumpCloneImplants',
+                                                'implants'))
         handler.autoparse(sheet.attributes, self)
         EveName.objects.register(self.pk, self.name)
 
         self.enabled = True
         self.save()
 
-
         implants = handler.autoparse_list(sheet.implants,
-                              CharacterImplant,
-                              unique_together=('typeID',),
-                              extra_selectors={'owner': self},
-                              owner=self,
-                              pre_save=True)
+                                          CharacterImplant,
+                                          unique_together=('typeID',),
+                                          extra_selectors={'owner': self},
+                                          owner=self,
+                                          pre_save=True)
         CharacterImplant.objects.filter(owner=self).exclude(pk__in=implants).delete()
 
         handler.autoparse_list(sheet.skills,
-                              Skill,
-                              unique_together=('typeID',),
-                              extra_selectors={'owner': self},
-                              owner=self,
-                              pre_save=True)
+                               Skill,
+                               unique_together=('typeID',),
+                               extra_selectors={'owner': self},
+                               owner=self,
+                               pre_save=True)
 
         self.recalculate_skillpoints()
 
         clones = handler.autoparse_list(sheet.jumpClones,
-                              JumpClone,
-                              unique_together=('jumpCloneID',),
-                              extra_selectors={'owner': self},
-                              owner=self,
-                              pre_save=True)
+                                        JumpClone,
+                                        unique_together=('jumpCloneID',),
+                                        extra_selectors={'owner': self},
+                                        owner=self,
+                                        pre_save=True)
         JumpClone.objects.filter(owner=self).exclude(pk__in=clones).delete()
 
         clone_implants = handler.autoparse_list(sheet.jumpCloneImplants,
                                                 JumpCloneImplant,
                                                 unique_together=('jumpCloneID', 'typeID'),
                                                 extra_selectors={'owner': self},
-                                                exclude=('jumpCloneID',),
                                                 owner=self,
                                                 pre_save=False)
         JumpCloneImplant.objects.filter(owner=self).exclude(pk__in=clone_implants).delete()
 
-
         roles = handler.autoparse_list(sheet.corporationRoles,
-                              CorporationRole,
-                              unique_together=('roleID', 'roleName'),
-                              extra_selectors={'owner': self, 'location': 'Global'},
-                              pre_save=True)
+                                       CorporationRole,
+                                       unique_together=('roleID', 'roleName'),
+                                       extra_selectors={'owner': self, 'location': 'Global'},
+                                       pre_save=True)
 
         roles += handler.autoparse_list(sheet.corporationRolesAtBase,
-                              CorporationRole,
-                              unique_together=('roleID', 'roleName'),
-                              extra_selectors={'owner': self, 'location': 'Base'},
-                              pre_save=True)
+                                        CorporationRole,
+                                        unique_together=('roleID', 'roleName'),
+                                        extra_selectors={'owner': self, 'location': 'Base'},
+                                        pre_save=True)
 
         roles += handler.autoparse_list(sheet.corporationRolesAtOther,
-                              CorporationRole,
-                              unique_together=('roleID', 'roleName'),
-                              extra_selectors={'owner': self, 'location': 'Other'},
-                              pre_save=True)
+                                        CorporationRole,
+                                        unique_together=('roleID', 'roleName'),
+                                        extra_selectors={'owner': self, 'location': 'Other'},
+                                        pre_save=True)
 
         roles += handler.autoparse_list(sheet.corporationRolesAtHQ,
-                              CorporationRole,
-                              unique_together=('roleID', 'roleName'),
-                              extra_selectors={'owner': self, 'location': 'HQ'},
-                              pre_save=True)
+                                        CorporationRole,
+                                        unique_together=('roleID', 'roleName'),
+                                        extra_selectors={'owner': self, 'location': 'HQ'},
+                                        pre_save=True)
 
         CorporationRole.objects.filter(owner=self).exclude(pk__in=roles).delete()
 
-
         titles = handler.autoparse_list(sheet.corporationTitles,
-                              CorporationTitle,
-                              unique_together=('titleID', 'titleName'),
-                              extra_selectors={'owner': self},
-                              pre_save=True)
+                                        CorporationTitle,
+                                        unique_together=('titleID', 'titleName'),
+                                        extra_selectors={'owner': self},
+                                        pre_save=True)
         CorporationTitle.objects.filter(owner=self).exclude(pk__in=titles).delete()
 
         certificates = handler.autoparse_list(sheet.certificates,
-                              Certificate,
-                              unique_together=('titleID', 'titleName'),
-                              extra_selectors={'owner': self},
-                              pre_save=True)
+                                              Certificate,
+                                              unique_together=('titleID', 'titleName'),
+                                              extra_selectors={'owner': self},
+                                              pre_save=True)
         Certificate.objects.filter(owner=self).exclude(pk__in=certificates).delete()
 
     def recalculate_skillpoints(self):
@@ -199,21 +197,30 @@ class CharacterImplant(models.Model):
 
 
 class JumpClone(models.Model):
-    jumpCloneID = models.IntegerField(primary_key=True)
+    jumpCloneID = models.BigIntegerField(primary_key=True)
     owner = models.ForeignKey(CharacterSheet, related_name='jumpClones')
     typeID = models.IntegerField()
     locationID = models.BigIntegerField()
     cloneName = models.CharField(max_length=255, blank=True, default='')
 
     def location(self):
-        return get_location_name(self.locationID)
+        location = get_location_name(self.locationID)
+        if location == self.locationID:
+            try:
+                location = ItemLocationName.objects.get(itemID=self.locationID)
+            except ItemLocationName.DoesNotExist:
+                pass
+        return location
+
+    def jumpCloneImplants(self):
+        return JumpCloneImplant.objects.filter(jumpCloneID=self.jumpCloneID)
 
     class Meta:
         unique_together = ('owner', 'jumpCloneID')
 
 
 class JumpCloneImplant(models.Model):
-    jumpCloneID = models.ForeignKey(JumpClone, related_name='jumpCloneImplants')
+    jumpCloneID = models.BigIntegerField()
     typeID = models.IntegerField()
     typeName = models.CharField(max_length=255)
     owner = models.ForeignKey(CharacterSheet)
@@ -288,6 +295,25 @@ class AssetList(models.Model):
         return "{0}'s assets ({1})".format(self.owner, self.retrieved)
 
 
+class AssetManager(models.Manager):
+    def search(self, characterIDs, query):
+        return self.raw('''
+        SELECT
+            *,
+            ts_rank(search_tokens, plainto_tsquery(%(query)s)) as relevancy
+        FROM
+            character_asset
+        WHERE
+            owner_id IN %(characterIDs)s AND
+            search_tokens @@ plainto_tsquery(%(query)s)
+        ORDER BY
+            relevancy DESC;
+        ''', {
+            'query': query,
+            'characterIDs': tuple(characterIDs)
+        })
+
+
 class Asset(models.Model):
     itemID = models.BigIntegerField()
     quantity = models.BigIntegerField()
@@ -312,6 +338,8 @@ class Asset(models.Model):
 
     owner = models.ForeignKey(CharacterSheet)
 
+    objects = AssetManager()
+
     def update_search_tokens(self):
         with connections['default'].cursor() as cursor:
             if self.singleton:
@@ -329,7 +357,8 @@ class Asset(models.Model):
                         setweight(to_tsvector(unaccent(%(itemName)s)), 'A') ||
                         setweight(to_tsvector(unaccent(%(groupName)s)), 'D') ||
                         setweight(to_tsvector(unaccent(%(categoryName)s)), 'D') ||
-                        setweight(to_tsvector(unaccent(%(fitted)s)), 'C')
+                        setweight(to_tsvector(unaccent(%(fitted)s)), 'C') ||
+                        setweight(to_tsvector(unaccent(%(owner)s)), 'B')
                 WHERE
                     id = %(pk)s''',
                                {
@@ -339,7 +368,8 @@ class Asset(models.Model):
                                    'itemName': self.item_name(),
                                    'groupName': self.get_type().group.groupName,
                                    'categoryName': self.get_type().group.category.categoryName,
-                                   'fitted': fitted
+                                   'fitted': fitted,
+                                   'owner': self.owner.name
                                })
             except:
                 print cursor.query
@@ -411,7 +441,6 @@ class Asset(models.Model):
         else:
             self.item_volume = item.volume * self.quantity
 
-
     def compute_container_volume(self):
         volume = Decimal(0.0)
         contents = self.get_contents()
@@ -438,6 +467,34 @@ class Asset(models.Model):
     def get_type(self):
         return InvType.objects.get(pk=self.typeID)
 
+    def get_parent(self):
+        if self.parent_id:
+            return Asset.objects.get(itemID=self.parent_id)
+        else:
+            return None
+
+    def parent_list(self):
+        parent = self.get_parent()
+        output = []
+        if parent:
+            output.append(
+                {
+                    'itemID': parent.itemID,
+                    'typeName': parent.typeName,
+                    'itemName': parent.item_name()
+                }
+            )
+            if parent.get_parent():
+                output.extend(parent.parent_list())
+        return output
+
+    def __unicode__(self):
+        name = self.item_name()
+        if name:
+            return '{0} {1}'.format(self.typeName, name)
+        else:
+            return self.typeName
+
     class Meta:
         managed = False
 
@@ -461,7 +518,6 @@ class MarketOrder(models.Model):
     price = models.DecimalField(max_digits=30, decimal_places=2)
 
     owner = models.ForeignKey('CharacterSheet')
-
 
     def update_from_api(self, sheet, handler):
         try:
@@ -549,7 +605,6 @@ class Notification(models.Model):
                 self.senderName,
                 self.typeID
             )
-
 
     class Meta:
         unique_together = ('owner', 'notificationID')
@@ -647,14 +702,11 @@ class SkillQueue(models.Model):
         self.save()
 
 
-
-
 class MailingList(models.Model):
     listID = models.BigIntegerField(primary_key=True)
     displayName = models.CharField(max_length=255)
 
     owners = models.ManyToManyField('CharacterSheet')
-
 
 
 class ContactNotification(models.Model):
@@ -745,8 +797,6 @@ class Certificate(models.Model):
         unique_together = ('certificateID', 'owner')
 
 
-
-
 class MailMessage(models.Model):
     messageID = models.BigIntegerField(primary_key=True)
     title = models.CharField(max_length=255, blank=True, null=True)
@@ -777,11 +827,9 @@ class MailMessage(models.Model):
                 except:
                     name = 'Mailing list {0}'.format(entity['id'])
             new_receivers.append({'name': name,
-                               'id': entity['id'],
-                               'type': entity['type']})
+                                  'id': entity['id'],
+                                  'type': entity['type']})
         self.receivers = new_receivers
-
-
 
     def update_from_api(self, msg, handler):
         def purge(l):
@@ -875,6 +923,7 @@ class IndustryJob(models.Model):
     licensedRuns = models.IntegerField(null=True)
 
     owner = models.ForeignKey('CharacterSheet')
+
 
 class IndustryJobHistory(models.Model):
     status = models.IntegerField(null=True)

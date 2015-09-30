@@ -385,7 +385,8 @@ class Asset(models.Model):
                         setweight(to_tsvector(unaccent(%(itemName)s)), 'A') ||
                         setweight(to_tsvector(unaccent(%(groupName)s)), 'D') ||
                         setweight(to_tsvector(unaccent(%(categoryName)s)), 'D') ||
-                        setweight(to_tsvector(unaccent(%(fitted)s)), 'C')
+                        setweight(to_tsvector(unaccent(%(fitted)s)), 'C') ||
+                        setweight(to_tsvector(unaccent(%(owner)s)), 'B')
                 WHERE
                     id = %(pk)s''',
                                {
@@ -395,7 +396,8 @@ class Asset(models.Model):
                                    'itemName': self.item_name(),
                                    'groupName': self.get_type().group.groupName,
                                    'categoryName': self.get_type().group.category.categoryName,
-                                   'fitted': fitted
+                                   'fitted': fitted,
+                                   'owner': self.owner.corporationName
                                })
 
     def item_name(self):
@@ -490,6 +492,13 @@ class Asset(models.Model):
 
     def get_type(self):
         return InvType.objects.get(pk=self.typeID)
+
+    def __unicode__(self):
+        name = self.item_name()
+        if name:
+            return '{0} {1}'.format(self.typeName, name)
+        else:
+            return self.typeName
 
     class Meta:
         managed = False

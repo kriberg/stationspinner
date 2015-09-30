@@ -3,7 +3,7 @@ from rest_framework import routers
 from stationspinner.character.views import CharacterSheetViewset, \
     NotificationViewset, MailMessageViewset, DistinctAllianceViewset, \
     DistinctCorporationViewset, WalletTransactionsViewset, \
-    AssetLocationsView, AssetsView
+    AssetLocationsView, AssetsView, AssetSearchView
 
 router = routers.DefaultRouter()
 router.register(r'CharacterSheet', CharacterSheetViewset, 'CharacterSheet')
@@ -17,4 +17,5 @@ urlpatterns = [
     url(r'^', include(router.urls)),
     url(r'^Assets', AssetsView.as_view(), name='character_assets'),
     url(r'^AssetLocations', AssetLocationsView.as_view(), name='character_asset_locations'),
+    url(r'^AssetSearch', AssetSearchView.as_view(), name='character_asset_search'),
 ]

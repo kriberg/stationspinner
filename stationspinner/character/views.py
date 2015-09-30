@@ -7,7 +7,7 @@ from stationspinner.character.serializers import CharacterSheetSerializer, \
     AssetSerializer, CharacterSheetListSerializer, NotificationSerializer, \
     MailMessageSerializer, ShortformAllianceSerializer, \
     CharacterSheetShortListSerializer, ShortformCorporationSerializer, \
-    WalletTransactionSerializer
+    WalletTransactionSerializer, AssetSearchSerializer
 from stationspinner.character.models import CharacterSheet, \
     Asset, Notification, MailMessage, WalletTransaction, \
     WalletJournal
@@ -177,3 +177,33 @@ class AssetsView(views.APIView):
             assets = []
 
         return Response(assets)
+
+
+class AssetSearchView(views.APIView):
+    class AssetSearchPagination(PageNumberPagination):
+        page_size = 20
+        ordering = '-relevancy'
+
+    permission_classes = [CapsulerPermission]
+    serializer_class = AssetSearchSerializer
+    pagination_class = AssetSearchPagination
+
+    def post(self, request, format=None):
+        query = request.data.get('query', None)
+        characterIDs = request.data.get('characterIDs', '')
+
+        if len(characterIDs) > 0 and query:
+            try:
+                characterIDs = str(characterIDs).split(',')
+                valid, invalid = CharacterSheet.objects.filter_valid(characterIDs, request.user)
+                characterIDs = valid
+            except:
+                characterIDs = []
+            assets = Asset.objects.search(characterIDs, query)
+        else:
+            assets = []
+
+        serializer = self.serializer_class(assets, many=True)
+        return Response(serializer.data)
+
+
