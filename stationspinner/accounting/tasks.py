@@ -27,7 +27,7 @@ def update_capsulers():
 def update_capsuler_keys(*args, **kwargs):
     capsulers = Capsuler.objects.filter(is_active=True)
 
-    active_keys = APIKey.objects.filter(expired=False, owner__in=capsulers)
+    active_keys = APIKey.objects.filter(owner__in=capsulers)
     log.info('Validating {0} keys'.format(active_keys.count()))
     for key in active_keys:
         validate_key.s(key.pk).apply_async()
@@ -281,6 +281,7 @@ def validate_key(apikey_pk):
     apikey.type = keyinfo.key.type
     apikey.expires = expires
     apikey.brokeness = 0
+    apikey.expired = False
 
     if keyinfo.key.type == 'Corporation':
         apikey.characterID = keyinfo.key.characters[0].characterID
