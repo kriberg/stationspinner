@@ -108,7 +108,7 @@ class MailManager(models.Manager):
               mail.read,
               mail.owner_id,
               mail.receivers,
-              ts_rank(index.document, to_tsquery(unaccent( %s ))) as relevancy
+              ts_rank(index.document, plainto_tsquery(%s)) as relevancy
             FROM
               evemail_mail mail,
               evemail_searchindex index
@@ -129,7 +129,7 @@ class MailManager(models.Manager):
               mail."messageID" = index."messageID" AND
               mail.owner_id = %s AND
               index.index_language = %s::REGCONFIG AND
-              index.document @@ to_tsquery(unaccent( %s ))
+              index.document @@ plainto_tsquery(%s)
             ORDER BY ts_rank(index.document, to_tsquery(unaccent( %s ))) DESC;
             ''', [query, capsuler.pk, owners, capsuler.pk, language, query, query])
                             #{'query': query, 'capsuler': capsuler.pk, 'language': language, 'owners': owners})
