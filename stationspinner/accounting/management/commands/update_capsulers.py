@@ -6,4 +6,4 @@ class Command(BaseCommand):
     help = 'Updates all capsulers'
 
     def handle(self, *args, **options):
-        app.send_task('accounting.update_capsulers').get()
+        app.send_task('accounting.update_capsulers')
