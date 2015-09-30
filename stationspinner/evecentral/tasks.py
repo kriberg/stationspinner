@@ -18,7 +18,7 @@ log = get_task_logger(__name__)
 
 def _market_items():
     market_items = InvType.objects.filter(published=True,
-                                          marketGroupID__lt=35000)
+                                          marketGroup__lt=35000)
     typeIDs = [i.pk for i in market_items.order_by('id')]
 
     for i in xrange(0, len(typeIDs), 100):
