@@ -311,3 +311,6 @@ REST_FRAMEWORK = {
     )
 
 }
+
+if DEBUG:
+    INSTALLED_APPS.append('devserver')
