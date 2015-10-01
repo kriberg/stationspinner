@@ -302,9 +302,7 @@ def validate_key(apikey_pk):
 
         # If a key access mask is changed, there could be residual targets
         # registered with that key, so we'll delete those
-        APIUpdate.objects.filter(
-            owner=apikey.corporationID,
-            apikey=apikey).exclude(pk__in=targets).delete()
+        APIUpdate.objects.filter(apikey=apikey).exclude(pk__in=targets).delete()
         # Any other keys that provides other accessmasks than this key will then remain.
         # If two keys provide access to the same endpoint for the same entity, whichever
         # key was parsed last, gets the honor. There can be only one!
@@ -321,7 +319,7 @@ def validate_key(apikey_pk):
                                                        apicall=call_type,
                                                        defaults={'apikey': apikey})
                     targets.append(target.pk)
-        APIUpdate.objects.filter(owner=apikey.corporationID).exclude(pk__in=targets).delete()
+        APIUpdate.objects.filter(apikey=apikey).exclude(pk__in=targets).delete()
     elif keyinfo.key.type == 'Account':
         apikey.save()
         targets = []
@@ -334,6 +332,7 @@ def validate_key(apikey_pk):
                                                            apicall=call_type,
                                                            defaults={'apikey': apikey})
                         targets.append(target.pk)
-        APIUpdate.objects.filter(owner=apikey.corporationID).exclude(pk__in=targets).delete()
+
+        APIUpdate.objects.filter(apikey=apikey).exclude(pk__in=targets).delete()
     else:
         apikey.save()
