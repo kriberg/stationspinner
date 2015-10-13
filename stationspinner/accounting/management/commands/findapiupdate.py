@@ -39,7 +39,7 @@ class Command(BaseCommand):
                                            apikey=key,
                                            owner=entity.pk)
         if updates.count() == 0:
-            self.stdout.write('APICall for "{1}.{2}" does not exist.'.format(
+            self.stdout.write('APICall for "{0}.{1}" does not exist.'.format(
                 call.type,
                 call.name
             ))
