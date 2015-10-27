@@ -97,15 +97,16 @@ def parse_market_data(typeIDs, locationID):
         return
 
     for typeID, price_data in data.items():
-        prices = {}
+        updated_data = {
+            'typeName': InvType.objects.get(pk=typeID).typeName
+        }
         for price_type in ('buy', 'sell'):
             type_data = price_data[price_type]
             for statistic, value in type_data.items():
-                prices['{0}_{1}'.format(price_type, statistic)] = value
+                updated_data['{0}_{1}'.format(price_type, statistic)] = value
         MarketItem.objects.update_or_create(typeID=typeID,
                                             locationID=locationID,
-                                            typeName=InvType.objects.get(pk=typeID).typeName,
-                                            defaults=prices)
+                                            defaults=updated_data)
 
 
 
