@@ -1,5 +1,4 @@
 from django.views.generic import View
-from django.shortcuts import get_object_or_404
 from django.contrib.auth import logout
 from django.http import HttpResponse
 from rest_framework import viewsets, views
@@ -36,8 +35,6 @@ class RevalidateKeyView(views.APIView):
             return Response({'msg': 'Revalidation queued.'})
 
         return Response({'msg': 'No such APIKey'}, status=404)
-
-
 
 
 class CapsulerViewset(viewsets.ModelViewSet):

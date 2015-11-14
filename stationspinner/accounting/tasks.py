@@ -320,10 +320,13 @@ def validate_key(apikey_pk):
                                                        defaults={'apikey': apikey})
                     targets.append(target.pk)
         APIUpdate.objects.filter(apikey=apikey).exclude(pk__in=targets).delete()
+        CharacterSheet.objects.filter(owner_key=apikey).exclude(pk=apikey.characterID).delete()
     elif keyinfo.key.type == 'Account':
         apikey.save()
         targets = []
+        characterIDs = []
         for char in keyinfo.key.characters:
+            characterIDs.append(char.characterID)
             for call_type in APICall.objects.filter(type='Character'):
                 if call_type.accessMask & apikey.accessMask > 0:
                     if APIUpdate.objects.filter(owner=char.characterID,
@@ -334,5 +337,6 @@ def validate_key(apikey_pk):
                         targets.append(target.pk)
 
         APIUpdate.objects.filter(apikey=apikey).exclude(pk__in=targets).delete()
+        CharacterSheet.objects.filter(owner_key=apikey).exclude(pk__in=characterIDs).delete()
     else:
         apikey.save()

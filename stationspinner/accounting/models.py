@@ -26,8 +26,6 @@ class Capsuler(AbstractUser):
             return obj.owner.owner == self
 
 
-
-
 class APIKey(models.Model):
     KEY_TYPES = (
         ('Account', 'Account'),
