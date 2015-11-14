@@ -43,7 +43,7 @@ class Skill(models.Model):
 class CharacterSheetManager(models.Manager):
     def filter_valid(self, characterIDs, capsuler):
         valid = self.filter(pk__in=characterIDs, owner=capsuler).values_list('characterID', flat=True)
-        invalid = set(characterIDs) - set(valid)
+        invalid = list(set(characterIDs) - set(valid))
         return valid, invalid
 
 
@@ -313,6 +313,44 @@ class AssetManager(models.Manager):
             'characterIDs': tuple(characterIDs)
         })
 
+    def summarize(self, characterIDs):
+        with connections['default'].cursor() as cursor:
+            cursor.execute('''
+            SELECT COALESCE(
+                ARRAY_TO_JSON(ARRAY_AGG(ROW_TO_JSON(summary))),
+                '[]'
+            )
+            FROM
+              (SELECT
+                 c.name,
+                 a.owner_id AS "characterID",
+                 sum(a.item_value)
+               FROM
+                 character_asset a,
+                 character_charactersheet c
+               WHERE
+                 a.owner_id IN %(characterIDs)s AND
+                 c."characterID" = a.owner_id AND
+                 c.enabled = TRUE
+               GROUP BY c.name, a.owner_id
+               ORDER BY sum DESC) summary;
+            ''', {'characterIDs': tuple(characterIDs)})
+
+            return cursor.fetchone()[0]
+
+    def net_worth(self, character):
+        with connections['default'].cursor() as cursor:
+            cursor.execute('''
+            SELECT
+               sum(a.item_value)
+           FROM
+             character_asset a
+           WHERE
+             a.owner_id = %(characterID)s
+            ''', {'characterID': character.pk})
+
+            return cursor.fetchone()[0]
+
 
 class Asset(models.Model):
     itemID = models.BigIntegerField()
@@ -328,7 +366,7 @@ class Asset(models.Model):
     rawQuantity = models.IntegerField(default=0)
     path = models.CharField(max_length=255, default='')
     parent_id = models.BigIntegerField(null=True)
-    category = models.IntegerField(null=True)
+    groupID = models.IntegerField(null=True)
     search_tokens = models.TextField(null=True)
 
     item_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
@@ -391,7 +429,7 @@ class Asset(models.Model):
         self.flag = item['flag']
         self.singleton = item['singleton']
         self.path = ".".join(map(str, path))
-        self.category = item['category']
+        self.groupID = item['groupID']
 
         if 'rawQuantity' in item:
             self.rawQuantity = item['rawQuantity']
@@ -400,7 +438,10 @@ class Asset(models.Model):
             self.parent_id = item['parent']
 
     def categorize(self):
-        self.category = self.get_type().group.category.pk
+        self.groupID = self.get_type().group.pk
+
+    def category(self):
+        return self.get_type().group.category.pk
 
     def get_contents(self):
         return Asset.objects.filter(owner=self.owner,
@@ -430,7 +471,7 @@ class Asset(models.Model):
         except InvType.DoesNotExist:
             log.warning('TypeID {0} does not exist.'.format(self.typeID))
             return
-        if not item.volume:
+        if not item.volume and item.volume != 0:
             log.warning('TypeID {0} has no volume.'.format(self.typeID))
             return
         if not self.singleton and item.group.pk in PACKAGED_VOLUME.keys():
@@ -987,6 +1028,9 @@ class ItemLocationName(models.Model):
 
     class Meta:
         unique_together = ('itemID', 'owner')
+
+
+
 
 
 @receiver(post_save, sender=CharacterSheet)

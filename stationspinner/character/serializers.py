@@ -165,7 +165,8 @@ class AssetSearchSerializer(serializers.ModelSerializer):
             'item_name',
             'container_value',
             'container_volume',
-            'parent_list'
+            'parent_list',
+            'owner'
         )
 
 class NotificationSerializer(serializers.ModelSerializer):

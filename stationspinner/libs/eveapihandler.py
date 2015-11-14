@@ -7,14 +7,15 @@ import logging
 
 log = logging.getLogger(__name__)
 
-
 eveapi.set_user_agent('stationspinner//vittoros@#eve-dev')
+
 
 class EveAPIHandler():
     """
     A wrapper for Entity's eveapi library, which takes care of caching and
     autoboxing api data into a django model.
     """
+
     def get_eveapi(self):
         """
         Creates an api connection with the proper caching.
@@ -69,7 +70,8 @@ class EveAPIHandler():
                      extra_selectors={},
                      owner=None,
                      exclude=(),
-                     pre_save=False):
+                     pre_save=False,
+                     immutable=False):
 
         selectors = {}
         for column in unique_together:
@@ -78,9 +80,14 @@ class EveAPIHandler():
         for key, value in extra_selectors.items():
             selectors[key] = value
 
+        if immutable:
+            obj = objClass.objects.filter(**selectors)
+            if obj.count() == 1:
+                return obj[0]
+
         defaults = self._create_defaults(entry,
-                                        objClass._meta.get_all_field_names(),
-                                        exclude)
+                                         objClass._meta.get_all_field_names(),
+                                         exclude)
 
         if len(selectors) > 0:
             obj, created = objClass.objects.update_or_create(defaults=defaults,
@@ -100,14 +107,15 @@ class EveAPIHandler():
         return obj
 
     def autoparse_list(self,
-                      result,
-                      objClass,
-                      unique_together=(),
-                      extra_selectors={},
-                      owner=None,
-                      exclude=(),
-                      pre_save=False,
-                      pre_delete=False):
+                       result,
+                       objClass,
+                       unique_together=(),
+                       extra_selectors={},
+                       owner=None,
+                       exclude=(),
+                       pre_save=False,
+                       pre_delete=False,
+                       immutable=False):
         """
         This will take most rowsets from the eveapi and create or update model objects,
         as long as the model attributes match those of from the api.
@@ -126,6 +134,7 @@ class EveAPIHandler():
             objClass.objects.all().delete()
 
         obj_list = []
+        overlap_obj = []
         for entry in result:
             selectors = {}
             for column in unique_together:
@@ -133,6 +142,12 @@ class EveAPIHandler():
 
             for key, value in extra_selectors.items():
                 selectors[key] = value
+
+            if immutable:
+                obj = objClass.objects.filter(**selectors)
+                if obj.count() == 1:
+                    overlap_obj.append(obj[0].pk)
+                    continue
 
             defaults = self._create_defaults(entry,
                                              objClass._meta.get_all_field_names(),
@@ -157,6 +172,9 @@ class EveAPIHandler():
                 obj.update_from_api(entry, self)
 
             obj_list.append(obj.pk)
+
+        if immutable:
+            return obj_list, overlap_obj
 
         return obj_list
 
@@ -192,7 +210,6 @@ class EveAPIHandler():
             for key, value in extra_selectors.items():
                 selectors[key] = value
 
-
             try:
                 obj = objClass.objects.get(**selectors)
                 # This means the object is already indexed, so let's just add the extra
@@ -208,8 +225,6 @@ class EveAPIHandler():
             defaults = self._create_defaults(entry,
                                              objClass._meta.get_all_field_names(),
                                              exclude)
-
-
 
             if len(selectors) > 0:
                 try:
@@ -235,7 +250,7 @@ class EveAPIHandler():
     def asset_parser(self, assets, AssetClass, owner, api_update):
         location_cache = {}
         type_cache = {}
-        category_cache = {}
+        group_cache = {}
         itemIDs_to_names = []
 
         def asset_with_name(asset):
@@ -256,7 +271,7 @@ class EveAPIHandler():
             # 17: commodities
             # 18: drones
             # 32: subsystems
-            if asset.category in (5, 7, 8, 9, 17, 18, 32):
+            if asset.category() in (5, 7, 8, 9, 17, 18, 32):
                 return False
 
             # 25: corpses
@@ -278,20 +293,20 @@ class EveAPIHandler():
                     locationName = get_location_name(locationID)
                     location_cache[locationID] = locationName
 
-                if row.typeID in type_cache and row.typeID in category_cache:
+                if row.typeID in type_cache and row.typeID in group_cache:
                     typeName = type_cache[row.typeID]
-                    category = category_cache[row.typeID]
+                    group = group_cache[row.typeID]
                 else:
                     try:
                         item_type = InvType.objects.get(pk=row.typeID)
                         typeName = item_type.typeName
-                        category = item_type.group.category.pk
+                        group = item_type.group.pk
                         type_cache[row.typeID] = typeName
-                        category_cache[row.typeID] = category
+                        group_cache[row.typeID] = group
                     except InvType.DoesNotExist:
                         typeName = None
                     except:
-                        category = None
+                        group = None
 
                 item = {
                     'itemID': row.itemID,
@@ -301,7 +316,7 @@ class EveAPIHandler():
                     'typeName': typeName,
                     'quantity': row.quantity,
                     'flag': row.flag,
-                    'category': category,
+                    'groupID': group,
                     'singleton': row.singleton,
                     'parent': parent,
                 }
@@ -323,7 +338,7 @@ class EveAPIHandler():
                     item['contents'] = parse_rowset(row.contents,
                                                     locationID=locationID,
                                                     parent=row.itemID,
-                                                    path=path+(row.itemID,))
+                                                    path=path + (row.itemID,))
 
                 asset.compute_container_volume()
                 asset.compute_container_value()
@@ -337,6 +352,5 @@ class EveAPIHandler():
 
         for container in parse_rowset(assets):
             store[container['itemID']] = container
-
 
         return store, itemIDs_to_names

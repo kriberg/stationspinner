@@ -16,7 +16,6 @@ from stationspinner.libs.assethandlers import CharacterAssetHandler
 from datetime import datetime
 
 
-
 class CharacterSheetViewset(viewsets.ReadOnlyModelViewSet):
     serializer_class = CharacterSheetSerializer
     model = CharacterSheet
@@ -41,10 +40,12 @@ class CharacterSheetViewset(viewsets.ReadOnlyModelViewSet):
         return CharacterSheet.objects.filter(owner=self.request.user,
                                              enabled=True).order_by('-skillPoints')
 
+
 class NotificationViewset(viewsets.ReadOnlyModelViewSet):
     class NotificationPagination(PageNumberPagination):
         page_size = 10
         ordering = '-sentDate'
+
     serializer_class = NotificationSerializer
     model = Notification
     permission_classes = [CapsulerPermission]
@@ -94,6 +95,7 @@ class DistinctCorporationViewset(viewsets.ReadOnlyModelViewSet):
             .values('corporationID', 'corporationName') \
             .order_by('corporationName')
 
+
 class WalletTransactionsViewset(viewsets.ReadOnlyModelViewSet):
     class WalletTransactionPagination(PageNumberPagination):
         page_size = 50
@@ -116,7 +118,6 @@ class WalletTransactionsViewset(viewsets.ReadOnlyModelViewSet):
             return WalletTransaction.objects.filter(owner=character).order_by('-transactionDateTime')
         else:
             return []
-
 
 
 class AssetLocationsView(views.APIView):
@@ -205,5 +206,4 @@ class AssetSearchView(views.APIView):
 
         serializer = self.serializer_class(assets, many=True)
         return Response(serializer.data)
-
 

@@ -16,6 +16,14 @@ from celery.utils.log import get_task_logger
 from django.db import connections
 log = get_task_logger(__name__)
 
+
+class CorporationSheetManager(models.Manager):
+    def filter_valid(self, corporationIDs, capsuler):
+        valid = self.filter(pk__in=corporationIDs, owner=capsuler).values_list('corporationID', flat=True)
+        invalid = set(corporationIDs) - set(valid)
+        return valid, invalid
+
+
 class CorporationSheet(models.Model):
     owner_key = models.ForeignKey(APIKey)
     owner = models.ForeignKey(Capsuler)
@@ -37,6 +45,8 @@ class CorporationSheet(models.Model):
     memberCount = models.IntegerField(default=1)
     shares = models.IntegerField(default=1)
     url = models.CharField(max_length=255, blank=True, default='')
+
+    objects = CorporationSheetManager()
 
     def update_from_api(self, sheet, handler):
         handler.autoparse(sheet, self)
@@ -305,7 +315,7 @@ class WalletJournal(models.Model):
     reason = models.CharField(max_length=255, blank=True, null=True)
     date = custom.DateTimeField()
     refTypeID = models.IntegerField(null=True)
-    refID = models.BigIntegerField(null=True)
+    refID = models.BigIntegerField(null=True, db_index=True)
     ownerID2 = models.IntegerField(null=True)
     taxAmount = models.CharField(max_length=255, blank=True, null=True)
     ownerID1 = models.IntegerField(null=True)
@@ -316,8 +326,12 @@ class WalletJournal(models.Model):
     ownerName1 = models.CharField(max_length=255, blank=True, null=True)
     amount = models.DecimalField(max_digits=30, decimal_places=2, null=True)
     balance = models.DecimalField(max_digits=30, decimal_places=2, null=True)
+    accountKey = models.IntegerField(null=True)
 
     owner = models.ForeignKey(CorporationSheet)
+
+    class Meta:
+        unique_together = ('owner', 'refID', 'accountKey')
 
 
 class Contact(models.Model):
@@ -345,6 +359,63 @@ class AssetList(models.Model):
         return "{0}'s assets ({1})".format(self.owner, self.retrieved)
 
 
+class AssetManager(models.Manager):
+    def search(self, corporationIDs, query):
+        return self.raw('''
+        SELECT
+            *,
+            ts_rank(search_tokens, plainto_tsquery(%(query)s)) as relevancy
+        FROM
+            corporation_asset
+        WHERE
+            owner_id IN %(corporationIDs)s AND
+            search_tokens @@ plainto_tsquery(%(query)s)
+        ORDER BY
+            relevancy DESC;
+        ''', {
+            'query': query,
+            'corporationIDs': tuple(corporationIDs)
+        })
+
+    def summarize(self, corporationIDs):
+        with connections['default'].cursor() as cursor:
+            cursor.execute('''
+            SELECT COALESCE(
+                ARRAY_TO_JSON(ARRAY_AGG(ROW_TO_JSON(summary))),
+                '[]'
+            )
+            FROM
+              (SELECT
+                 c.corporationName,
+                 a.owner_id AS "corporationID",
+                 sum(a.item_value)
+               FROM
+                 corporation_asset a,
+                 corporation_corporationsheet c
+               WHERE
+                 a.owner_id IN %(corporationIDs)s AND
+                 c."corporationID" = a.owner_id AND
+                 c.enabled = TRUE
+               GROUP BY c.corporationName, a.owner_id
+               ORDER BY sum DESC) summary;
+            ''', {'corporationIDs': tuple(corporationIDs)})
+
+            return cursor.fetchone()[0]
+
+    def net_worth(self, corporation):
+        with connections['default'].cursor() as cursor:
+            cursor.execute('''
+            SELECT
+               sum(a.item_value)
+           FROM
+             corporation_asset a
+           WHERE
+             a.owner_id = %(corporationID)s
+            ''', {'corporationID': corporation.pk})
+
+            return cursor.fetchone()[0]
+
+
 class Asset(models.Model):
     itemID = models.BigIntegerField()
     quantity = models.BigIntegerField()
@@ -359,7 +430,7 @@ class Asset(models.Model):
     rawQuantity = models.IntegerField(default=0)
     path = models.CharField(max_length=255, default='')
     parent_id = models.BigIntegerField(null=True)
-    category = models.IntegerField(null=True)
+    groupID = models.IntegerField(null=True)
     search_tokens = models.TextField(null=True)
 
     item_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
@@ -368,6 +439,8 @@ class Asset(models.Model):
     container_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
 
     owner = models.ForeignKey(CorporationSheet)
+
+    objects = AssetManager()
 
     def update_search_tokens(self):
         with connections['default'].cursor() as cursor:
@@ -417,7 +490,7 @@ class Asset(models.Model):
         self.flag = item['flag']
         self.singleton = item['singleton']
         self.path = ".".join(map(str, path))
-        self.category = item['category']
+        self.groupID = item['groupID']
 
         if 'rawQuantity' in item:
             self.rawQuantity = item['rawQuantity']
@@ -426,7 +499,10 @@ class Asset(models.Model):
             self.parent_id = item['parent']
 
     def categorize(self):
-        self.category = self.get_type().group.category.pk
+        self.groupID = self.get_type().group.pk
+
+    def category(self):
+        return self.get_type().group.category.pk
 
     def get_contents(self):
         return Asset.objects.filter(owner=self.owner,
@@ -456,7 +532,7 @@ class Asset(models.Model):
         except InvType.DoesNotExist:
             log.warning('TypeID {0} does not exist.'.format(self.typeID))
             return
-        if not item.volume:
+        if not item.volume and item.volume != 0:
             log.warning('TypeID {0} has no volume.'.format(self.typeID))
             return
         if not self.singleton and item.group.pk in PACKAGED_VOLUME.keys():

@@ -17,12 +17,12 @@ class BaseAssetHandler():
                 SELECT
                     DISTINCT("locationID")
                 FROM
-                    {0}
+                    {0}_asset
                 WHERE
                     "regionID" IN %(locationIDs)s OR
                     "solarSystemID" IN %(locationIDs)s OR
                     "locationID" IN %(locationIDs)s
-            )'''.format(self.ASSET_TABLE)
+            )'''.format(self.TYPE)
         else:
             search_query = ''
 
@@ -50,13 +50,13 @@ class BaseAssetHandler():
         )
 
     def _asset_query(self, entities, locationID, parent_id):
-        clauses = ['owner_id IN %(owner_id)s']
+        clauses = ['a.owner_id IN %(owner_id)s']
         if parent_id:
-            clauses.append('parent_id = %(parent_id)s')
+            clauses.append('a.parent_id = %(parent_id)s')
         else:
-            clauses.append('parent_id IS NULL')
+            clauses.append('a.parent_id IS NULL')
         if locationID:
-            clauses.append('"locationID" = %(locationID)s')
+            clauses.append('a."locationID" = %(locationID)s')
 
         sql =  '''
         SELECT
@@ -66,26 +66,28 @@ class BaseAssetHandler():
             )
         FROM (
             SELECT
-                "itemID",
-                "typeID",
-                "typeName" as name,
-                quantity,
-                flag,
-                category,
-                singleton,
-                "rawQuantity",
-                item_volume as volume,
-                item_value as value,
-                container_value,
-                container_volume,
-                owner_id as owner
+                a."itemID",
+                a."typeID",
+                a."typeName" as name,
+                a.quantity,
+                a.flag,
+                a."groupID",
+                a.singleton,
+                a."rawQuantity",
+                a.item_volume as volume,
+                a.item_value as value,
+                a.container_value,
+                a.container_volume,
+                a.owner_id as owner,
+                n."itemName"
             FROM
-                {0}
+                {0}_asset a
+            LEFT OUTER JOIN {0}_itemlocationname n USING ("itemID", owner_id)
             WHERE
                 {1}
             ) t
         '''.format(
-            self.ASSET_TABLE,
+            self.TYPE,
             ' AND \n'.join(clauses)
         )
         return sql
@@ -119,6 +121,7 @@ class BaseAssetHandler():
 
     def get_merged_asset_locations(self, entities, locationIDs=[]):
         keyset = self._entity_key(entities, locationIDs)
+
         asset_locations = self._cache_get(keyset)
 
         if not asset_locations:
@@ -128,7 +131,7 @@ class BaseAssetHandler():
                     {
                         'owner_id': tuple(entities),
                         'locationIDs': tuple(locationIDs)
-                     }
+                    }
                 )
                 asset_locations = cursor.fetchone()[0]
                 self.annotate_locations(asset_locations)
@@ -178,6 +181,7 @@ class BaseAssetHandler():
         if not assets:
             with connections['default'].cursor() as cursor:
                 q = self._asset_query(entities, locationID, parent_id)
+                print q, entities, locationID, parent_id
                 cursor.execute(q, {
                     'owner_id': entities,
                     'locationID': locationID,
@@ -191,9 +195,9 @@ class BaseAssetHandler():
 
 class CharacterAssetHandler(BaseAssetHandler):
     ASSETSUMMARY_VIEW = 'character_assetsummary'
-    ASSET_TABLE = 'character_asset'
+    TYPE = 'character'
 
 
 class CorporationAssetHandler(BaseAssetHandler):
     ASSETSUMMARY_VIEW = 'corporation_assetsummary'
-    ASSET_TABLE = 'corporation_asset'
+    TYPE = 'corporation'
