@@ -45,7 +45,7 @@ class Command(BaseCommand):
             ))
             sys.exit(1)
         for update in updates:
-            self.stdout.write('PK "{0}", characterID {4} keyID {3}, last updated {1}, cached until {2}.'.format(
+            self.stdout.write('PK {0}, characterID {4} keyID {3}, last updated {1}, cached until {2}.'.format(
                 update.pk,
                 update.last_update,
                 update.cached_until,
