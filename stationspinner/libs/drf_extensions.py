@@ -24,3 +24,20 @@ class JSONField(serializers.Field):
 
     def to_internal_value(self, data):
         return data
+
+
+class ValidatedIDsMixin(object):
+    '''
+    Use this mixin to get valid IDs for corporation or characters from request
+    '''
+
+    def filter_valid_IDs(self, params, user):
+        ids = params.get(self.validation_lookup_key, '')
+
+        if len(ids) > 0:
+            ids = map(int, str(ids).split(','))
+            valid, invalid = self.validation_class.objects.filter_valid(ids, user)
+        else:
+            valid = []
+            invalid = []
+        return valid, invalid
