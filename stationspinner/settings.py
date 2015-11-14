@@ -147,6 +147,7 @@ INSTALLED_APPS = [
     'stationspinner.corporation',
     'stationspinner.evecentral',
     'stationspinner.evemail',
+    'stationspinner.statistics',
 #   'registration',
     'bootstrapform',
 
@@ -311,6 +312,3 @@ REST_FRAMEWORK = {
     )
 
 }
-
-if DEBUG:
-    INSTALLED_APPS.append('devserver')
