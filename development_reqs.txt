@@ -3,6 +3,3 @@ prospector
 ipython
 werkzeug
 ptpython
-django-devserver
-guppy
-line_profiler
