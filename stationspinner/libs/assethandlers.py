@@ -13,16 +13,16 @@ class BaseAssetHandler():
 
     def _merge_query(self, locationIDs):
         if len(locationIDs) > 0:
-            search_query = ''' AND "locationID" IN (
+            search_query = ''' AND v."locationID" IN (
                 SELECT
-                    DISTINCT("locationID")
+                    DISTINCT(a."locationID")
                 FROM
-                    {0}_asset
+                    {0}_asset a
                 WHERE
-                    "regionID" IN %(locationIDs)s OR
-                    "solarSystemID" IN %(locationIDs)s OR
-                    "locationID" IN %(locationIDs)s
-            )'''.format(self.TYPE)
+                    a."regionID" IN %(locationIDs)s OR
+                    a."solarSystemID" IN %(locationIDs)s OR
+                    a."locationID" IN %(locationIDs)s
+            )'''.format(self.ASSET_TYPE)
         else:
             search_query = ''
 
@@ -34,16 +34,16 @@ class BaseAssetHandler():
             )
         FROM
             (SELECT
-                "locationID",
-                SUM("locationValue") as "value",
-                SUM("locationVolume") as "volume"
+                v."locationID",
+                SUM(v."locationValue") as "value",
+                SUM(v."locationVolume") as "volume"
             FROM
-                {0}
+                {0} v
             WHERE
-                owner_id IN %(owner_id)s
+                v.owner_id IN %(owner_id)s
                 {1}
-            GROUP BY "locationID"
-            ORDER BY "locationID") locations
+            GROUP BY v."locationID"
+            ORDER BY v."locationID") locations
         '''.format(
             self.ASSETSUMMARY_VIEW,
             search_query
@@ -87,7 +87,7 @@ class BaseAssetHandler():
                 {1}
             ) t
         '''.format(
-            self.TYPE,
+            self.ASSET_TYPE,
             ' AND \n'.join(clauses)
         )
         return sql
@@ -181,7 +181,6 @@ class BaseAssetHandler():
         if not assets:
             with connections['default'].cursor() as cursor:
                 q = self._asset_query(entities, locationID, parent_id)
-                print q, entities, locationID, parent_id
                 cursor.execute(q, {
                     'owner_id': entities,
                     'locationID': locationID,
@@ -195,9 +194,9 @@ class BaseAssetHandler():
 
 class CharacterAssetHandler(BaseAssetHandler):
     ASSETSUMMARY_VIEW = 'character_assetsummary'
-    TYPE = 'character'
+    ASSET_TYPE = 'character'
 
 
 class CorporationAssetHandler(BaseAssetHandler):
     ASSETSUMMARY_VIEW = 'corporation_assetsummary'
-    TYPE = 'corporation'
+    ASSET_TYPE = 'corporation'
