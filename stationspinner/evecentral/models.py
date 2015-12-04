@@ -43,5 +43,5 @@ class MarketItem(models.Model):
         except:
             return u'{0} @ {1}'.format(self.typeName, self.locationID)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('typeID', 'locationID')

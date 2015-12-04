@@ -36,7 +36,7 @@ class Skill(models.Model):
         self.skill_group = skill.group.groupName
         self.save()
 
-    class Meta:
+    class Meta(object):
         unique_together = ('typeID', 'owner')
 
 
@@ -215,7 +215,7 @@ class JumpClone(models.Model):
     def jumpCloneImplants(self):
         return JumpCloneImplant.objects.filter(jumpCloneID=self.jumpCloneID)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('owner', 'jumpCloneID')
 
 
@@ -225,7 +225,7 @@ class JumpCloneImplant(models.Model):
     typeName = models.CharField(max_length=255)
     owner = models.ForeignKey(CharacterSheet)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('jumpCloneID', 'typeID')
 
 
@@ -256,7 +256,7 @@ class Blueprint(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
-    class Meta:
+    class Meta(object):
         unique_together = ('itemID', 'owner')
 
 
@@ -367,6 +367,7 @@ class Asset(models.Model):
     path = models.CharField(max_length=255, default='')
     parent_id = models.BigIntegerField(null=True)
     groupID = models.IntegerField(null=True)
+    categoryID = models.IntegerField(null=True)
     search_tokens = models.TextField(null=True)
 
     item_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
@@ -430,6 +431,7 @@ class Asset(models.Model):
         self.singleton = item['singleton']
         self.path = ".".join(map(str, path))
         self.groupID = item['groupID']
+        self.categoryID = item['categoryID']
 
         if 'rawQuantity' in item:
             self.rawQuantity = item['rawQuantity']
@@ -439,6 +441,7 @@ class Asset(models.Model):
 
     def categorize(self):
         self.groupID = self.get_type().group.pk
+        self.categoryID = self.get_type().group.category.pk
 
     def category(self):
         return self.get_type().group.category.pk
@@ -536,7 +539,7 @@ class Asset(models.Model):
         else:
             return self.typeName
 
-    class Meta:
+    class Meta(object):
         managed = False
 
 
@@ -597,7 +600,7 @@ class PlanetaryColony(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
-    class Meta:
+    class Meta(object):
         verbose_name_plural = "PlanetaryColonies"
 
 
@@ -647,7 +650,7 @@ class Notification(models.Model):
                 self.typeID
             )
 
-    class Meta:
+    class Meta(object):
         unique_together = ('owner', 'notificationID')
 
     def update_from_api(self, notification, handler):
@@ -709,7 +712,7 @@ class ContractItem(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
-    class Meta:
+    class Meta(object):
         unique_together = ('contract', 'owner', 'rowID')
 
 
@@ -722,7 +725,7 @@ class ContractBid(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
-    class Meta:
+    class Meta(object):
         unique_together = ('bidID', 'contractID', 'owner')
 
 
@@ -804,7 +807,7 @@ class WalletTransaction(models.Model):
             self.transactionFor = 'c'
         self.save()
 
-    class Meta:
+    class Meta(object):
         unique_together = ('owner', 'transactionID')
 
 
@@ -834,7 +837,7 @@ class Certificate(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
-    class Meta:
+    class Meta(object):
         unique_together = ('certificateID', 'owner')
 
 
@@ -1011,7 +1014,7 @@ class NPCStanding(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
-    class Meta:
+    class Meta(object):
         unique_together = ('fromID', 'owner')
 
 
@@ -1026,7 +1029,7 @@ class ItemLocationName(models.Model):
     def __unicode__(self):
         return self.itemName
 
-    class Meta:
+    class Meta(object):
         unique_together = ('itemID', 'owner')
 
 

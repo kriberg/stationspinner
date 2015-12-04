@@ -115,7 +115,7 @@ class MemberMedal(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('medalID', 'owner')
 
 
@@ -128,7 +128,7 @@ class Medal(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('medalID', 'owner')
 
 
@@ -167,7 +167,7 @@ class Starbase(models.Model):
     def get_fuel(self):
         return StarbaseFuel.objects.filter(starbase=self)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('itemID', 'owner')
 
 
@@ -193,7 +193,7 @@ class Outpost(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('stationID', 'owner')
 
 
@@ -206,7 +206,7 @@ class OutpostService(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('outpost', 'serviceName', 'owner')
 
 
@@ -223,7 +223,7 @@ class Blueprint(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('itemID', 'owner')
 
 
@@ -330,7 +330,7 @@ class WalletJournal(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('owner', 'refID', 'accountKey')
 
 
@@ -431,6 +431,7 @@ class Asset(models.Model):
     path = models.CharField(max_length=255, default='')
     parent_id = models.BigIntegerField(null=True)
     groupID = models.IntegerField(null=True)
+    categoryID = models.IntegerField(null=True)
     search_tokens = models.TextField(null=True)
 
     item_value = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
@@ -491,6 +492,7 @@ class Asset(models.Model):
         self.singleton = item['singleton']
         self.path = ".".join(map(str, path))
         self.groupID = item['groupID']
+        self.categoryID = item['categoryID']
 
         if 'rawQuantity' in item:
             self.rawQuantity = item['rawQuantity']
@@ -500,6 +502,7 @@ class Asset(models.Model):
 
     def categorize(self):
         self.groupID = self.get_type().group.pk
+        self.categoryID = self.get_type().group.category.pk
 
     def category(self):
         return self.get_type().group.category.pk
@@ -576,7 +579,7 @@ class Asset(models.Model):
         else:
             return self.typeName
 
-    class Meta:
+    class Meta(object):
         managed = False
 
 
@@ -638,7 +641,7 @@ class ContractItem(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('contract', 'owner', 'rowID')
 
 
@@ -651,7 +654,7 @@ class ContractBid(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('bidID', 'contractID', 'owner')
 
 
@@ -685,7 +688,7 @@ class NPCStanding(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('fromID', 'owner')
 
 
@@ -746,7 +749,7 @@ class Facilities(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('facilityID', 'owner')
 
 
@@ -759,7 +762,7 @@ class Division(models.Model):
     def __unicode__(self):
         return self.description
 
-    class Meta:
+    class Meta(object):
         unique_together = ('accountKey', 'owner')
 
 
@@ -772,7 +775,7 @@ class WalletDivision(models.Model):
     def __unicode__(self):
         return self.description
 
-    class Meta:
+    class Meta(object):
         unique_together = ('accountKey', 'owner')
 
 
@@ -792,7 +795,7 @@ class AccountBalance(models.Model):
         except WalletDivision.DoesNotExist:
             return self.accountKey
 
-    class Meta:
+    class Meta(object):
         unique_together = ('accountID', 'owner')
 
 
@@ -807,7 +810,7 @@ class ItemLocationName(models.Model):
     def __unicode__(self):
         return self.itemName
 
-    class Meta:
+    class Meta(object):
         unique_together = ('itemID', 'owner')
 
 

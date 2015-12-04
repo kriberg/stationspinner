@@ -52,7 +52,7 @@ class MailStatus(models.Model):
     read = models.BooleanField(default=False)
     owner = models.ForeignKey(Capsuler)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('message', 'owner')
 
 
@@ -155,7 +155,7 @@ class Mail(models.Model):
         return self.title
 
 
-    class Meta:
+    class Meta(object):
         managed = False
 
 

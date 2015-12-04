@@ -18,14 +18,14 @@ class APIKeySerializer(serializers.ModelSerializer):
                                                        owner_key=obj)
         return corporations.values('corporationName', 'corporationID')
 
-    class Meta:
+    class Meta(object):
         model = APIKey
         exclude = ('owner', 'characterID', 'corporationID')
         read_only_fields = ('expired', 'expires', 'type', 'accessMask', 'id')
 
 
 class CapsulerSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = Capsuler
         read_only_fields = ('username', 'email', 'last_login', 'date_joined')
         exclude = ('id', 'password', 'is_superuser', 'is_staff', 'groups', 'is_active',

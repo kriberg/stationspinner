@@ -25,10 +25,10 @@ class RevalidateKeyView(views.APIView):
     permission_classes = [CapsulerPermission]
 
     def post(self, request):
-        id = request.data.get('id', None)
-        if id:
+        apikey_pk = request.data.get('id', None)
+        if apikey_pk:
             try:
-                key = APIKey.objects.get(pk=id, owner=request.user)
+                key = APIKey.objects.get(pk=apikey_pk, owner=request.user)
             except APIKey.DoesNotExist:
                 return Response({'msg': 'No such APIKey.'}, status=404)
             app.send_task('accounting.validate_key', [key.pk])

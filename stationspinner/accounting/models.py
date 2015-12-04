@@ -73,7 +73,7 @@ class APIUpdate(models.Model):
                                      self.apikey,
                                      self.owner)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('apicall', 'apikey', 'owner')
 
 

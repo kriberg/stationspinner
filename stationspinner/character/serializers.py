@@ -7,18 +7,18 @@ from stationspinner.sde.models import MapDenormalize
 from stationspinner.sde.serializers import RegionSerializer
 
 class SkillSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = Skill
         exclude = ('owner', 'published', 'id')
 
 class SkillQueueSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = SkillQueue
         exclude = ('owner',)
 
 
 class SkillInTrainingSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = SkillInTraining
         fields = (
             'trainingStartSP',
@@ -35,39 +35,39 @@ class SkillInTrainingSerializer(serializers.ModelSerializer):
 
 
 class CharacterImplantSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = CharacterImplant
         exclude = ('owner',)
 
 
 class JumpCloneImplantSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = JumpCloneImplant
         fields = ('typeID', 'typeName')
 
 
 class JumpCloneSerializer(serializers.ModelSerializer):
     jumpCloneImplants = JumpCloneImplantSerializer(many=True)
-    class Meta:
+    class Meta(object):
         model = JumpClone
         fields = ('location', 'jumpCloneImplants')
 
 
 class CharacterSheetListSerializer(serializers.ModelSerializer):
     skillInTraining = SkillInTrainingSerializer(many=True)
-    class Meta:
+    class Meta(object):
         model = CharacterSheet
         exclude = ('owner', 'enabled', 'owner_key')
 
 
 class CharacterSheetShortListSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = CharacterSheet
         fields = ('name', 'characterID')
 
 
 class CharacterImplantSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = CharacterImplant
         fields = ('typeID', 'typeName')
 
@@ -79,7 +79,7 @@ class CharacterSheetSerializer(serializers.ModelSerializer):
     implants = CharacterImplantSerializer(many=True)
     jumpClones = JumpCloneSerializer(many=True)
 
-    class Meta:
+    class Meta(object):
         model = CharacterSheet
         fields = (
             'characterID',
@@ -122,13 +122,13 @@ class CharacterSheetSerializer(serializers.ModelSerializer):
 
 
 class CharacterSheetShort(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = CharacterSheet
         fields = ('characterID', 'name', 'corporationName', 'allianceName')
 
 
 class AssetSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = Asset
         fields = (
             'itemID',
@@ -143,12 +143,13 @@ class AssetSerializer(serializers.ModelSerializer):
             'item_value',
             'item_volume',
             'container_value',
-            'container_volume'
+            'container_volume',
+            'category'
         )
 
 
 class AssetSearchSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = Asset
         fields = (
             'itemID',
@@ -166,36 +167,37 @@ class AssetSearchSerializer(serializers.ModelSerializer):
             'container_value',
             'container_volume',
             'parent_list',
-            'owner'
+            'owner',
+            'category'
         )
 
 class NotificationSerializer(serializers.ModelSerializer):
     owner = CharacterSheetShort(many=False)
-    class Meta:
+    class Meta(object):
         model = Notification
         exclude = ('owner', 'notificationID', 'senderID', 'broken')
 
 
 class MailMessageSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = MailMessage
         fields = ('messageID', 'title', 'senderName', 'parsed_message', 'sentDate', 'recipients')
 
 
 class ShortformCorporationSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = CharacterSheet
         fields = ('corporationID', 'corporationName')
 
 
 class ShortformAllianceSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = CharacterSheet
         fields = ('allianceID', 'allianceName')
 
 class WalletTransactionSerializer(serializers.ModelSerializer):
     client_type = serializers.CharField()
-    class Meta:
+    class Meta(object):
         model = WalletTransaction
         fields = ('transactionDateTime', 'transactionFor', 'transactionType',
                   'typeName', 'stationName', 'quantity', 'price', 'clientName',

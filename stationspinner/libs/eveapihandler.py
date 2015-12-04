@@ -251,6 +251,7 @@ class EveAPIHandler():
         location_cache = {}
         type_cache = {}
         group_cache = {}
+        category_cache = {}
         itemIDs_to_names = []
 
         def asset_with_name(asset):
@@ -293,20 +294,24 @@ class EveAPIHandler():
                     locationName = get_location_name(locationID)
                     location_cache[locationID] = locationName
 
-                if row.typeID in type_cache and row.typeID in group_cache:
+                if row.typeID in type_cache and row.typeID in group_cache and row.typeID in category_cache:
                     typeName = type_cache[row.typeID]
                     group = group_cache[row.typeID]
+                    category = category_cache[row.typeID]
                 else:
                     try:
                         item_type = InvType.objects.get(pk=row.typeID)
                         typeName = item_type.typeName
                         group = item_type.group.pk
+                        category = item_type.group.category.pk
                         type_cache[row.typeID] = typeName
                         group_cache[row.typeID] = group
+                        category_cache[row.typeID] = category
                     except InvType.DoesNotExist:
                         typeName = None
                     except:
                         group = None
+                        category = None
 
                 item = {
                     'itemID': row.itemID,
@@ -317,6 +322,7 @@ class EveAPIHandler():
                     'quantity': row.quantity,
                     'flag': row.flag,
                     'groupID': group,
+                    'categoryID': category,
                     'singleton': row.singleton,
                     'parent': parent,
                 }

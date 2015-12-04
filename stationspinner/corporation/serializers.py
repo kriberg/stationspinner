@@ -2,14 +2,14 @@ from rest_framework import serializers
 from stationspinner.corporation.models import CorporationSheet
 
 class CorporationSheetSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = CorporationSheet
         exclude = ('owner', 'owner_key', 'enabled')
 
 
 
 class CorporationSheetListSerializer(serializers.ModelSerializer):
-    class Meta:
+    class Meta(object):
         model = CorporationSheet
         fields = ('corporationID', 'corporationName', 'allianceID', 'allianceName')
         #exclude = (

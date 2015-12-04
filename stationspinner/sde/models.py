@@ -8,7 +8,7 @@ from django.db import models
 class AgtAgentType(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'agentTypeID')
     agentType = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'agtAgentTypes'
         verbose_name = u'agtAgentTypes'
 
@@ -22,7 +22,7 @@ class AgtAgent(models.Model):
     quality = models.SmallIntegerField(null=True, blank=True)
     agentTypeID = models.BigIntegerField(null=True, blank=True)
     isLocator = models.NullBooleanField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'agtAgents'
         verbose_name = u'agtAgents'
 
@@ -32,7 +32,7 @@ class CertCert(models.Model):
     description = models.TextField(blank=True)
     groupid = models.BigIntegerField(null=True, blank=True)
     name = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'certCerts'
         verbose_name = u'certCerts'
 
@@ -49,7 +49,7 @@ class ChrAncestry(models.Model):
     intelligence = models.SmallIntegerField(null=True, blank=True)
     icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     shortDescription = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'chrAncestries'
         verbose_name = u'chrAncestries'
 
@@ -61,7 +61,7 @@ class ChrAttribute(models.Model):
     icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     shortDescription = models.TextField(blank=True)
     notes = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'chrAttributes'
         verbose_name = u'chrAttributes'
 
@@ -84,7 +84,7 @@ class ChrBloodline(models.Model):
     shortDescription = models.TextField(blank=True)
     shortMaleDescription = models.TextField(blank=True)
     shortFemaleDescription = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'chrBloodlines'
         verbose_name = u'chrBloodlines'
 
@@ -101,7 +101,7 @@ class ChrFaction(models.Model):
     stationSystemCount = models.SmallIntegerField(null=True, blank=True)
     militiaCorporationID = models.BigIntegerField(null=True, blank=True)
     icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
-    class Meta:
+    class Meta(object):
         db_table = u'chrFactions'
         verbose_name = u'chrFactions'
 
@@ -112,7 +112,7 @@ class ChrRace(models.Model):
     description = models.TextField(blank=True)
     icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     shortDescription = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'chrRaces'
         verbose_name = u'chrRaces'
 
@@ -121,7 +121,7 @@ class CrpActivity(models.Model):
     id = models.SmallIntegerField(primary_key=True, db_column=u'activityID')
     activityName = models.TextField(blank=True)
     description = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'crpActivities'
         verbose_name = u'crpActivities'
 
@@ -155,7 +155,7 @@ class CrpNPCCorporation(models.Model):
     stationSystemCount = models.SmallIntegerField(null=True, blank=True)
     description = models.TextField(blank=True)
     icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
-    class Meta:
+    class Meta(object):
         db_table = u'crpNPCCorporations'
         verbose_name = u'crpNPCCorporations'
 
@@ -165,7 +165,7 @@ class CrpNPCDivision(models.Model):
     divisionName = models.TextField(blank=True)
     description = models.TextField(blank=True)
     leaderType = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'crpNPCDivisions'
         verbose_name = u'crpNPCDivisions'
 
@@ -174,7 +174,7 @@ class DgmAttributeCategory(models.Model):
     id = models.SmallIntegerField(primary_key=True, db_column=u'categoryID')
     categoryName = models.TextField(blank=True)
     categoryDescription = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'dgmAttributeCategories'
         verbose_name = u'dgmAttributeCategories'
 
@@ -191,7 +191,7 @@ class DgmAttributeType(models.Model):
     stackable = models.NullBooleanField(null=True, blank=True)
     highIsGood = models.NullBooleanField(null=True, blank=True)
     categoryID = models.SmallIntegerField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'dgmAttributeTypes'
         verbose_name = u'dgmAttributeTypes'
 
@@ -224,7 +224,7 @@ class DgmEffect(models.Model):
     npcUsageChanceAttributeID = models.SmallIntegerField(null=True, blank=True)
     npcActivationChanceAttributeID = models.SmallIntegerField(null=True, blank=True)
     fittingUsageChanceAttributeID = models.SmallIntegerField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'dgmEffects'
         verbose_name = u'dgmEffects'
 
@@ -240,7 +240,7 @@ class EveIcon(models.Model):
         except:
             return None
     
-    class Meta:
+    class Meta(object):
         db_table = u'eveIcons'
         verbose_name = u'eveIcons'
 
@@ -250,7 +250,7 @@ class EveUnit(models.Model):
     unitName = models.TextField(blank=True)
     displayName = models.TextField(blank=True)
     description = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'eveUnits'
         verbose_name = u'eveUnits'
 
@@ -258,7 +258,7 @@ class EveUnit(models.Model):
 class IndustryBlueprint(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'typeID')
     maxProductionLimit = models.BigIntegerField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'industryBlueprints'
         verbose_name = u'industryBlueprints'
 
@@ -268,7 +268,7 @@ class InvCategory(models.Model):
     categoryName = models.TextField(blank=True)
     icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
     published = models.NullBooleanField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'invCategories'
         verbose_name = u'invCategories'
 
@@ -276,7 +276,7 @@ class InvCategory(models.Model):
 class InvControlTowerResourcePurpose(models.Model):
     id = models.SmallIntegerField(primary_key=True, db_column=u'purpose')
     purposeText = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'invControlTowerResourcePurposes'
         verbose_name = u'invControlTowerResourcePurposes'
 
@@ -286,7 +286,7 @@ class InvFlag(models.Model):
     flagName = models.TextField(blank=True)
     flagText = models.TextField(blank=True)
     orderID = models.BigIntegerField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'invFlags'
         verbose_name = u'invFlags'
 
@@ -301,7 +301,7 @@ class InvGroup(models.Model):
     anchorable = models.NullBooleanField(null=True, blank=True)
     fittableNonSingleton = models.NullBooleanField(null=True, blank=True)
     published = models.NullBooleanField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'invGroups'
         verbose_name = u'invGroups'
 
@@ -313,7 +313,7 @@ class InvItem(models.Model):
     locationID = models.BigIntegerField()
     flagID = models.SmallIntegerField()
     quantity = models.BigIntegerField()
-    class Meta:
+    class Meta(object):
         db_table = u'invItems'
         verbose_name = u'invItems'
 
@@ -355,7 +355,7 @@ class InvMarketGroup(models.Model):
     def get_children(self):
         return InvMarketGroup.objects.filter(parentGroupID=self.pk)
 
-    class Meta:
+    class Meta(object):
         db_table = u'invMarketGroups'
         verbose_name = u'invMarketGroups'
 
@@ -365,7 +365,7 @@ class InvMetaGroup(models.Model):
     metaGroupName = models.TextField(blank=True)
     description = models.TextField(blank=True)
     icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
-    class Meta:
+    class Meta(object):
         db_table = u'invMetaGroups'
         verbose_name = u'invMetaGroups'
 
@@ -374,7 +374,7 @@ class InvMetaType(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'typeID')
     parentTypeID = models.BigIntegerField(null=True, blank=True)
     metaGroupID = models.SmallIntegerField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'invMetaTypes'
         verbose_name = u'invMetaTypes'
 
@@ -382,7 +382,7 @@ class InvMetaType(models.Model):
 class InvName(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'itemID')
     itemName = models.TextField()
-    class Meta:
+    class Meta(object):
         db_table = u'invNames'
         verbose_name = u'invNames'
 
@@ -395,7 +395,7 @@ class InvPosition(models.Model):
     yaw = models.FloatField(null=True, blank=True)
     pitch = models.FloatField(null=True, blank=True)
     roll = models.FloatField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'invPositions'
         verbose_name = u'invPositions'
 
@@ -415,7 +415,7 @@ class InvType(models.Model):
     published = models.NullBooleanField(null=True, blank=True)
     marketGroup = models.ForeignKey('InvMarketGroup', null=True, db_column=u'marketGroupID')
 
-    class Meta:
+    class Meta(object):
         db_table = u'invTypes'
         verbose_name = u'invTypes'
 
@@ -424,7 +424,7 @@ class InvUniqueName(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'itemID')
     itemName = models.TextField(unique=True)
     groupID = models.BigIntegerField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'invUniqueNames'
         verbose_name = u'invUniqueNames'
 
@@ -450,7 +450,7 @@ class MapCelestialStatistic(models.Model):
     pressure = models.BigIntegerField(null=True, blank=True)
     radius = models.BigIntegerField(null=True, blank=True)
     mass = models.BigIntegerField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'mapCelestialStatistics'
         verbose_name = u'mapCelestialStatistics'
 
@@ -470,7 +470,7 @@ class MapConstellation(models.Model):
     zMax = models.FloatField(null=True, blank=True)
     factionID = models.BigIntegerField(null=True, blank=True)
     radius = models.FloatField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'mapConstellations'
         verbose_name = u'mapConstellations'
 
@@ -478,7 +478,7 @@ class MapConstellation(models.Model):
 class MapJump(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'stargateID')
     destinationID = models.BigIntegerField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'mapJumps'
         verbose_name = u'mapJumps'
 
@@ -492,7 +492,7 @@ class MapLandmark(models.Model):
     y = models.FloatField(null=True, blank=True)
     z = models.FloatField(null=True, blank=True)
     icon = models.ForeignKey('EveIcon', null=True, db_column='iconID')
-    class Meta:
+    class Meta(object):
         db_table = u'mapLandmarks'
         verbose_name = u'mapLandmarks'
 
@@ -500,7 +500,7 @@ class MapLandmark(models.Model):
 class MapLocationScene(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'locationID')
     graphicID = models.BigIntegerField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'mapLocationScenes'
         verbose_name = u'mapLocationScenes'
 
@@ -508,7 +508,7 @@ class MapLocationScene(models.Model):
 class MapLocationWormholeClass(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'locationID')
     wormholeClassID = models.BigIntegerField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'mapLocationWormholeClasses'
         verbose_name = u'mapLocationWormholeClasses'
 
@@ -527,7 +527,7 @@ class MapRegion(models.Model):
     zMax = models.FloatField(null=True, blank=True)
     factionID = models.BigIntegerField(null=True, blank=True)
     radius = models.FloatField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'mapRegions'
         verbose_name = u'mapRegions'
 
@@ -560,7 +560,7 @@ class MapSolarSystem(models.Model):
     sunTypeID = models.BigIntegerField(null=True, blank=True)
     securityClass = models.TextField(blank=True)
 
-    class Meta:
+    class Meta(object):
         db_table = u'mapSolarSystems'
         verbose_name = u'mapSolarSystems'
 
@@ -578,7 +578,7 @@ class MapUniverse(models.Model):
     zMin = models.FloatField(null=True, blank=True)
     zMax = models.FloatField(null=True, blank=True)
     radius = models.FloatField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'mapUniverse'
         verbose_name = u'mapUniverse'
 
@@ -587,7 +587,7 @@ class PlanetSchematic(models.Model):
     id = models.SmallIntegerField(primary_key=True, db_column=u'schematicID')
     schematicName = models.TextField(blank=True)
     cycleTime = models.BigIntegerField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'planetSchematics'
         verbose_name = u'planetSchematics'
 
@@ -598,7 +598,7 @@ class RamActivity(models.Model):
     iconNo = models.TextField(blank=True)
     description = models.TextField(blank=True)
     published = models.NullBooleanField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'ramActivities'
         verbose_name = u'ramActivities'
 
@@ -613,7 +613,7 @@ class RamAssemblyLineType(models.Model):
     volume = models.FloatField(null=True, blank=True)
     activityID = models.SmallIntegerField(null=True, blank=True)
     minCostPerHour = models.FloatField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'ramAssemblyLineTypes'
         verbose_name = u'ramAssemblyLineTypes'
 
@@ -633,7 +633,7 @@ class StaOperation(models.Model):
     amarrStationTypeID = models.BigIntegerField(null=True, blank=True)
     gallenteStationTypeID = models.BigIntegerField(null=True, blank=True)
     joveStationTypeID = models.BigIntegerField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'staOperations'
         verbose_name = u'staOperations'
 
@@ -642,7 +642,7 @@ class StaService(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'serviceID')
     serviceName = models.TextField(blank=True)
     description = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'staServices'
         verbose_name = u'staServices'
 
@@ -659,7 +659,7 @@ class StaStationType(models.Model):
     officeSlots = models.SmallIntegerField(null=True, blank=True)
     reprocessingEfficiency = models.FloatField(null=True, blank=True)
     conquerable = models.NullBooleanField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'staStationTypes'
         verbose_name = u'staStationTypes'
 
@@ -684,7 +684,7 @@ class StaStation(models.Model):
     reprocessingStationsTake = models.FloatField(null=True, blank=True)
     reprocessingHangarFlag = models.SmallIntegerField(null=True, blank=True)
 
-    class Meta:
+    class Meta(object):
         db_table = u'staStations'
         verbose_name = u'staStations'
 
@@ -695,7 +695,7 @@ class TrnTranslationColumn(models.Model):
     tableName = models.TextField()
     columnName = models.TextField()
     masterID = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'trnTranslationColumns'
         verbose_name = u'trnTranslationColumns'
 
@@ -704,7 +704,7 @@ class TrnTranslationLanguage(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'numericLanguageID')
     languageID = models.TextField(blank=True)
     languageName = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'trnTranslationLanguages'
         verbose_name = u'trnTranslationLanguages'
 
@@ -712,7 +712,7 @@ class TrnTranslationLanguage(models.Model):
 class WarCombatZoneSystem(models.Model):
     id = models.BigIntegerField(primary_key=True, db_column=u'solarSystemID')
     combatZoneID = models.BigIntegerField(null=True, blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'warCombatZoneSystems'
         verbose_name = u'warCombatZoneSystems'
 
@@ -723,7 +723,7 @@ class WarCombatZone(models.Model):
     factionID = models.BigIntegerField(null=True, blank=True)
     centerSystemID = models.BigIntegerField(null=True, blank=True)
     description = models.TextField(blank=True)
-    class Meta:
+    class Meta(object):
         db_table = u'warCombatZones'
         verbose_name = u'warCombatZones'
 
@@ -734,7 +734,7 @@ class TrnTranslation(models.Model):
     languageID = models.TextField()
     text = models.TextField()
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'trnTranslations'
         verbose_name = u'trnTranslations'
 
@@ -743,7 +743,7 @@ class AgtResearchAgent(models.Model):
     agentID = models.BigIntegerField()
     typeID = models.BigIntegerField()
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'agtResearchAgents'
         verbose_name = u'agtResearchAgents'
 
@@ -753,7 +753,7 @@ class CertMastery(models.Model):
     masteryLevel = models.BigIntegerField(null=True, blank=True)
     certID = models.BigIntegerField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'certMasteries'
         verbose_name = u'certMasteries'
 
@@ -763,7 +763,7 @@ class CrpNPCCorporationDivision(models.Model):
     divisionID = models.SmallIntegerField()
     size = models.SmallIntegerField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'crpNPCCorporationDivisions'
         verbose_name = u'crpNPCCorporationDivisions'
 
@@ -775,7 +775,7 @@ class CertSkill(models.Model):
     skillLevel = models.BigIntegerField(null=True, blank=True)
     certLevelText = models.TextField(blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'certSkills'
         verbose_name = u'certSkills'
 
@@ -784,7 +784,7 @@ class CrpNPCCorporationResearchField(models.Model):
     skillID = models.BigIntegerField()
     corporationID = models.BigIntegerField()
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'crpNPCCorporationResearchFields'
         verbose_name = u'crpNPCCorporationResearchFields'
 
@@ -793,7 +793,7 @@ class CrpNPCCorporationTrade(models.Model):
     corporationID = models.BigIntegerField()
     typeID = models.BigIntegerField()
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'crpNPCCorporationTrades'
         verbose_name = u'crpNPCCorporationTrades'
 
@@ -804,7 +804,7 @@ class DgmTypeAttribute(models.Model):
     valueInt = models.BigIntegerField(null=True, blank=True)
     valueFloat = models.FloatField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'dgmTypeAttributes'
         verbose_name = u'dgmTypeAttributes'
 
@@ -814,7 +814,7 @@ class DgmTypeEffect(models.Model):
     effectID = models.SmallIntegerField()
     isDefault = models.NullBooleanField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'dgmTypeEffects'
         verbose_name = u'dgmTypeEffects'
 
@@ -824,7 +824,7 @@ class IndustryActivity(models.Model):
     time = models.BigIntegerField(null=True, blank=True)
     activityID = models.BigIntegerField()
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'industryActivity'
         verbose_name = u'industryActivity'
 
@@ -836,7 +836,7 @@ class IndustryActivityMaterial(models.Model):
     quantity = models.BigIntegerField(null=True, blank=True)
     consume = models.SmallIntegerField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'industryActivityMaterials'
         verbose_name = u'industryActivityMaterials'
 
@@ -847,7 +847,7 @@ class IndustryActivityProbability(models.Model):
     productTypeID = models.BigIntegerField(null=True, blank=True)
     probability = models.DecimalField(null=True, max_digits=3, decimal_places=2, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'industryActivityProbabilities'
         verbose_name = u'industryActivityProbabilities'
 
@@ -858,7 +858,7 @@ class IndustryActivityProduct(models.Model):
     productTypeID = models.BigIntegerField(null=True, blank=True)
     quantity = models.BigIntegerField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'industryActivityProducts'
         verbose_name = u'industryActivityProducts'
 
@@ -869,7 +869,7 @@ class IndustryActivityRace(models.Model):
     productTypeID = models.BigIntegerField(null=True, blank=True)
     raceID = models.SmallIntegerField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'industryActivityRaces'
         verbose_name = u'industryActivityRaces'
 
@@ -880,7 +880,7 @@ class IndustryActivitySkill(models.Model):
     skillID = models.BigIntegerField(null=True, blank=True)
     level = models.BigIntegerField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'industryActivitySkills'
         verbose_name = u'industryActivitySkills'
 
@@ -893,7 +893,7 @@ class InvContrabandType(models.Model):
     fineByValue = models.FloatField(null=True, blank=True)
     attackMinSec = models.FloatField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'invContrabandTypes'
         verbose_name = u'invContrabandTypes'
 
@@ -906,7 +906,7 @@ class InvControlTowerResource(models.Model):
     minSecurityLevel = models.FloatField(null=True, blank=True)
     factionID = models.BigIntegerField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'invControlTowerResources'
         verbose_name = u'invControlTowerResources'
 
@@ -918,7 +918,7 @@ class InvTrait(models.Model):
     bonusText = models.TextField(blank=True)
     unitID = models.BigIntegerField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'invTraits'
         verbose_name = u'invTraits'
 
@@ -928,7 +928,7 @@ class InvTypeMaterial(models.Model):
     materialTypeID = models.BigIntegerField()
     quantity = models.BigIntegerField()
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'invTypeMaterials'
         verbose_name = u'invTypeMaterials'
 
@@ -939,7 +939,7 @@ class InvTypeReaction(models.Model):
     typeID = models.BigIntegerField()
     quantity = models.SmallIntegerField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'invTypeReactions'
         verbose_name = u'invTypeReactions'
 
@@ -950,7 +950,7 @@ class MapConstellationJump(models.Model):
     toConstellationID = models.BigIntegerField()
     toRegionID = models.BigIntegerField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'mapConstellationJumps'
         verbose_name = u'mapConstellationJumps'
 
@@ -959,7 +959,7 @@ class MapRegionJump(models.Model):
     fromRegionID = models.BigIntegerField()
     toRegionID = models.BigIntegerField()
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'mapRegionJumps'
         verbose_name = u'mapRegionJumps'
 
@@ -972,7 +972,7 @@ class MapSolarSystemJump(models.Model):
     toConstellationID = models.BigIntegerField(null=True, blank=True)
     toRegionID = models.BigIntegerField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'mapSolarSystemJumps'
         verbose_name = u'mapSolarSystemJumps'
 
@@ -981,7 +981,7 @@ class PlanetSchematicsPinMap(models.Model):
     schematicID = models.SmallIntegerField()
     pinTypeID = models.BigIntegerField()
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'planetSchematicsPinMap'
         verbose_name = u'planetSchematicsPinMap'
 
@@ -992,7 +992,7 @@ class PlanetSchematicsTypeMap(models.Model):
     quantity = models.SmallIntegerField(null=True, blank=True)
     isInput = models.NullBooleanField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'planetSchematicsTypeMap'
         verbose_name = u'planetSchematicsTypeMap'
 
@@ -1006,7 +1006,7 @@ class RamAssemblyLineStation(models.Model):
     solarSystem = models.ForeignKey('MapSolarSystem', null=True, db_column='solarSystemID')
     region = models.ForeignKey('MapRegion', null=True, db_column='regionID')
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'ramAssemblyLineStations'
         verbose_name = u'ramAssemblyLineStations'
 
@@ -1018,7 +1018,7 @@ class RamAssemblyLineTypeDetailPerCategory(models.Model):
     materialMultiplier = models.FloatField(null=True, blank=True)
     costMultiplier = models.FloatField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'ramAssemblyLineTypeDetailPerCategory'
         verbose_name = u'ramAssemblyLineTypeDetailPerCategory'
 
@@ -1030,7 +1030,7 @@ class RamAssemblyLineTypeDetailPerGroup(models.Model):
     materialMultiplier = models.FloatField(null=True, blank=True)
     costMultiplier = models.FloatField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'ramAssemblyLineTypeDetailPerGroup'
         verbose_name = u'ramAssemblyLineTypeDetailPerGroup'
 
@@ -1040,7 +1040,7 @@ class RamInstallationTypeContent(models.Model):
     assemblyLineTypeID = models.SmallIntegerField()
     quantity = models.SmallIntegerField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'ramInstallationTypeContents'
         verbose_name = u'ramInstallationTypeContents'
 
@@ -1049,7 +1049,7 @@ class StaOperationService(models.Model):
     operationID = models.SmallIntegerField()
     serviceID = models.BigIntegerField()
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'staOperationServices'
         verbose_name = u'staOperationServices'
 
@@ -1061,7 +1061,7 @@ class TranslationTable(models.Model):
     tcGroupID = models.BigIntegerField(null=True, blank=True)
     tcID = models.BigIntegerField(null=True, blank=True)
     id = models.IntegerField(primary_key=True)
-    class Meta:
+    class Meta(object):
         db_table = u'translationTables'
         verbose_name = u'translationTables'
 
@@ -1110,6 +1110,6 @@ class MapDenormalize(models.Model):
                 return self.pk
 
 
-    class Meta:
+    class Meta(object):
         db_table = u'mapDenormalize'
         verbose_name = u'mapDenormalize'

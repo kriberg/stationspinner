@@ -5,7 +5,7 @@ from stationspinner.libs.drf_extensions import JSONField
 
 class MailSerializer(serializers.ModelSerializer):
     receivers = JSONField()
-    class Meta:
+    class Meta(object):
         model = Mail
         fields = ('messageID', 'title', 'senderName', 'parsed_message', 'sentDate',
                   'read', 'receivers', 'relevancy')
@@ -13,6 +13,6 @@ class MailSerializer(serializers.ModelSerializer):
 
 class MailStatusSerializer(serializers.ModelSerializer):
     messageID = serializers.IntegerField(read_only=True)
-    class Meta:
+    class Meta(object):
         model = MailStatus
         fields = ('messageID', 'read')

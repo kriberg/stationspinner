@@ -128,7 +128,7 @@ class APICall(models.Model):
     def __unicode__(self):
         return "{0}.{1}".format(self.type, self.name)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('accessMask', 'type')
 
 class UniverseUpdate(models.Model):

@@ -1,7 +1,10 @@
 from abc import ABCMeta
 from django.db import connections
 from redis import Redis
-from stationspinner.libs.pragma import *
+from stationspinner.libs.pragma import get_location, \
+    get_location_name, \
+    get_location_regionName, get_location_regionID, \
+    get_location_solarSystemName, get_location_solarSystemID
 import json
 
 REDIS_ASSET_CACHE = 2
@@ -72,6 +75,7 @@ class BaseAssetHandler():
                 a.quantity,
                 a.flag,
                 a."groupID",
+                a."categoryID",
                 a.singleton,
                 a."rawQuantity",
                 a.item_volume as volume,
@@ -119,7 +123,7 @@ class BaseAssetHandler():
             parentID
         )
 
-    def get_merged_asset_locations(self, entities, locationIDs=[]):
+    def get_merged_asset_locations(self, entities, locationIDs=()):
         keyset = self._entity_key(entities, locationIDs)
 
         asset_locations = self._cache_get(keyset)
