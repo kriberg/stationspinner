@@ -152,7 +152,7 @@ INSTALLED_APPS = [
     'stationspinner.evecentral',
     'stationspinner.evemail',
     'stationspinner.statistics',
-#   'registration',
+    'registration',
     'bootstrapform',
 
 ]
@@ -226,6 +226,7 @@ ACCOUNT_ACTIVATION_DAYS = 3
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'localhost'
 EMAIL_PORT = 25
+REGISTRATION_DEFAULT_FROM_EMAIL = ''
 
 
 
