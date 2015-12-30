@@ -89,7 +89,7 @@ class EveAPIHandler():
                                          objClass._meta.get_all_field_names(),
                                          exclude)
 
-        if len(selectors) > 0:
+        if len(selectors) > 0 and not immutable:
             obj, created = objClass.objects.update_or_create(defaults=defaults,
                                                              **selectors)
         else:
@@ -103,6 +103,8 @@ class EveAPIHandler():
 
         if 'update_from_api' in dir(obj):
             obj.update_from_api(entry, self)
+
+        obj.save()
 
         return obj
 
@@ -153,7 +155,7 @@ class EveAPIHandler():
                                              objClass._meta.get_all_field_names(),
                                              exclude)
 
-            if len(selectors) > 0:
+            if len(selectors) > 0 and not immutable:
                 try:
                     obj, created = objClass.objects.update_or_create(defaults=defaults,
                                                                      **selectors)
@@ -172,6 +174,8 @@ class EveAPIHandler():
 
             if hasattr(obj, 'update_from_api'):
                 obj.update_from_api(entry, self)
+
+            obj.save()
 
             obj_list.append(obj.pk)
 
