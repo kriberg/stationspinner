@@ -163,6 +163,10 @@ class EveAPIHandler():
                     log.error('Could not save {0} with defaults "{1}" and selectors "{2}".'.format(
                             objClass, defaults, selectors))
                     raise ve
+                except Exception, ex:
+                    log.error('Could not save {0} with defaults "{1}" and selectors "{2}".'.format(
+                            objClass, defaults, selectors))
+                    raise ex
             else:
                 obj = objClass(**defaults)
 
