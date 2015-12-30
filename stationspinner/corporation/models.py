@@ -241,22 +241,25 @@ class IndustryJob(models.Model):
     timeInSeconds = models.IntegerField()
     productTypeID = models.IntegerField(null=True)
     completedDate = custom.DateTimeField(null=True)
-    completedCharacterID = models.IntegerField(null=True)
+    completedCharacterID = models.BigIntegerField(null=True)
     installerName = models.CharField(max_length=255)
-    installerID = models.IntegerField()
-    facilityID = models.IntegerField()
+    installerID = models.BigIntegerField()
+    facilityID = models.BigIntegerField()
     pauseDate = custom.DateTimeField(null=True)
     solarSystemName = models.CharField(max_length=255)
-    stationID = models.IntegerField(null=True)
+    stationID = models.BigIntegerField(null=True)
     jobID = models.BigIntegerField(null=True)
     teamID = models.IntegerField(null=True)
     productTypeName = models.CharField(max_length=255, blank=True, null=True)
-    blueprintLocationID = models.IntegerField(null=True)
+    blueprintLocationID = models.BigIntegerField(null=True)
     blueprintID = models.BigIntegerField(null=True)
     solarSystemID = models.IntegerField()
     licensedRuns = models.IntegerField(null=True)
 
     owner = models.ForeignKey(CorporationSheet)
+
+    class Meta(object):
+        unique_together = ('facilityID', 'installerID', 'activityID')
 
 
 class IndustryJobHistory(models.Model):
@@ -269,26 +272,29 @@ class IndustryJobHistory(models.Model):
     outputLocationID = models.BigIntegerField()
     activityID = models.IntegerField()
     cost = models.DecimalField(max_digits=30, decimal_places=2, null=True)
-    blueprintTypeID = models.IntegerField(null=True)
+    blueprintTypeID = models.BigIntegerField(null=True)
     timeInSeconds = models.IntegerField()
     productTypeID = models.IntegerField(null=True)
     completedDate = custom.DateTimeField(null=True)
-    completedCharacterID = models.IntegerField(null=True)
+    completedCharacterID = models.BigIntegerField(null=True)
     installerName = models.CharField(max_length=255)
-    installerID = models.IntegerField()
-    facilityID = models.IntegerField()
+    installerID = models.BigIntegerField()
+    facilityID = models.BigIntegerField()
     pauseDate = custom.DateTimeField(null=True)
     solarSystemName = models.CharField(max_length=255)
-    stationID = models.IntegerField(null=True)
+    stationID = models.BigIntegerField(null=True)
     jobID = models.BigIntegerField(null=True)
     teamID = models.IntegerField(null=True)
     productTypeName = models.CharField(max_length=255, blank=True, null=True)
-    blueprintLocationID = models.IntegerField(null=True)
+    blueprintLocationID = models.BigIntegerField(null=True)
     blueprintID = models.BigIntegerField(null=True)
     solarSystemID = models.IntegerField()
     licensedRuns = models.IntegerField(null=True)
 
     owner = models.ForeignKey(CorporationSheet)
+
+    class Meta(object):
+        unique_together = ('facilityID', 'installerID', 'activityID')
 
 
 class WalletTransaction(models.Model):
@@ -672,7 +678,15 @@ class ContainerLog(models.Model):
     actorID = models.IntegerField()
     quantity = models.IntegerField(null=True)
 
+
     owner = models.ForeignKey(CorporationSheet)
+
+    def update_from_api(self, item, handler):
+        if not item.typeID:
+            self.typeID = None
+
+    class Meta(object):
+        unique_together = ('logTime', 'itemID', 'owner')
 
 
 class NPCStanding(models.Model):
@@ -812,6 +826,43 @@ class ItemLocationName(models.Model):
 
     class Meta(object):
         unique_together = ('itemID', 'owner')
+
+
+class CustomsOffice(models.Model):
+    itemID = models.BigIntegerField()
+    solarSystemID = models.IntegerField()
+    solarSystemName = models.CharField(max_length=255)
+    reinforceHour = models.IntegerField()
+    allowAlliance = models.BooleanField()
+    allowStandings = models.BooleanField()
+    standingLevel = models.IntegerField()
+    taxRateAlliance = models.DecimalField(max_digits=6, decimal_places=3)
+    taxRateCorporation = models.DecimalField(max_digits=6, decimal_places=3)
+    taxRateStandingHigh = models.DecimalField(max_digits=6, decimal_places=3)
+    taxRateStandingGood = models.DecimalField(max_digits=6, decimal_places=3)
+    taxRateStandingNeutral = models.DecimalField(max_digits=6, decimal_places=3)
+    taxRateStandingBad = models.DecimalField(max_digits=6, decimal_places=3)
+    taxRateStandingHorrible = models.DecimalField(max_digits=6, decimal_places=3)
+
+    owner = models.ForeignKey(CorporationSheet)
+
+    def save(self, *args, **kwargs):
+        for tax_target in ('taxRateAlliance',
+                           'taxRateCorporation',
+                           'taxRateStandingHigh',
+                           'taxRateStandingGood',
+                           'taxRateStandingNeutral',
+                           'taxRateStandingBad',
+                           'taxRateStandingHorrible'):
+            if getattr(self, tax_target) is None:
+                setattr(self, tax_target, 0.0)
+        return super(CustomsOffice, self).save(*args, **kwargs)
+
+    def __unicode__(self):
+        return self.solarSystemName
+
+    class Meta(object):
+        unique_together = ('itemID', 'solarSystemID')
 
 
 @receiver(post_save, sender=CorporationSheet)

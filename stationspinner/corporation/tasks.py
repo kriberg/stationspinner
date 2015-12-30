@@ -9,12 +9,16 @@ from stationspinner.corporation.models import CorporationSheet, AssetList, \
     ContainerLog, Contract, ContractBid, NPCStanding, Facilities, \
     OutpostService, Shareholder, Starbase, StarbaseFuel, IndustryJob, \
     IndustryJobHistory, Outpost, WalletTransaction, WalletJournal, Asset, \
-    Blueprint, ItemLocationName
+    Blueprint, ItemLocationName, CustomsOffice
 from stationspinner.corporation.signals import \
     corporation_assets_parsed, \
     corporation_sheet_parsed, \
     corporation_account_balance_updated, \
-    corporation_wallet_journal_updated
+    corporation_wallet_journal_updated, \
+    corporation_container_log_updated, \
+    corporation_customs_offices_updated, \
+    corporation_industry_jobs_updated, \
+    corporation_industry_jobs_history_updated
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
 from stationspinner.libs.assethandlers import CorporationAssetHandler
 
@@ -374,10 +378,142 @@ def walk_walletjournal(apiupdate_pk, fromID, accountKey):
 
     target.updated(api_data)
 
+
+@app.task(name='corporation.fetch_containerlog', max_retries=0)
+def fetch_containerlog(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(corporation.owner_key)
+    try:
+        api_data = auth.corp.ContainerLog()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    handler.autoparse_list(api_data.containerLog,
+                           ContainerLog,
+                           unique_together=('logTime', 'itemID'),
+                           extra_selectors={'owner': corporation},
+                           owner=corporation,
+                           immutable=True)
+    target.updated(api_data)
+    corporation_container_log_updated.send(ContainerLog, corporationID=corporation.pk)
+
+
+@app.task(name='corporation.fetch_customsoffices', max_retries=0)
+def fetch_customsoffices(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(corporation.owner_key)
+    try:
+        api_data = auth.corp.CustomsOffices()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    handler.autoparse_list(api_data.pocos,
+                           CustomsOffice,
+                           unique_together=('solarSystemID', 'itemID'),
+                           extra_selectors={'owner': corporation},
+                           owner=corporation)
+    target.updated(api_data)
+    corporation_customs_offices_updated.send(ContainerLog, corporationID=corporation.pk)
+
+
+@app.task(name='corporation.fetch_industryjobs', max_retries=0)
+def fetch_industryjobs(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(corporation.owner_key)
+    try:
+        api_data = auth.corp.IndustryJobs()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    handler.autoparse_list(api_data.jobs,
+                           IndustryJob,
+                           unique_together=('facilityID', 'installerID', 'activityID'),
+                           extra_selectors={'owner': corporation},
+                           owner=corporation)
+    target.updated(api_data)
+    corporation_industry_jobs_updated.send(ContainerLog, corporationID=corporation.pk)
+
+
+@app.task(name='corporation.fetch_industryjobshistory', max_retries=0)
+def fetch_industryjobshistory(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(corporation.owner_key)
+    try:
+        api_data = auth.corp.IndustryJobsHistory()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    handler.autoparse_list(api_data.jobs,
+                           IndustryJobHistory,
+                           unique_together=('facilityID', 'installerID', 'activityID'),
+                           extra_selectors={'owner': corporation},
+                           owner=corporation)
+    target.updated(api_data)
+    corporation_industry_jobs_history_updated.send(ContainerLog, corporationID=corporation.pk)
+
+
 API_MAP = {
-    'AssetList': (fetch_assetlist, fetch_blueprints),
+    'AssetList': (fetch_assetlist, fetch_blueprints, fetch_customsoffices),
     'AccountBalance': (fetch_accountbalance,),
     'MemberTrackingExtended': (fetch_membertracking,),
     'StarbaseList': (fetch_starbaselist,),
     'WalletJournal': (fetch_walletjournal,),
+    'ContainerLog': (fetch_containerlog, ),
+    'IndustryJobs': (fetch_industryjobs, fetch_industryjobshistory),
 }
