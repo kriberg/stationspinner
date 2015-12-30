@@ -158,6 +158,8 @@ class EveAPIHandler():
                     obj, created = objClass.objects.update_or_create(defaults=defaults,
                                                                      **selectors)
                 except ValueError, ve:
+                    log.error('Could not save {0} with defaults "{1}" and selectors "{2}".'.format(
+                            objClass, defaults, selectors))
                     raise ve
             else:
                 obj = objClass(**defaults)
