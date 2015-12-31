@@ -89,7 +89,10 @@ class EveAPIHandler():
 
         selectors = {}
         for column in unique_together:
-            selectors[column] = getattr(entry, column)
+            if column in static_defaults:
+                selectors[column] = static_defaults[column]
+            else:
+                selectors[column] = getattr(entry, column)
 
         for key, value in extra_selectors.items():
             selectors[key] = value
@@ -159,7 +162,10 @@ class EveAPIHandler():
         for entry in result:
             selectors = {}
             for column in unique_together:
-                selectors[column] = getattr(entry, column)
+                if column in static_defaults:
+                    selectors[column] = static_defaults[column]
+                else:
+                    selectors[column] = getattr(entry, column)
 
             for key, value in extra_selectors.items():
                 selectors[key] = value
