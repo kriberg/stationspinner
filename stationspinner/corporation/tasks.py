@@ -675,7 +675,7 @@ def fetch_marketorders(apiupdate_pk):
                            owner=corporation)
 
     target.updated(api_data)
-    corporation_market_orders_updated.send(MemberSecurityLog, corporationID=corporation.pk)
+    corporation_market_orders_updated.send(MarketOrder, corporationID=corporation.pk)
 
 
 API_MAP = {
