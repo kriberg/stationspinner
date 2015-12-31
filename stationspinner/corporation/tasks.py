@@ -20,7 +20,8 @@ from stationspinner.corporation.signals import \
     corporation_industry_jobs_updated, \
     corporation_industry_jobs_history_updated, \
     corporation_contact_list_updated, \
-    corporation_member_security_log_updated
+    corporation_member_security_log_updated, \
+    corporation_shareholders_updated
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
 from stationspinner.libs.assethandlers import CorporationAssetHandler
 
@@ -443,7 +444,7 @@ def fetch_customsoffices(apiupdate_pk):
                            extra_selectors={'owner': corporation},
                            owner=corporation)
     target.updated(api_data)
-    corporation_customs_offices_updated.send(ContainerLog, corporationID=corporation.pk)
+    corporation_customs_offices_updated.send(CustomsOffice, corporationID=corporation.pk)
 
 
 @app.task(name='corporation.fetch_industryjobs', max_retries=0)
@@ -475,7 +476,7 @@ def fetch_industryjobs(apiupdate_pk):
                            extra_selectors={'owner': corporation},
                            owner=corporation)
     target.updated(api_data)
-    corporation_industry_jobs_updated.send(ContainerLog, corporationID=corporation.pk)
+    corporation_industry_jobs_updated.send(IndustryJob, corporationID=corporation.pk)
 
 
 @app.task(name='corporation.fetch_industryjobshistory', max_retries=0)
@@ -507,7 +508,7 @@ def fetch_industryjobshistory(apiupdate_pk):
                            extra_selectors={'owner': corporation},
                            owner=corporation)
     target.updated(api_data)
-    corporation_industry_jobs_history_updated.send(ContainerLog, corporationID=corporation.pk)
+    corporation_industry_jobs_history_updated.send(IndustryJobHistory, corporationID=corporation.pk)
 
 
 @app.task(name='corporation.fetch_contactlist', max_retries=0)
@@ -556,7 +557,7 @@ def fetch_contactlist(apiupdate_pk):
     ))
 
     target.updated(api_data)
-    corporation_contact_list_updated.send(ContainerLog, corporationID=corporation.pk)
+    corporation_contact_list_updated.send(Contact, corporationID=corporation.pk)
 
 
 @app.task(name='corporation.fetch_membersecuritylog', max_retries=0)
@@ -590,7 +591,57 @@ def fetch_membersecuritylog(apiupdate_pk):
                            immutable=True)
 
     target.updated(api_data)
-    corporation_member_security_log_updated.send(ContainerLog, corporationID=corporation.pk)
+    corporation_member_security_log_updated.send(MemberSecurityLog, corporationID=corporation.pk)
+
+
+@app.task(name='corporation.fetch_shareholders', max_retries=0)
+def fetch_shareholders(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(corporation.owner_key)
+    try:
+        api_data = auth.corp.ShareHolders()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    char_ids = handler.autoparse_list(api_data.characters,
+                                      Shareholder,
+                                      unique_together=('shareholderID', 'holder_type'),
+                                      extra_selectors={'owner': corporation},
+                                      owner=corporation,
+                                      static_defaults={'holder_type': 'Character'})
+
+    corp_ids = handler.autoparse_list(api_data.corporations,
+                                      Shareholder,
+                                      unique_together=('shareholderID', 'holder_type'),
+                                      extra_selectors={'owner': corporation},
+                                      owner=corporation,
+                                      static_defaults={'holder_type': 'Corporation'})
+
+    old_entries = Shareholder.objects.filter(owner=corporation).exclude(pk__in=char_ids+corp_ids)
+    deleted = old_entries.count()
+    old_entries.delete()
+    log.info('Updated shareholders for corporation "{0}". {1} entries, {2} old entries removed.'.format(
+        corporation,
+        len(corp_ids) + len(char_ids),
+        deleted
+    ))
+
+    target.updated(api_data)
+    corporation_shareholders_updated.send(Shareholder, corporationID=corporation.pk)
 
 
 API_MAP = {
@@ -603,4 +654,5 @@ API_MAP = {
     'IndustryJobs': (fetch_industryjobs, fetch_industryjobshistory),
     'ContactList': (fetch_contactlist, ),
     'MemberSecurityLog': (fetch_membersecuritylog, ),
+    'Shareholders': (fetch_shareholders, ),
 }

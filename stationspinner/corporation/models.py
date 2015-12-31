@@ -76,15 +76,16 @@ class Shareholder(models.Model):
         ('Character', 'Character'),
     )
     holder_type = models.CharField(max_length=11, choices=HOLDER_TYPES)
-
-
-    shareholderID = models.IntegerField()
+    shareholderID = models.BigIntegerField()
     shareholderName = models.CharField(max_length=255)
-    shareholderCorporationID = models.IntegerField(null=True)
+    shareholderCorporationID = models.BigIntegerField(null=True)
     shareholderCorporationName = models.CharField(max_length=255, null=True)
     shares = models.IntegerField(default=1)
 
     owner = models.ForeignKey(CorporationSheet)
+
+    class Meta(object):
+        unique_together = ('owner', 'shareholderID', 'holder_type')
 
 
 class MemberTracking(models.Model):
