@@ -12,3 +12,4 @@ corporation_industry_jobs_history_updated = Signal(providing_args=['corporationI
 corporation_contact_list_updated = Signal(providing_args=['corporationID'])
 corporation_member_security_log_updated = Signal(providing_args=['corporationID'])
 corporation_shareholders_updated = Signal(providing_args=['corporationID'])
+corporation_market_orders_updated = Signal(providing_args=['corporationID'])

@@ -21,7 +21,8 @@ from stationspinner.corporation.signals import \
     corporation_industry_jobs_history_updated, \
     corporation_contact_list_updated, \
     corporation_member_security_log_updated, \
-    corporation_shareholders_updated
+    corporation_shareholders_updated, \
+    corporation_market_orders_updated
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
 from stationspinner.libs.assethandlers import CorporationAssetHandler
 
@@ -644,6 +645,39 @@ def fetch_shareholders(apiupdate_pk):
     corporation_shareholders_updated.send(Shareholder, corporationID=corporation.pk)
 
 
+@app.task(name='corporation.fetch_marketorders', max_retries=0)
+def fetch_marketorders(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(corporation.owner_key)
+    try:
+        api_data = auth.corp.MarketOrders()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    handler.autoparse_list(api_data.orders,
+                           MarketOrder,
+                           unique_together=('orderID', ),
+                           extra_selectors={'owner': corporation},
+                           owner=corporation)
+
+    target.updated(api_data)
+    corporation_market_orders_updated.send(MemberSecurityLog, corporationID=corporation.pk)
+
+
 API_MAP = {
     'AssetList': (fetch_assetlist, fetch_blueprints, fetch_customsoffices),
     'AccountBalance': (fetch_accountbalance,),
@@ -655,4 +689,5 @@ API_MAP = {
     'ContactList': (fetch_contactlist, ),
     'MemberSecurityLog': (fetch_membersecuritylog, ),
     'Shareholders': (fetch_shareholders, ),
+    'MarketOrders': (fetch_marketorders, ),
 }

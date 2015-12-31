@@ -549,13 +549,13 @@ class MarketOrder(models.Model):
     typeName = models.CharField(max_length=255, null=True)
     volEntered = models.BigIntegerField()
     minVolume = models.BigIntegerField()
-    charID = models.IntegerField()
+    charID = models.BigIntegerField()
     accountKey = models.IntegerField(default=1000)
     issued = custom.DateTimeField()
     bid = models.BooleanField(default=False)
     range = models.IntegerField()
     escrow = models.DecimalField(max_digits=30, decimal_places=2, null=True)
-    stationID = models.IntegerField()
+    stationID = models.BigIntegerField()
     orderState = models.IntegerField()
     volRemaining = models.BigIntegerField()
     duration = models.IntegerField()
@@ -570,6 +570,9 @@ class MarketOrder(models.Model):
             log.warning('TypeID {0} does not exist.'.format(self.typeID))
             self.typeName = self.typeID
         self.save()
+
+    class Meta(object):
+        unique_together = ('owner', 'orderID')
 
 
 class Medal(models.Model):

@@ -594,21 +594,32 @@ class Asset(models.Model):
 class MarketOrder(models.Model):
     orderID = models.BigIntegerField()
     typeID = models.IntegerField()
+    typeName = models.CharField(max_length=255, null=True)
     volEntered = models.BigIntegerField()
     minVolume = models.BigIntegerField()
-    charID = models.IntegerField()
+    charID = models.BigIntegerField()
     accountKey = models.IntegerField(default=1000)
     issued = custom.DateTimeField()
     bid = models.BooleanField(default=False)
     range = models.IntegerField()
     escrow = models.DecimalField(max_digits=30, decimal_places=2, null=True)
-    stationID = models.IntegerField()
+    stationID = models.BigIntegerField()
     orderState = models.IntegerField()
     volRemaining = models.BigIntegerField()
     duration = models.IntegerField()
     price = models.DecimalField(max_digits=30, decimal_places=2)
 
     owner = models.ForeignKey(CorporationSheet)
+
+    def update_from_api(self, sheet, handler):
+        try:
+            self.typeName = InvType.objects.get(pk=self.typeID).typeName
+        except InvType.DoesNotExist:
+            log.warning('TypeID {0} does not exist.'.format(self.typeID))
+            self.typeName = self.typeID
+
+    class Meta(object):
+        unique_together = ('owner', 'orderID')
 
 
 class Contract(models.Model):
