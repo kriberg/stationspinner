@@ -342,18 +342,19 @@ class WalletJournal(models.Model):
 
 class Contact(models.Model):
     CONTACT_LIST_TYPES = (
-        ('Private', 'Private'),
         ('Corporate', 'Corporate'),
         ('Alliance', 'Alliance')
     )
-    standing = models.IntegerField()
-    inWatchlist = models.BooleanField(default=False)
-    contactID = models.IntegerField()
+    standing = models.DecimalField(max_digits=6, decimal_places=3)
+    contactID = models.BigIntegerField()
     contactName = models.CharField(max_length=255)
     contactTypeID = models.IntegerField()
     listType = models.CharField(max_length=20, choices=CONTACT_LIST_TYPES)
 
     owner = models.ForeignKey(CorporationSheet)
+
+    class Meta(object):
+        unique_together = ('owner', 'contactID', 'listType')
 
 
 class AssetList(models.Model):
@@ -733,21 +734,29 @@ class MemberTitle(models.Model):
 
 
 class MemberSecurityLog(models.Model):
-    CHANGE_TYPES = (
-        ('New', 'New'),
-        ('Old', 'Old')
-    )
     changeTime = custom.DateTimeField()
     issuerID = models.IntegerField()
     issuerName = models.CharField(max_length=255)
     characterID = models.IntegerField()
     characterName = models.CharField(max_length=255)
     roleLocationType = models.CharField(max_length=255)
-    change_type = models.CharField(max_length=3, choices=CHANGE_TYPES)
-    roleID = models.BigIntegerField()
-    roleName = models.CharField(max_length=255)
+    oldRoles = JsonField(default=[])
+    newRoles = JsonField(default=[])
 
     owner = models.ForeignKey(CorporationSheet)
+
+    def update_from_api(self, item, *args, **kwargs):
+        old_roles = []
+        new_roles = []
+        for role in item.oldRoles:
+            old_roles.append({'roleID': role.roleID, 'roleName': role.roleName})
+        for role in item.newRoles:
+            new_roles.append({'roleID': role.roleID, 'roleName': role.roleName})
+        self.oldRoles = old_roles
+        self.newRoles = new_roles
+
+    class Meta(object):
+        unique_together = ('owner', 'changeTime', 'characterID', 'roleLocationType')
 
 
 class Facilities(models.Model):

@@ -18,7 +18,9 @@ from stationspinner.corporation.signals import \
     corporation_container_log_updated, \
     corporation_customs_offices_updated, \
     corporation_industry_jobs_updated, \
-    corporation_industry_jobs_history_updated
+    corporation_industry_jobs_history_updated, \
+    corporation_contact_list_updated, \
+    corporation_member_security_log_updated
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
 from stationspinner.libs.assethandlers import CorporationAssetHandler
 
@@ -508,6 +510,89 @@ def fetch_industryjobshistory(apiupdate_pk):
     corporation_industry_jobs_history_updated.send(ContainerLog, corporationID=corporation.pk)
 
 
+@app.task(name='corporation.fetch_contactlist', max_retries=0)
+def fetch_contactlist(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(corporation.owner_key)
+    try:
+        api_data = auth.corp.ContactList()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    corp_ids = handler.autoparse_list(api_data.corporateContactList,
+                                      Contact,
+                                      unique_together=('contactID',),
+                                      extra_selectors={'owner': corporation},
+                                      owner=corporation,
+                                      static_defaults={'listType': 'Corporate'})
+
+    ally_ids = handler.autoparse_list(api_data.allianceContactList,
+                                      Contact,
+                                      unique_together=('contactID',),
+                                      extra_selectors={'owner': corporation},
+                                      owner=corporation,
+                                      static_defaults={'listType': 'Alliance'})
+    old_entries = Contact.objects.filter(owner=corporation).exclude(pk__in=corp_ids+ally_ids)
+    deleted = old_entries.count()
+    old_entries.delete()
+    log.info('Updated standings for corporation "{0}". {1} entries, {2} old entries removed.'.format(
+        corporation,
+        len(corp_ids) + len(ally_ids),
+        deleted
+    ))
+
+    target.updated(api_data)
+    corporation_contact_list_updated.send(ContainerLog, corporationID=corporation.pk)
+
+
+@app.task(name='corporation.fetch_membersecuritylog', max_retries=0)
+def fetch_membersecuritylog(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(corporation.owner_key)
+    try:
+        api_data = auth.corp.MemberSecurityLog()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    handler.autoparse_list(api_data.roleHistory,
+                           MemberSecurityLog,
+                           unique_together=('changeTime', 'characterID', 'roleLocationType'),
+                           extra_selectors={'owner': corporation},
+                           owner=corporation,
+                           immutable=True)
+
+    target.updated(api_data)
+    corporation_member_security_log_updated.send(ContainerLog, corporationID=corporation.pk)
+
+
 API_MAP = {
     'AssetList': (fetch_assetlist, fetch_blueprints, fetch_customsoffices),
     'AccountBalance': (fetch_accountbalance,),
@@ -516,4 +601,6 @@ API_MAP = {
     'WalletJournal': (fetch_walletjournal,),
     'ContainerLog': (fetch_containerlog, ),
     'IndustryJobs': (fetch_industryjobs, fetch_industryjobshistory),
+    'ContactList': (fetch_contactlist, ),
+    'MemberSecurityLog': (fetch_membersecuritylog, ),
 }
