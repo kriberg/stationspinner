@@ -71,7 +71,21 @@ class EveAPIHandler():
                      owner=None,
                      exclude=(),
                      pre_save=False,
-                     immutable=False):
+                     immutable=False,
+                     static_defaults={}):
+        """
+
+        :param entry:
+        :param objClass:
+        :param unique_together:
+        :param extra_selectors:
+        :param owner:
+        :param exclude:
+        :param pre_save:
+        :param immutable:
+        :param static_defaults:
+        :return:
+        """
 
         selectors = {}
         for column in unique_together:
@@ -88,6 +102,8 @@ class EveAPIHandler():
         defaults = self._create_defaults(entry,
                                          objClass._meta.get_all_field_names(),
                                          exclude)
+        for key, value in static_defaults.items():
+                defaults[key] = value
 
         if len(selectors) > 0 and not immutable:
             obj, created = objClass.objects.update_or_create(defaults=defaults,
@@ -117,7 +133,8 @@ class EveAPIHandler():
                        exclude=(),
                        pre_save=False,
                        pre_delete=False,
-                       immutable=False):
+                       immutable=False,
+                       static_defaults={}):
         """
         This will take most rowsets from the eveapi and create or update model objects,
         as long as the model attributes match those of from the api.
@@ -129,6 +146,8 @@ class EveAPIHandler():
         :param exclude:
         :param pre_save:
         :param pre_delete:
+        :param immutable:
+        :param static_defaults:
         :return:
         """
 
@@ -154,6 +173,8 @@ class EveAPIHandler():
             defaults = self._create_defaults(entry,
                                              objClass._meta.get_all_field_names(),
                                              exclude)
+            for key, value in static_defaults.items():
+                defaults[key] = value
 
             if len(selectors) > 0 and not immutable:
                 try:
