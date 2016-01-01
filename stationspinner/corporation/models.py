@@ -346,22 +346,25 @@ class IndustryJobHistory(models.Model):
 
 
 class WalletTransaction(models.Model):
-    typeID = models.IntegerField(null=True)
-    clientTypeID = models.IntegerField(null=True)
-    transactionFor = models.CharField(max_length=255, blank=True, null=True)
+    typeID = models.IntegerField()
+    clientTypeID = models.IntegerField()
+    transactionFor = models.CharField(max_length=11)
     price = models.DecimalField(max_digits=30, decimal_places=2, null=True)
-    clientID = models.IntegerField(null=True)
-    journalTransactionID = models.IntegerField(null=True)
-    typeName = models.CharField(max_length=255, blank=True, null=True)
-    stationID = models.IntegerField(null=True)
-    stationName = models.CharField(max_length=255, blank=True, null=True)
-    transactionID = models.IntegerField(null=True)
-    quantity = models.IntegerField(null=True)
-    transactionDateTime = custom.DateTimeField(null=True)
-    clientName = models.CharField(max_length=255, blank=True, null=True)
-    transactionType = models.CharField(max_length=255, blank=True, null=True)
+    clientID = models.BigIntegerField()
+    journalTransactionID = models.BigIntegerField()
+    typeName = models.CharField(max_length=255, blank=True, default='')
+    stationID = models.BigIntegerField()
+    stationName = models.CharField(max_length=255, blank=True, default='')
+    transactionID = models.BigIntegerField(null=True)
+    quantity = models.IntegerField()
+    transactionDateTime = custom.DateTimeField()
+    clientName = models.CharField(max_length=255, blank=True, default='')
+    transactionType = models.CharField(max_length=4)
 
     owner = models.ForeignKey(CorporationSheet)
+
+    class Meta(object):
+        unique_together = ('owner', 'transactionID')
 
 class WalletJournal(models.Model):
     taxReceiverID = models.CharField(max_length=255, blank=True, null=True)
@@ -824,7 +827,7 @@ class MemberSecurityLog(models.Model):
         unique_together = ('owner', 'changeTime', 'characterID', 'roleLocationType')
 
 
-class Facilities(models.Model):
+class Facility(models.Model):
     facilityID = models.BigIntegerField()
     typeID = models.IntegerField()
     typeName = models.CharField(max_length=255)
@@ -832,7 +835,7 @@ class Facilities(models.Model):
     solarSystemName = models.CharField(max_length=255)
     regionID = models.IntegerField()
     regionName = models.CharField(max_length=255)
-    tax = models.IntegerField(default=0)
+    tax = models.DecimalField(max_digits=6, decimal_places=3)
     starbaseModifier = models.IntegerField(default=0)
 
     owner = models.ForeignKey(CorporationSheet)

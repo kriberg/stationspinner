@@ -6,7 +6,7 @@ from stationspinner.universe.models import APICall
 from stationspinner.corporation.models import CorporationSheet, AssetList, \
     MarketOrder, Medal, MemberMedal, MemberSecurity, MemberSecurityLog, \
     MemberTitle, MemberTracking, ContractItem, AccountBalance, Contact, \
-    ContainerLog, Contract, ContractBid, NPCStanding, Facilities, \
+    ContainerLog, Contract, ContractBid, NPCStanding, Facility, \
     OutpostService, Shareholder, Starbase, StarbaseFuel, IndustryJob, \
     IndustryJobHistory, Outpost, WalletTransaction, WalletJournal, Asset, \
     Blueprint, ItemLocationName, CustomsOffice
@@ -31,7 +31,8 @@ from stationspinner.corporation.signals import \
     corporation_member_medals_updated, \
     corporation_member_tracking_updated, \
     corporation_starbases_updated, \
-    corporation_starbase_details_updated
+    corporation_starbase_details_updated, \
+    corporation_facilities_updated
 from stationspinner.libs.eveapi.eveapi import AuthenticationError, ServerError
 from stationspinner.libs.assethandlers import CorporationAssetHandler
 
@@ -940,8 +941,105 @@ def fetch_membermedals(apiupdate_pk):
     corporation_member_medals_updated.send(MemberMedal, corporationID=corporation.pk)
 
 
+@app.task(name='corporation.fetch_wallettransactions', max_retries=0)
+def fetch_wallettransactions(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    log.info('Walking transactions for corporation "{0}".'.format(corporation))
+    app.send_task('corporation.walk_wallettransactions', [target.pk, None])
+    corporation_wallet_journal_updated.send(WalletTransaction, corporationID=corporation.pk)
+
+
+@app.task(name='corporation.walk_wallettransactions', max_retries=0)
+def walk_wallettransactions(apiupdate_pk, fromID):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.corp.WalletTransactions(characterID=target.apikey.characterID,
+                                                rowCount=2560,
+                                                fromID=fromID)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+                target.apikey.keyID,
+                target.apikey.owner
+        ))
+        return
+
+    new_ids, overlap_ids = handler.autoparse_list(api_data.transactions,
+                                                  WalletTransaction,
+                                                  unique_together=['transactionID'],
+                                                  extra_selectors={'owner': corporation},
+                                                  owner=corporation,
+                                                  immutable=True)
+    log.info('Walked {0} wallet transaction entries for corporation "{1}". {2} new entries, {3} already known'.format(
+            len(new_ids) + len(overlap_ids),
+            corporation,
+            len(new_ids),
+            len(overlap_ids)
+    ))
+    entry_ids = new_ids + overlap_ids
+    if len(api_data.transactions) >= 2560 and len(overlap_ids) < 2560:
+        last_transaction_entry = WalletTransaction.objects.filter(owner=corporation,
+                                                              transactionID__in=entry_ids).aggregate(
+                Min('transactionID'))
+        app.send_task('corporation.walk_wallettransactions', [target.pk,
+                                                              last_transaction_entry['transactionID__min']])
+
+    target.updated(api_data)
+
+
+@app.task(name='corporation.fetch_facilities', max_retries=0)
+def fetch_facilities(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.corp.Facilities()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    facility_ids = handler.autoparse_list(api_data.facilities,
+                                          Facility,
+                                          unique_together=('facilityID', ),
+                                          extra_selectors={'owner': corporation},
+                                          owner=corporation)
+
+    Facility.objects.filter(owner=corporation).exclude(pk__in=facility_ids).delete()
+    target.updated(api_data)
+    corporation_facilities_updated.send(Facility, corporationID=corporation.pk)
+
+
 API_MAP = {
-    'AssetList': (fetch_assetlist, fetch_blueprints, fetch_customsoffices),
+    'AssetList': (fetch_assetlist, fetch_blueprints, fetch_customsoffices, fetch_facilities),
     'AccountBalance': (fetch_accountbalance,),
     'MemberTrackingExtended': (fetch_membertracking,),
     'StarbaseList': (fetch_starbaselist,),
@@ -956,4 +1054,5 @@ API_MAP = {
     'MemberSecurity': (fetch_membersecurity, ),
     'Medals': (fetch_medals, ),
     'MemberMedals': (fetch_membermedals, ),
+    'WalletTransactions': (fetch_wallettransactions, ),
 }
