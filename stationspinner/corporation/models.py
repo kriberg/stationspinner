@@ -735,6 +735,9 @@ class MemberSecurity(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
+    class Meta(object):
+        unique_together = ('owner', 'characterID', 'roleID', 'location')
+
 
 class MemberTitle(models.Model):
     characterID = models.IntegerField()
@@ -743,6 +746,9 @@ class MemberTitle(models.Model):
     titleName = models.CharField(max_length=255)
 
     owner = models.ForeignKey(CorporationSheet)
+
+    class Meta(object):
+        unique_together = ('owner', 'characterID', 'titleID')
 
 
 class MemberSecurityLog(models.Model):

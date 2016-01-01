@@ -22,7 +22,10 @@ from stationspinner.corporation.signals import \
     corporation_contact_list_updated, \
     corporation_member_security_log_updated, \
     corporation_shareholders_updated, \
-    corporation_market_orders_updated
+    corporation_market_orders_updated, \
+    corporation_member_security_updated, \
+    corporation_member_security_new_role, \
+    corporation_member_security_new_title
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
 from stationspinner.libs.assethandlers import CorporationAssetHandler
 
@@ -678,6 +681,113 @@ def fetch_marketorders(apiupdate_pk):
     corporation_market_orders_updated.send(MarketOrder, corporationID=corporation.pk)
 
 
+@app.task(name='corporation.fetch_membersecurity', max_retries=0)
+def fetch_membersecurity(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(corporation.owner_key)
+    try:
+        api_data = auth.corp.MemberSecurity()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+    role_ids = []
+    title_ids = []
+    for member in api_data.members:
+        for role_type  in MemberSecurity.ROLE_LOCATION:
+            role_type = role_type[0]
+            if role_type == 'Global':
+                name_key = 'roles'
+                grant_key = 'grantableRoles'
+            else:
+                name_key = 'rolesAt{0}'.format(role_type)
+                grant_key = 'grantableRolesAt{0}'.format(role_type)
+            for role in getattr(member, name_key):
+                obj, created = MemberSecurity.objects.update_or_create(characterID=member.characterID,
+                                                                       owner=corporation,
+                                                                       roleID=role.roleID,
+                                                                       location=role_type,
+                                                                       defaults={
+                                                                           'roleID': role.roleID,
+                                                                           'roleName': role.roleName,
+                                                                           'characterID': member.characterID,
+                                                                           'characterName': member.name,
+                                                                           'location': role_type,
+                                                                           'owner': corporation
+                                                                       })
+                role_ids.append(obj.pk)
+                if created:
+                    corporation_member_security_new_role.send(MemberSecurity,
+                                                              corporationID=corporation.pk,
+                                                              member_security_pk=obj.pk)
+            for grantable in getattr(member, grant_key):
+                obj, created = MemberSecurity.objects.update_or_create(characterID=member.characterID,
+                                                                       owner=corporation,
+                                                                       roleID=grantable.roleID,
+                                                                       location=role_type,
+                                                                       defaults={
+                                                                           'roleID': grantable.roleID,
+                                                                           'roleName': grantable.roleName,
+                                                                           'characterID': member.characterID,
+                                                                           'characterName': member.name,
+                                                                           'location': role_type,
+                                                                           'grantable': True,
+                                                                           'owner': corporation
+                                                                       })
+                role_ids.append(obj.pk)
+                if created:
+                    corporation_member_security_new_role.send(MemberSecurity,
+                                                              corporationID=corporation.pk,
+                                                              member_security_pk=obj.pk)
+        for title in member.titles:
+            obj, created = MemberTitle.objects.update_or_create(owner=corporation,
+                                                                characterID=member.characterID,
+                                                                titleID=title.titleID,
+                                                                defaults={
+                                                                    'titleID': title.titleID,
+                                                                    'titleName': title.titleName,
+                                                                    'characterID': member.characterID,
+                                                                    'characterName': member.name,
+                                                                    'owner': corporation
+                                                                })
+            title_ids.append(obj.pk)
+            if created:
+                corporation_member_security_new_title.send(MemberTitle,
+                                                           corporationID=corporation.pk,
+                                                           member_title_pk=obj.pk)
+
+
+
+    old_roles = MemberSecurity.objects.filter(owner=corporation).exclude(pk__in=role_ids)
+    roles_deleted = old_roles.count()
+    old_roles.delete()
+    old_titles = MemberTitle.objects.filter(owner=corporation).exclude(pk__in=title_ids)
+    titles_deleted = old_titles.count()
+    old_titles.delete()
+    log.info('Updated roles and titles for "{0}": {1} roles granted, {2} removed. {3} titles set, {4} removed.'.format(
+        corporation,
+        len(role_ids),
+        roles_deleted,
+        len(title_ids),
+        titles_deleted
+    ))
+
+    target.updated(api_data)
+    corporation_member_security_updated.send(MemberSecurity, corporationID=corporation.pk)
+
+
 API_MAP = {
     'AssetList': (fetch_assetlist, fetch_blueprints, fetch_customsoffices),
     'AccountBalance': (fetch_accountbalance,),
@@ -690,4 +800,5 @@ API_MAP = {
     'MemberSecurityLog': (fetch_membersecuritylog, ),
     'Shareholders': (fetch_shareholders, ),
     'MarketOrders': (fetch_marketorders, ),
+    'MemberSecurity': (fetch_membersecurity, ),
 }
