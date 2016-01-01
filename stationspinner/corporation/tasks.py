@@ -11,6 +11,7 @@ from stationspinner.corporation.models import CorporationSheet, AssetList, \
     IndustryJobHistory, Outpost, WalletTransaction, WalletJournal, Asset, \
     Blueprint, ItemLocationName, CustomsOffice
 from stationspinner.corporation.signals import \
+    corporation_corporation_sheet_added, \
     corporation_assets_parsed, \
     corporation_sheet_parsed, \
     corporation_account_balance_updated, \
@@ -25,8 +26,13 @@ from stationspinner.corporation.signals import \
     corporation_market_orders_updated, \
     corporation_member_security_updated, \
     corporation_member_security_new_role, \
-    corporation_member_security_new_title
-from stationspinner.libs.eveapi.eveapi import AuthenticationError
+    corporation_member_security_new_title, \
+    corporation_medals_updated, \
+    corporation_member_medals_updated, \
+    corporation_member_tracking_updated, \
+    corporation_starbases_updated, \
+    corporation_starbase_details_updated
+from stationspinner.libs.eveapi.eveapi import AuthenticationError, ServerError
 from stationspinner.libs.assethandlers import CorporationAssetHandler
 
 from celery.utils.log import get_task_logger
@@ -76,7 +82,7 @@ def fetch_corporationsheet(apiupdate_pk):
 
     try:
         corporation = CorporationSheet.objects.get(corporationID=sheet.corporationID)
-
+        created = False
         # As long as the apikey can get a valid character sheet back from the
         # eveapi, we'll allow the CS model to change owner and/or key
         if corporation.owner_key != apikey:
@@ -90,6 +96,7 @@ def fetch_corporationsheet(apiupdate_pk):
                                                                                           apikey.owner))
     except CorporationSheet.DoesNotExist:
         corporation = CorporationSheet(corporationID=sheet.corporationID)
+        created = True
     except Exception, ex:
         log.warning('Corporation {0} "{1}" could not be updated with APIKey {2}.'.format(sheet.corporationID,
                                                                                          sheet.corporationName,
@@ -99,6 +106,9 @@ def fetch_corporationsheet(apiupdate_pk):
     corporation.owner_key = apikey
     corporation.owner = apikey.owner
     corporation.update_from_api(sheet, handler)
+    if created:
+        corporation_corporation_sheet_added.send(CorporationSheet,
+                                                 corporationID=corporation.corporationID)
 
     log.info('Corporation {0} "{1}" updated.'.format(sheet.corporationID,
                                                      sheet.corporationName))
@@ -119,9 +129,9 @@ def fetch_assetlist(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
-        api_data = auth.corp.AssetList(characterID=corporation.owner_key.characterID)
+        api_data = auth.corp.AssetList(characterID=target.apikey.characterID)
     except AuthenticationError:
         log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
             target.apikey.keyID,
@@ -193,9 +203,9 @@ def fetch_membertracking(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
-        api_data = auth.corp.MemberTracking(characterID=corporation.owner_key.characterID,
+        api_data = auth.corp.MemberTracking(characterID=target.apikey.characterID,
                                             extended=1)
     except AuthenticationError:
         log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
@@ -214,6 +224,7 @@ def fetch_membertracking(apiupdate_pk):
         .exclude(pk__in=memberIDs).delete()
 
     target.updated(api_data)
+    corporation_member_tracking_updated.send(Starbase, corporationID=corporation.pk)
 
 
 @app.task(name='corporation.fetch_starbaselist', max_retries=0)
@@ -228,9 +239,9 @@ def fetch_starbaselist(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
-        api_data = auth.corp.StarbaseList(characterID=corporation.owner_key.characterID)
+        api_data = auth.corp.StarbaseList()
     except AuthenticationError:
         log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
             target.apikey.keyID,
@@ -243,11 +254,84 @@ def fetch_starbaselist(apiupdate_pk):
                                     Starbase,
                                     unique_together=('itemID',),
                                     extra_selectors={'owner': corporation},
-                                    owner=corporation,
-                                    pre_save=True)
-    Starbase.objects.filter(owner=corporation) \
-        .exclude(pk__in=posIDs).delete()
+                                    owner=corporation)
+    Starbase.objects.filter(owner=corporation).exclude(pk__in=posIDs).delete()
+
     target.updated(api_data)
+    corporation_starbases_updated.send(Starbase, corporationID=corporation.pk)
+
+    try:
+        details_call = APICall.objects.get(type='Corporation',
+                                           name='StarbaseDetail')
+        details_target = APIUpdate.objects.get(apicall=details_call,
+                                               apikey=target.apikey,
+                                               owner=target.owner)
+        for starbase_pk in posIDs:
+            app.send_task('corporation.fetch_starbasedetails', (details_target.pk, starbase_pk))
+    except APICall.DoesNotExist:
+        log.error('Could not find APICall for StarbaseDetails.')
+    except APIUpdate.DoesNotExist:
+        log.debug('Key {0} cant call starbase details, so its starbases remain undetailed.'.format(
+            target.apikey.keyID
+        ))
+
+
+@app.task(name='corporation.fetch_starbasedetails', max_retries=0)
+def fetch_starbasedetails(apiupdate_pk, starbase_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    try:
+        starbase = Starbase.objects.get(owner=corporation, pk=starbase_pk)
+    except Starbase.DoesNotExist:
+        log.warning('Received request for starbase details on non-existant starbase {0} owned by {1}.'.format(
+            starbase_pk,
+            corporation,
+        ))
+        return
+
+    # Unanchored starbases dont have details, just wait for somebody to anchor it first.
+    if starbase.state == 0:
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+
+    try:
+        api_data = auth.corp.StarbaseDetail(itemID=starbase.itemID)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+    except ServerError:
+        log.error('ServerError while getting starbase details for {0} with apikey {1}.'.format(
+            starbase.itemID,
+            target.apikey.keyID
+        ))
+        return
+
+    fuel_ids = handler.autoparse_list(api_data.fuel,
+                                      StarbaseFuel,
+                                      unique_together=('starbase', 'typeID'),
+                                      extra_selectors={'owner': corporation},
+                                      owner=corporation,
+                                      static_defaults={
+                                          'starbase': starbase
+                                      })
+    StarbaseFuel.objects.filter(owner=corporation,
+                                starbase=starbase).exclude(pk__in=fuel_ids).delete()
+
+    target.updated(api_data)
+    corporation_starbase_details_updated.send(Starbase, corporationID=corporation.pk, starbase_pk=starbase.pk)
 
 
 @app.task(name='corporation.fetch_blueprints', max_retries=0)
@@ -262,10 +346,10 @@ def fetch_blueprints(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
 
     try:
-        api_data = auth.corp.Blueprints(characterID=corporation.owner_key.characterID)
+        api_data = auth.corp.Blueprints()
     except AuthenticationError:
         log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
             target.apikey.keyID,
@@ -298,9 +382,9 @@ def fetch_accountbalance(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
-        api_data = auth.corp.AccountBalance(characterID=corporation.owner_key.characterID)
+        api_data = auth.corp.AccountBalance()
     except AuthenticationError:
         log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
             target.apikey.keyID,
@@ -347,9 +431,9 @@ def walk_walletjournal(apiupdate_pk, fromID, accountKey):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
-        api_data = auth.corp.WalletJournal(characterID=corporation.owner_key.characterID,
+        api_data = auth.corp.WalletJournal(characterID=target.apikey.characterID,
                                            accountKey=accountKey,
                                            rowCount=2560,
                                            fromID=fromID)
@@ -398,7 +482,7 @@ def fetch_containerlog(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
         api_data = auth.corp.ContainerLog()
     except AuthenticationError:
@@ -431,7 +515,7 @@ def fetch_customsoffices(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
         api_data = auth.corp.CustomsOffices()
     except AuthenticationError:
@@ -463,7 +547,7 @@ def fetch_industryjobs(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
         api_data = auth.corp.IndustryJobs()
     except AuthenticationError:
@@ -495,7 +579,7 @@ def fetch_industryjobshistory(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
         api_data = auth.corp.IndustryJobsHistory()
     except AuthenticationError:
@@ -527,7 +611,7 @@ def fetch_contactlist(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
         api_data = auth.corp.ContactList()
     except AuthenticationError:
@@ -576,7 +660,7 @@ def fetch_membersecuritylog(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
         api_data = auth.corp.MemberSecurityLog()
     except AuthenticationError:
@@ -610,7 +694,7 @@ def fetch_shareholders(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
         api_data = auth.corp.ShareHolders()
     except AuthenticationError:
@@ -660,7 +744,7 @@ def fetch_marketorders(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
         api_data = auth.corp.MarketOrders()
     except AuthenticationError:
@@ -693,7 +777,7 @@ def fetch_membersecurity(apiupdate_pk):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(corporation.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
         api_data = auth.corp.MemberSecurity()
     except AuthenticationError:
@@ -788,11 +872,80 @@ def fetch_membersecurity(apiupdate_pk):
     corporation_member_security_updated.send(MemberSecurity, corporationID=corporation.pk)
 
 
+@app.task(name='corporation.fetch_medals', max_retries=0)
+def fetch_medals(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.corp.Medals()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    medal_ids = handler.autoparse_list(api_data.medals,
+                                       Medal,
+                                       unique_together=('medalID',),
+                                       extra_selectors={'owner': corporation},
+                                       owner=corporation)
+
+    Medal.objects.filter(owner=corporation).exclude(pk__in=medal_ids).delete()
+    target.updated(api_data)
+    corporation_medals_updated.send(Medal, corporationID=corporation.pk)
+
+
+@app.task(name='corporation.fetch_membermedals', max_retries=0)
+def fetch_membermedals(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.corp.MemberMedals()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    medal_ids = handler.autoparse_list(api_data.issuedMedals,
+                                       MemberMedal,
+                                       unique_together=('medalID', 'characterID'),
+                                       extra_selectors={'owner': corporation},
+                                       owner=corporation)
+
+    MemberMedal.objects.filter(owner=corporation).exclude(pk__in=medal_ids).delete()
+    target.updated(api_data)
+    corporation_member_medals_updated.send(MemberMedal, corporationID=corporation.pk)
+
+
 API_MAP = {
     'AssetList': (fetch_assetlist, fetch_blueprints, fetch_customsoffices),
     'AccountBalance': (fetch_accountbalance,),
     'MemberTrackingExtended': (fetch_membertracking,),
     'StarbaseList': (fetch_starbaselist,),
+    'StarbaseDetail': tuple(),
     'WalletJournal': (fetch_walletjournal,),
     'ContainerLog': (fetch_containerlog, ),
     'IndustryJobs': (fetch_industryjobs, fetch_industryjobshistory),
@@ -801,4 +954,6 @@ API_MAP = {
     'Shareholders': (fetch_shareholders, ),
     'MarketOrders': (fetch_marketorders, ),
     'MemberSecurity': (fetch_membersecurity, ),
+    'Medals': (fetch_medals, ),
+    'MemberMedals': (fetch_membermedals, ),
 }

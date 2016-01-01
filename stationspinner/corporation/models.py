@@ -107,17 +107,16 @@ class MemberTracking(models.Model):
 
 class MemberMedal(models.Model):
     medalID = models.BigIntegerField()
-    status = models.CharField(max_length=10)
-    issued = custom.DateTimeField()
-    issuerID = models.IntegerField()
+    characterID = models.BigIntegerField()
     reason = models.TextField(blank=True, default='')
-    title = models.CharField(max_length=255, null=True)
-    description = models.TextField(blank=True, default='')
+    status = models.CharField(max_length=10)
+    issuerID = models.BigIntegerField()
+    issued = custom.DateTimeField()
 
     owner = models.ForeignKey(CorporationSheet)
 
     class Meta(object):
-        unique_together = ('medalID', 'owner')
+        unique_together = ('owner', 'medalID', 'characterID')
 
 
 class Medal(models.Model):
@@ -154,6 +153,25 @@ class Starbase(models.Model):
     moonID = models.IntegerField(null=True)
 
     # General settings
+    # They store access restrictions to the POS facilities on 2 bits:
+    #     0: 'Starbase Config',
+    #     1: 'Starbase Fuel Tech',
+    #     2: 'Corporation Members',
+    #     3: 'Alliance Members',
+    # usageFlags
+    #     access restrictions to the POS fuel bay are encoded in this 4 bit field.
+    #     example: if usageFlags == 9 == 0b1001   -->   10    01
+    #                                                  view  take
+    #         0b10 == 2 --> 'Corporation Members' can view
+    #         0b01 == 1 --> 'Starbase Fuel Tech' can take
+    # deployFlags
+    #     access restrictions to who is able to operate this POS are encoded in this 8 bit field.
+    #     example: if usageFlags == 68 == 0b01000100  -->   01       00       01      00
+    #                                                     anchor  unanchor  online  offline
+    #         0b01 == 1 --> 'Starbase Fuel Tech' can anchor
+    #         0b00 == 0 --> 'Starbase Config' can unanchor
+    #         0b01 == 1 --> 'Starbase Fuel Tech' can online
+    #         0b00 == 0 --> 'Starbase Config' can offline
     general_settings = JsonField(default={}, blank=True)
 
     # Combat settings
@@ -161,6 +179,32 @@ class Starbase(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
+    def parse_general_settings(self, starbase_details):
+        self.general_settings = {
+            'usageFlags': getattr(starbase_details.generalSettings, 'usageFlags', 0),
+            'deployFlags': getattr(starbase_details.generalSettings, 'deployFlags', 0),
+            'allowCorporationMembers': getattr(starbase_details.generalSettings, 'allowCorporationMembers', 0),
+            'allowAllianceMembers': getattr(starbase_details.generalSettings, 'allowAllianceMembers', 0),
+        }
+    def parse_combat_settings(self, starbase_details):
+        self.combat_settings = {
+            'useStandingsFrom': {
+                'ownerID': starbase_details.combatSettings.useStandingsFrom.ownerID
+            },
+            'onStandingDrop': {
+                'standing': starbase_details.combatSettings.onStandingDrop.standing
+            },
+            'onStatusDrop': {
+                'enabled': starbase_details.combatSettings.onStatusDrop.enabled,
+                'standing': starbase_details.combatSettings.onStatusDrop.enabled
+            },
+            'onAggression': {
+                'enabled': starbase_details.combatSettings.onAggression.enabled
+            },
+            'onCorporationWar': {
+                'enabled': starbase_details.combatSettings.onCorporationWar.enabled
+            }
+        }
 
     def get_state(self):
         return self.STATES[self.state]
@@ -178,6 +222,9 @@ class StarbaseFuel(models.Model):
     quantity = models.IntegerField()
 
     owner = models.ForeignKey(CorporationSheet)
+
+    class Meta(object):
+        unique_together = ('owner', 'starbase', 'typeID')
 
 
 class Outpost(models.Model):

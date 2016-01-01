@@ -391,7 +391,7 @@ def walk_walletjournal(apiupdate_pk, fromID):
         return
 
     handler = EveAPIHandler()
-    auth = handler.get_authed_eveapi(character.owner_key)
+    auth = handler.get_authed_eveapi(target.apikey)
     try:
         api_data = auth.char.WalletJournal(characterID=character.pk,
                                            rowCount=2560,
