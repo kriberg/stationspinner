@@ -41,8 +41,9 @@ class APIKey(models.Model):
     expired = models.BooleanField(default=False, editable=False)
     expires = models.DateTimeField(editable=False, null=True)
     brokeness = models.IntegerField(default=0)
-    characterID = models.IntegerField(null=True, blank=True)
-    corporationID = models.IntegerField(null=True, blank=True)
+    characterID = models.BigIntegerField(null=True, blank=True)
+    corporationID = models.BigIntegerField(null=True, blank=True)
+    characterIDs = JsonField(null=True, default=[])
 
     owner = models.ForeignKey(Capsuler)
 

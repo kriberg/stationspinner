@@ -9,6 +9,8 @@ from stationspinner.libs.eveapihandler import EveAPIHandler
 from stationspinner.libs.pragma import get_current_time
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
 from stationspinner.accounting.models import Capsuler, APIKey, APIUpdate
+from stationspinner.accounting.signals import accounting_new_character, \
+    accounting_new_corporation
 from stationspinner.character.models import CharacterSheet
 from stationspinner.corporation.models import CorporationSheet
 from stationspinner.universe.models import APICall
@@ -267,7 +269,7 @@ def validate_key(apikey_pk):
         return
 
     if not keyinfo.key.expires:
-        expires = datetime.fromtimestamp(2000000000, tz=UTC)
+        expires = datetime(year=2099, month=1, day=1, tzinfo=UTC)
     else:
         expires = datetime.fromtimestamp(keyinfo.key.expires, tz=UTC)
 
@@ -288,55 +290,89 @@ def validate_key(apikey_pk):
         apikey.corporationID = keyinfo.key.characters[0].corporationID
         apikey.save()
         targets = []
+        # These are all targets for this corporation. Can span several apikeys.
+        current_targets = APIUpdate.objects.filter(owner=apikey.corporationID)
+        # Remove targets mapped to expired keys, so this key can be set as the
+        # target later on.
+        current_targets.filter(apikey__expired=True).delete()
         for call_type in APICall.objects.filter(type='Corporation'):
             if call_type.accessMask & apikey.accessMask > 0:
-                # We have now found a APICall and an APIKey capable to do that call
-                # Check if there's already an APIUpdate with another key that does
-                # this call, if not update/create for this key
-                if APIUpdate.objects.filter(owner=apikey.corporationID,
-                                            apicall=call_type).count() == 0:
-                    target, created = APIUpdate.objects.update_or_create(owner=apikey.corporationID,
-                                                       apicall=call_type,
-                                                       defaults={'apikey': apikey})
-                    targets.append(target.pk)
+                # We have now found an APICall and an APIKey capable to do that call
+                # Check if there's already an APIUpdate that does this call, if not
+                # create a target for this key.
+
+                target, created = APIUpdate.objects.update_or_create(owner=apikey.corporationID,
+                                                                     apicall=call_type,
+                                                                     apikey=apikey)
+                # Make sure it's in the list, if not it will be deleted as redundant
+                targets.append(target.pk)
+
 
         # If a key access mask is changed, there could be residual targets
-        # registered with that key, so we'll delete those
-        APIUpdate.objects.filter(apikey=apikey).exclude(pk__in=targets).delete()
+        # registered with that key, so we'll delete those. They'll be whichever keys
+        # are not in targets, as we've gone through all the available APICalls and checked
+        # if they have valid targets by this key or any other key.
+        APIUpdate.objects.filter(owner=apikey.corporationID, apikey=apikey).exclude(pk__in=targets).delete()
+
         # Any other keys that provides other accessmasks than this key will then remain.
         # If two keys provide access to the same endpoint for the same entity, whichever
         # key was parsed last, gets the honor. There can be only one!
 
+        # Send a signal if we found a new corporation
+        if CorporationSheet.objects.filter(corporationID=apikey.corporationID).count() == 0:
+            accounting_new_corporation.send(APIKey,
+                                            apikey_pk=apikey.pk,
+                                            corporationID=apikey.corporationID)
+
     elif keyinfo.key.type == 'Character':
-        apikey.characterID = keyinfo.key.characters[0].characterID
+        characterID = keyinfo.key.characters[0].characterID
+        apikey.characterID = characterID
+        if not characterID in apikey.characterIDs:
+            apikey.characterIDs = [characterID]
         apikey.save()
         targets = []
+        current_targets = APIUpdate.objects.filter(owner=apikey.characterID)
+        current_targets.filter(apikey__expired=True).delete()
         for call_type in APICall.objects.filter(type='Character'):
             if call_type.accessMask & apikey.accessMask > 0:
-                if APIUpdate.objects.filter(owner=apikey.characterID,
-                                            apicall=call_type).count() == 0:
-                    target, created = APIUpdate.objects.update_or_create(owner=apikey.characterID,
-                                                       apicall=call_type,
-                                                       defaults={'apikey': apikey})
-                    targets.append(target.pk)
-        APIUpdate.objects.filter(apikey=apikey).exclude(pk__in=targets).delete()
+                target, created = APIUpdate.objects.update_or_create(owner=apikey.characterID,
+                                                                     apicall=call_type,
+                                                                     apikey=apikey)
+                # Make sure it's in the list, if not it will be deleted as redundant
+                targets.append(target.pk)
+        APIUpdate.objects.filter(apikey=apikey, owner=apikey.characterID).exclude(pk__in=targets).delete()
+        # In case we have changed which character this apikey points to, we remove the matching
+        # character sheet.
         CharacterSheet.objects.filter(owner_key=apikey).exclude(pk=apikey.characterID).delete()
+
+        if CharacterSheet.objects.filter(characterID=apikey.characterID).count() == 0:
+            accounting_new_character.send(APIKey,
+                                          apikey_pk=apikey.pk,
+                                          characterID=apikey.characterID)
     elif keyinfo.key.type == 'Account':
         apikey.save()
         targets = []
         characterIDs = []
         for char in keyinfo.key.characters:
             characterIDs.append(char.characterID)
+            current_targets = APIUpdate.objects.filter(owner=char.characterID)
+            current_targets.filter(apikey__expired=True).delete()
             for call_type in APICall.objects.filter(type='Character'):
                 if call_type.accessMask & apikey.accessMask > 0:
-                    if APIUpdate.objects.filter(owner=char.characterID,
-                                                apicall=call_type).count() == 0:
-                        target, created = APIUpdate.objects.update_or_create(owner=char.characterID,
-                                                           apicall=call_type,
-                                                           defaults={'apikey': apikey})
-                        targets.append(target.pk)
+                    target, created = APIUpdate.objects.update_or_create(owner=char.characterID,
+                                                                         apicall=call_type,
+                                                                         apikey=apikey)
+                    targets.append(target.pk)
+            if CharacterSheet.objects.filter(characterID=char.characterID).count() == 0:
+                accounting_new_character.send(APIKey,
+                                              apikey_pk=apikey.pk,
+                                              characterID=char.characterID)
+        apikey.characterIDs = characterIDs
+        apikey.save()
 
         APIUpdate.objects.filter(apikey=apikey).exclude(pk__in=targets).delete()
+        # If this account key previously had characters associated to it that has been biomassed,
+        # we delete them.
         CharacterSheet.objects.filter(owner_key=apikey).exclude(pk__in=characterIDs).delete()
     else:
         apikey.save()
