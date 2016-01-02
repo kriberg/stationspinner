@@ -36,7 +36,8 @@ from stationspinner.corporation.signals import \
     corporation_contracts_updated, \
     corporation_contract_bids_new_bid, \
     corporation_contract_bids_updated, \
-    corporation_contract_items_updated
+    corporation_contract_items_updated, \
+    corporation_outposts_updated
 from stationspinner.libs.eveapi.eveapi import AuthenticationError, ServerError
 from stationspinner.libs.assethandlers import CorporationAssetHandler
 
@@ -1167,6 +1168,99 @@ def fetch_contractbids(apiupdate_pk):
     corporation_contract_bids_updated.send(ContractBid, corporationID=corporation.pk)
 
 
+@app.task(name='corporation.fetch_outposts', max_retries=0)
+def fetch_outposts(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.corp.OutpostList()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    outpost_ids = handler.autoparse_list(api_data.corporationStarbases,
+                                         Outpost,
+                                         unique_together=('stationID',),
+                                         extra_selectors={'owner': corporation},
+                                         owner=corporation)
+
+    old_entries = Outpost.objects.filter(owner=corporation).exclude(pk__in=outpost_ids)
+    deleted = old_entries.count()
+    old_entries.delete()
+    log.info('Updated outposts for corporation "{0}". {1} entries, {2} old entries removed.'.format(
+        corporation,
+        len(outpost_ids),
+        deleted
+    ))
+
+    target.updated(api_data)
+    corporation_outposts_updated.send(Outpost, corporationID=corporation.pk)
+
+    try:
+        details_call = APICall.objects.get(type='Corporation',
+                                           name='OutpostServiceDetail')
+        details_target = APIUpdate.objects.get(apicall=details_call,
+                                               apikey=target.apikey,
+                                               owner=target.owner)
+        for outpost_pk in outpost_ids:
+            app.send_task('corporation.fetch_outpostservicedetails', (details_target.pk,
+                                                                      outpost_pk))
+    except APICall.DoesNotExist:
+        log.error('Could not find APICall for OutpostServiceDetail.')
+    except APIUpdate.DoesNotExist:
+        log.debug('Key {0} cant call outpost details, so its services remain undetailed.'.format(
+            target.apikey.keyID
+        ))
+
+
+@app.task(name='corporation.fetch_outpostservicedetails', max_retries=0)
+def fetch_outpostservicedetails(apiupdate_pk, stationID):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.corp.OutpostServiceDetail(itemID=stationID)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    outpost_services_ids = handler.autoparse_list(api_data.outpostServiceDetails,
+                                                  OutpostService,
+                                                  unique_together=('stationID', 'serviceName'),
+                                                  extra_selectors={'owner': corporation},
+                                                  owner=corporation)
+
+    OutpostService.objects.filter(owner=corporation).exclude(pk__in=outpost_services_ids).delete()
+    target.updated(api_data)
+    corporation_outposts_updated.send(OutpostService,
+                                      corporationID=corporation.pk,
+                                      stationID=stationID)
+
 
 API_MAP = {
     'AssetList': (fetch_assetlist, fetch_blueprints, fetch_customsoffices, fetch_facilities),
@@ -1185,5 +1279,7 @@ API_MAP = {
     'Medals': (fetch_medals, ),
     'MemberMedals': (fetch_membermedals, ),
     'WalletTransactions': (fetch_wallettransactions, ),
-    'Contracts': (fetch_contracts, fetch_contractbids)
+    'Contracts': (fetch_contracts, fetch_contractbids),
+    'OutpostList': (fetch_outposts, ),
+    'OutpostServiceDetails': tuple(),
 }

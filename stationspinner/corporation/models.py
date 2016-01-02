@@ -228,25 +228,29 @@ class StarbaseFuel(models.Model):
 
 
 class Outpost(models.Model):
-    stationID = models.IntegerField(primary_key=True)
+    stationID = models.BigIntegerField(primary_key=True)
     stationName = models.CharField(max_length=255)
     reprocessingEfficiency = models.DecimalField(max_digits=30, decimal_places=10, default=0.0)
     reprocessingStationTake = models.DecimalField(max_digits=30, decimal_places=10, default=0.0)
     officeRentalCost = models.DecimalField(max_digits=30, decimal_places=2, null=True)
     dockingCostPerShipColume = models.DecimalField(max_digits=30, decimal_places=2, default=0.0)
-    standingOwnerID = models.IntegerField()
-    ownerID = models.IntegerField()
+    standingOwnerID = models.BigIntegerField()
+    ownerID = models.BigIntegerField()
     solarSystemID = models.IntegerField()
     stationTypeID = models.IntegerField()
 
     owner = models.ForeignKey(CorporationSheet)
+
+    def get_services(self):
+        return OutpostService.objects.filter(stationID=self.stationID,
+                                             owner=self.owner)
 
     class Meta(object):
         unique_together = ('stationID', 'owner')
 
 
 class OutpostService(models.Model):
-    outpost = models.ForeignKey(Outpost)
+    stationID = models.BigIntegerField()
     serviceName = models.CharField(max_length=255)
     minStanding = models.DecimalField(max_digits=5, decimal_places=2)
     surchargePerBadStanding = models.IntegerField()
@@ -255,7 +259,7 @@ class OutpostService(models.Model):
     owner = models.ForeignKey(CorporationSheet)
 
     class Meta(object):
-        unique_together = ('outpost', 'serviceName', 'owner')
+        unique_together = ('stationID', 'serviceName', 'owner')
 
 
 class Blueprint(models.Model):
