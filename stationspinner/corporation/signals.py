@@ -23,3 +23,7 @@ corporation_starbase_details_updated = Signal(providing_args=['corporationID', '
 corporation_member_tracking_updated= Signal(providing_args=['corporationID'])
 corporation_corporation_sheet_added = Signal(providing_args=['corporationID'])
 corporation_facilities_updated = Signal(providing_args=['corporationID'])
+corporation_contracts_updated = Signal(providing_args=['corporationID'])
+corporation_contract_items_updated = Signal(providing_args=['corporationID', 'contract_pk'])
+corporation_contract_bids_updated = Signal(providing_args=['corporationID'])
+corporation_contract_bids_new_bid = Signal(providing_args=['corporationID', 'contractID', 'bid_pk'])

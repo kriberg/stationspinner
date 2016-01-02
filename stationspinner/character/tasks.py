@@ -9,7 +9,9 @@ from stationspinner.character.models import CharacterSheet, WalletJournal, \
     SkillInTraining, IndustryJob, IndustryJobHistory, NPCStanding, Asset, \
     ItemLocationName
 from stationspinner.character.signals import character_assets_parsed, \
-    character_sheet_parsed
+    character_sheet_parsed, \
+    character_industry_jobs_history_updated, \
+    character_industry_jobs_updated
 from stationspinner.universe.models import EveName
 from stationspinner.libs.eveapihandler import EveAPIHandler
 from stationspinner.libs.eveapi.eveapi import AuthenticationError
@@ -681,6 +683,72 @@ def fetch_mailinglists(apiupdate_pk):
     target.updated(api_data)
 
 
+@app.task(name='character.fetch_industryjobs', max_retries=0)
+def fetch_industryjobs(apiupdate_pk):
+    try:
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.char.IndustryJobs(characterID=target.owner)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    handler.autoparse_list(api_data.jobs,
+                           IndustryJob,
+                           unique_together=('jobID',),
+                           extra_selectors={'owner': character},
+                           owner=character)
+
+    target.updated(api_data)
+    character_industry_jobs_updated.send(IndustryJob, characterID=character.pk)
+
+
+@app.task(name='character.fetch_industryjobshistory', max_retries=0)
+def fetch_industryjobshistory(apiupdate_pk):
+    try:
+        target, character = _get_character_auth(apiupdate_pk)
+    except CharacterSheet.DoesNotExist:
+        log.debug('CharacterSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.char.IndustryJobsHistory(characterID=target.owner)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    handler.autoparse_list(api_data.jobs,
+                           IndustryJobHistory,
+                           unique_together=('jobID',),
+                           extra_selectors={'owner': character},
+                           owner=character)
+
+    target.updated(api_data)
+    character_industry_jobs_history_updated.send(IndustryJobHistory, characterID=character.pk)
+
+
 @app.task(name='character.reparse_notifications')
 def reparse_notifications():
     for note in Notification.objects.all():
@@ -700,4 +768,5 @@ API_MAP = {
     'Notifications': (fetch_notifications,),
     'MailMessages': (fetch_mails,),
     'MailingLists': (fetch_mailinglists,),
+    'IndustryJobs': (fetch_industryjobs, fetch_industryjobshistory),
 }

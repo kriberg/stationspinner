@@ -954,22 +954,25 @@ class IndustryJob(models.Model):
     timeInSeconds = models.IntegerField()
     productTypeID = models.IntegerField(null=True)
     completedDate = custom.DateTimeField(null=True)
-    completedCharacterID = models.IntegerField(null=True)
+    completedCharacterID = models.BigIntegerField(null=True)
     installerName = models.CharField(max_length=255)
-    installerID = models.IntegerField()
-    facilityID = models.IntegerField()
+    installerID = models.BigIntegerField()
+    facilityID = models.BigIntegerField()
     pauseDate = custom.DateTimeField(null=True)
     solarSystemName = models.CharField(max_length=255)
-    stationID = models.IntegerField(null=True)
-    jobID = models.BigIntegerField(null=True)
+    stationID = models.BigIntegerField(null=True)
+    jobID = models.BigIntegerField()
     teamID = models.IntegerField(null=True)
     productTypeName = models.CharField(max_length=255, blank=True, null=True)
-    blueprintLocationID = models.IntegerField(null=True)
+    blueprintLocationID = models.BigIntegerField(null=True)
     blueprintID = models.BigIntegerField(null=True)
     solarSystemID = models.IntegerField()
     licensedRuns = models.IntegerField(null=True)
 
     owner = models.ForeignKey('CharacterSheet')
+
+    class Meta(object):
+        unique_together = ('owner', 'jobID')
 
 
 class IndustryJobHistory(models.Model):
@@ -988,12 +991,12 @@ class IndustryJobHistory(models.Model):
     completedDate = custom.DateTimeField(null=True)
     completedCharacterID = models.IntegerField(null=True)
     installerName = models.CharField(max_length=255)
-    installerID = models.IntegerField()
-    facilityID = models.IntegerField()
+    installerID = models.BigIntegerField()
+    facilityID = models.BigIntegerField()
     pauseDate = custom.DateTimeField(null=True)
     solarSystemName = models.CharField(max_length=255)
-    stationID = models.IntegerField(null=True)
-    jobID = models.BigIntegerField(null=True)
+    stationID = models.BigIntegerField(null=True)
+    jobID = models.BigIntegerField()
     teamID = models.IntegerField(null=True)
     productTypeName = models.CharField(max_length=255, blank=True, null=True)
     blueprintLocationID = models.IntegerField(null=True)
@@ -1002,6 +1005,9 @@ class IndustryJobHistory(models.Model):
     licensedRuns = models.IntegerField(null=True)
 
     owner = models.ForeignKey('CharacterSheet')
+
+    class Meta(object):
+        unique_together = ('owner', 'jobID')
 
 
 class NPCStanding(models.Model):

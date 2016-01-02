@@ -32,7 +32,11 @@ from stationspinner.corporation.signals import \
     corporation_member_tracking_updated, \
     corporation_starbases_updated, \
     corporation_starbase_details_updated, \
-    corporation_facilities_updated
+    corporation_facilities_updated, \
+    corporation_contracts_updated, \
+    corporation_contract_bids_new_bid, \
+    corporation_contract_bids_updated, \
+    corporation_contract_items_updated
 from stationspinner.libs.eveapi.eveapi import AuthenticationError, ServerError
 from stationspinner.libs.assethandlers import CorporationAssetHandler
 
@@ -561,7 +565,7 @@ def fetch_industryjobs(apiupdate_pk):
 
     handler.autoparse_list(api_data.jobs,
                            IndustryJob,
-                           unique_together=('facilityID', 'installerID', 'activityID'),
+                           unique_together=('jobID', ),
                            extra_selectors={'owner': corporation},
                            owner=corporation)
     target.updated(api_data)
@@ -593,7 +597,7 @@ def fetch_industryjobshistory(apiupdate_pk):
 
     handler.autoparse_list(api_data.jobs,
                            IndustryJobHistory,
-                           unique_together=('facilityID', 'installerID', 'activityID'),
+                           unique_together=('jobID', ),
                            extra_selectors={'owner': corporation},
                            owner=corporation)
     target.updated(api_data)
@@ -1038,6 +1042,132 @@ def fetch_facilities(apiupdate_pk):
     corporation_facilities_updated.send(Facility, corporationID=corporation.pk)
 
 
+@app.task(name='corporation.fetch_contracts', max_retries=0)
+def fetch_contracts(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.corp.Contracts()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    contract_ids = handler.autoparse_list(api_data.contractList,
+                                          Contract,
+                                          unique_together=('contractID',),
+                                          extra_selectors={'owner': corporation},
+                                          owner=corporation)
+
+    target.updated(api_data)
+    corporation_contracts_updated.send(Contract, corporationID=corporation.pk)
+
+    for id in contract_ids:
+        contract = Contract.objects.get(pk=id)
+        if contract.get_items().count() == 0:
+            app.send_task('corporation.fetch_contractitems', [target.pk, contract.pk])
+
+
+@app.task(name='corporation.fetch_contractitems', max_retries=0)
+def fetch_contractitems(apiupdate_pk, contract_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    try:
+        contract = Contract.objects.get(pk=contract_pk,
+                                        owner=corporation)
+    except Contract.DoesNotExist:
+        log.warning('ContractItems requested for non-existing contractID {0} with APIUpdate {1}.'.format(
+            contract_pk,
+            apiupdate_pk
+        ))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.corp.ContractItems(contractID=contract.contractID)
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    handler.autoparse_list(api_data.itemList,
+                           ContractItem,
+                           unique_together=('contract', 'recordID'),
+                           extra_selectors={'owner': corporation},
+                           owner=corporation,
+                           immutable=True,
+                           static_defaults={
+                               'contract': contract
+                           })
+
+    target.updated(api_data)
+    corporation_contract_items_updated.send(ContractItem, corporationID=corporation.pk, contract_pk=contract.pk)
+
+
+@app.task(name='corporation.fetch_contractbids', max_retries=0)
+def fetch_contractbids(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.corp.ContractBids()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    bid_ids, overlap = handler.autoparse_list(api_data.bidList,
+                                              ContractBid,
+                                              unique_together=('contractID', 'bidID'),
+                                              extra_selectors={'owner': corporation},
+                                              owner=corporation,
+                                              immutable=True)
+
+    target.updated(api_data)
+    # Only trigger if there are new bids
+    for bid in ContractBid.objects.filter(pk__in=bid_ids):
+        corporation_contract_bids_new_bid.send(ContractBid,
+                                               corporationID=corporation.pk,
+                                               contractID=bid.contractID,
+                                               bid_pk = bid.pk)
+    corporation_contract_bids_updated.send(ContractBid, corporationID=corporation.pk)
+
+
+
 API_MAP = {
     'AssetList': (fetch_assetlist, fetch_blueprints, fetch_customsoffices, fetch_facilities),
     'AccountBalance': (fetch_accountbalance,),
@@ -1055,4 +1185,5 @@ API_MAP = {
     'Medals': (fetch_medals, ),
     'MemberMedals': (fetch_membermedals, ),
     'WalletTransactions': (fetch_wallettransactions, ),
+    'Contracts': (fetch_contracts, fetch_contractbids)
 }

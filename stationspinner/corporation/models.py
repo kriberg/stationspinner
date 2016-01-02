@@ -296,7 +296,7 @@ class IndustryJob(models.Model):
     pauseDate = custom.DateTimeField(null=True)
     solarSystemName = models.CharField(max_length=255)
     stationID = models.BigIntegerField(null=True)
-    jobID = models.BigIntegerField(null=True)
+    jobID = models.BigIntegerField()
     teamID = models.IntegerField(null=True)
     productTypeName = models.CharField(max_length=255, blank=True, null=True)
     blueprintLocationID = models.BigIntegerField(null=True)
@@ -307,7 +307,7 @@ class IndustryJob(models.Model):
     owner = models.ForeignKey(CorporationSheet)
 
     class Meta(object):
-        unique_together = ('facilityID', 'installerID', 'activityID')
+        unique_together = ('owner', 'jobID')
 
 
 class IndustryJobHistory(models.Model):
@@ -331,7 +331,7 @@ class IndustryJobHistory(models.Model):
     pauseDate = custom.DateTimeField(null=True)
     solarSystemName = models.CharField(max_length=255)
     stationID = models.BigIntegerField(null=True)
-    jobID = models.BigIntegerField(null=True)
+    jobID = models.BigIntegerField()
     teamID = models.IntegerField(null=True)
     productTypeName = models.CharField(max_length=255, blank=True, null=True)
     blueprintLocationID = models.BigIntegerField(null=True)
@@ -342,7 +342,7 @@ class IndustryJobHistory(models.Model):
     owner = models.ForeignKey(CorporationSheet)
 
     class Meta(object):
-        unique_together = ('facilityID', 'installerID', 'activityID')
+        unique_together = ('owner', 'jobID')
 
 
 class WalletTransaction(models.Model):
@@ -674,44 +674,56 @@ class MarketOrder(models.Model):
 
 class Contract(models.Model):
     status = models.CharField(max_length=50)
-    startStationID = models.IntegerField(null=True)
+    startStationID = models.BigIntegerField(null=True)
     dateCompleted = custom.DateTimeField(null=True)
     collateral = models.DecimalField(max_digits=30, decimal_places=2, null=True)
-    assigneeID = models.IntegerField(null=True)
-    issuerID = models.IntegerField()
+    assigneeID = models.BigIntegerField(null=True)
+    issuerID = models.BigIntegerField()
     price = models.DecimalField(max_digits=30, decimal_places=2, null=True)
-    endStationID = models.IntegerField(null=True)
+    endStationID = models.BigIntegerField(null=True)
     buyout = models.DecimalField(max_digits=30, decimal_places=2, null=True)
     dateExpired = custom.DateTimeField()
     availability = models.CharField(max_length=10)
     numDays = models.IntegerField(null=True)
     volume = models.DecimalField(max_digits=30, decimal_places=2, null=True)
     title = models.CharField(max_length=255)
-    acceptorID = models.IntegerField(null=True)
+    acceptorID = models.BigIntegerField(null=True)
     forCorp = models.BooleanField(default=False)
     dateAccepted = custom.DateTimeField(null=True)
     dateIssued = custom.DateTimeField(null=True)
     reward = models.DecimalField(max_digits=30, decimal_places=2, null=True)
     type = models.CharField(max_length=15)
-    issuerCorpID = models.IntegerField()
+    issuerCorpID = models.BigIntegerField()
     contractID = models.BigIntegerField()
+    search_tokens = models.TextField(null=True)
 
     owner = models.ForeignKey(CorporationSheet)
+
+    def get_items(self):
+        return ContractItem.objects.filter(owner=self.owner,
+                                           contract=self)
+
+    def get_bids(self):
+        return ContractBid.objects.fitler(owner=self.owner,
+                                          contractID=self.contractID)
+
+    class Meta(object):
+        unique_together = ('owner', 'contractID')
 
 
 class ContractItem(models.Model):
     contract = models.ForeignKey(Contract)
-    rowID = models.BigIntegerField()
+    recordID = models.BigIntegerField()
     typeID = models.IntegerField()
     quantity = models.BigIntegerField()
-    rawQuantity = models.IntegerField(null=True)
+    rawQuantity = models.BigIntegerField(null=True)
     singleton = models.BooleanField(default=False)
     included = models.BooleanField(default=True)
 
     owner = models.ForeignKey(CorporationSheet)
 
     class Meta(object):
-        unique_together = ('contract', 'owner', 'rowID')
+        unique_together = ('contract', 'owner', 'recordID')
 
 
 class ContractBid(models.Model):
