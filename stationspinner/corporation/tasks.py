@@ -37,7 +37,9 @@ from stationspinner.corporation.signals import \
     corporation_contract_bids_new_bid, \
     corporation_contract_bids_updated, \
     corporation_contract_items_updated, \
-    corporation_outposts_updated
+    corporation_outposts_updated, \
+    corporation_npc_standings_updated, \
+    corporation_outpost_services_updated
 from stationspinner.libs.eveapi.eveapi import AuthenticationError, ServerError
 from stationspinner.libs.assethandlers import CorporationAssetHandler
 
@@ -1257,9 +1259,65 @@ def fetch_outpostservicedetails(apiupdate_pk, stationID):
 
     OutpostService.objects.filter(owner=corporation).exclude(pk__in=outpost_services_ids).delete()
     target.updated(api_data)
-    corporation_outposts_updated.send(OutpostService,
+    corporation_outpost_services_updated.send(OutpostService,
                                       corporationID=corporation.pk,
                                       stationID=stationID)
+
+
+@app.task(name='corporation.fetch_npcstandings', max_retries=0)
+def fetch_npcstandings(apiupdate_pk):
+    try:
+        target, corporation = _get_corporation_auth(apiupdate_pk)
+    except CorporationSheet.DoesNotExist:
+        log.debug('CorporationSheet for APIUpdate {0} not indexed yet.'.format(apiupdate_pk))
+        return
+    except APIUpdate.DoesNotExist:
+        log.warning('Target APIUpdate {0} was deleted mid-flight.'.format(apiupdate_pk))
+        return
+
+    handler = EveAPIHandler()
+    auth = handler.get_authed_eveapi(target.apikey)
+    try:
+        api_data = auth.corp.Standings()
+    except AuthenticationError:
+        log.error('AuthenticationError for key "{0}" owned by "{1}"'.format(
+            target.apikey.keyID,
+            target.apikey.owner
+        ))
+        target.delete()
+        return
+
+    agent_ids = handler.autoparse_list(api_data.corporationNPCStandings.agents,
+                                       NPCStanding,
+                                       unique_together=('fromID',),
+                                       extra_selectors={'owner': corporation},
+                                       owner=corporation,
+                                       static_defaults={
+                                           'type': 'Agent'
+                                       })
+
+    corp_ids = handler.autoparse_list(api_data.corporationNPCStandings.NPCCorporations,
+                                      NPCStanding,
+                                      unique_together=('fromID',),
+                                      extra_selectors={'owner': corporation},
+                                      owner=corporation,
+                                      static_defaults={
+                                          'type': 'Corporation'
+                                      })
+
+    faction_ids = handler.autoparse_list(api_data.corporationNPCStandings.factions,
+                                         NPCStanding,
+                                         unique_together=('fromID',),
+                                         extra_selectors={'owner': corporation},
+                                         owner=corporation,
+                                         static_defaults={
+                                             'type': 'Faction'
+                                         })
+    all_ids = agent_ids + corp_ids + faction_ids
+    NPCStanding.objects.filter(owner=corporation).exclude(pk__in=all_ids).delete()
+    target.updated(api_data)
+    corporation_npc_standings_updated.send(NPCStanding,
+                                           corporationID=corporation.pk)
 
 
 API_MAP = {
@@ -1282,4 +1340,5 @@ API_MAP = {
     'Contracts': (fetch_contracts, fetch_contractbids),
     'OutpostList': (fetch_outposts, ),
     'OutpostServiceDetails': tuple(),
+    'Standings': (fetch_npcstandings, ),
 }
