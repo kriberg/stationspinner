@@ -1339,6 +1339,6 @@ API_MAP = {
     'WalletTransactions': (fetch_wallettransactions, ),
     'Contracts': (fetch_contracts, fetch_contractbids),
     'OutpostList': (fetch_outposts, ),
-    'OutpostServiceDetails': tuple(),
+    'OutpostServiceDetail': tuple(),
     'Standings': (fetch_npcstandings, ),
 }
