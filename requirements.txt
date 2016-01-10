@@ -1,4 +1,4 @@
-Django==1.8.7
+Django==1.8.8
 psycopg2
 django-redis
 django-extensions>=1.5.9
