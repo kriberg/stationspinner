@@ -13,3 +13,5 @@ git+https://github.com/eve-val/evelink
 django-registration-redux
 django-bootstrap-form
 beautifulsoup4
+pycrest
+pyopenssl

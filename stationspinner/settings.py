@@ -134,7 +134,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-
     # external apps
     'django_extensions',
     'rest_framework',
@@ -152,9 +151,6 @@ INSTALLED_APPS = [
     'stationspinner.evecentral',
     'stationspinner.evemail',
     'stationspinner.statistics',
-    'registration',
-    'bootstrapform',
-
 ]
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
@@ -215,9 +211,12 @@ AUTH_USER_MODEL = 'accounting.Capsuler'
 # Django rest framework settings
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'stationspinner.accounting.authentication.CrestAuthentication',
+    ),
     'PAGINATE_BY': 100
 }
+
 
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
@@ -310,10 +309,3 @@ CELERYBEAT_SCHEDULE = {
 }
 
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    )
-
-}

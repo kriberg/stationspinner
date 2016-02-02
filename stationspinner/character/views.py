@@ -160,24 +160,37 @@ class AssetsView(views.APIView):
         characterIDs = request.query_params.get('characterIDs', [])
         locationID = request.query_params.get('locationID', None)
         parentID = request.query_params.get('parentID', None)
+        itemID = request.query_params.get('itemID', None)
 
-        if len(characterIDs) > 0 and locationID:
+        if len(characterIDs) > 0:
             try:
                 characterIDs = str(characterIDs).split(',')
                 valid, invalid = CharacterSheet.objects.filter_valid(characterIDs, request.user)
                 characterIDs = valid
             except:
                 characterIDs = []
+        else:
+            return Response([])
 
+
+        if locationID or parentID:
             assets = self.handler.get_location_assets(
                 tuple(characterIDs),
                 locationID=locationID,
                 parent_id=parentID
             )
-        else:
-            assets = []
+            return Response(assets)
 
-        return Response(assets)
+        if itemID:
+            try:
+                asset = Asset.objects.get(owner__in=characterIDs,
+                                          itemID=itemID)
+                serializer = AssetSerializer(asset)
+                return Response(serializer.data)
+            except Asset.DoesNotExist:
+                return Response({'detail': 'Unkown itemID'})
+
+        return Response([])
 
 
 class AssetSearchView(views.APIView):

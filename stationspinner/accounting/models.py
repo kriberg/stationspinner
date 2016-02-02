@@ -12,6 +12,7 @@ from stationspinner.celery import app
 
 class Capsuler(AbstractUser):
     settings = JsonField(blank=True, default={})
+    owner_hash = models.CharField(max_length=255, null=True)
 
     def __unicode__(self):
         return self.username

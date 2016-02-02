@@ -1,5 +1,4 @@
 from rest_framework import permissions, viewsets, serializers
-import json
 
 class CapsulerPermission(permissions.IsAuthenticated):
     """

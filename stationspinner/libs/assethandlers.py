@@ -195,7 +195,6 @@ class BaseAssetHandler():
         return assets
 
 
-
 class CharacterAssetHandler(BaseAssetHandler):
     ASSETSUMMARY_VIEW = 'character_assetsummary'
     ASSET_TYPE = 'character'

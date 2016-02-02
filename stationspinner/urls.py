@@ -15,7 +15,6 @@ app_urls = [
     url(r'^prices/', include('stationspinner.evecentral.urls')),
     url(r'^statistics/', include('stationspinner.statistics.urls')),
     url(r'^universe/', include('stationspinner.universe.urls')),
-    url(r'^registration/', include('registration.backends.default.urls')),
     url(r'^grappelli/', include('grappelli.urls')),
     url(r'^auth/', authtoken.obtain_auth_token),
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),

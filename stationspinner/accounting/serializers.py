@@ -28,6 +28,5 @@ class CapsulerSerializer(serializers.ModelSerializer):
     class Meta(object):
         model = Capsuler
         read_only_fields = ('username', 'email', 'last_login', 'date_joined')
-        exclude = ('id', 'password', 'is_superuser', 'is_staff', 'groups', 'is_active',
-                   'user_permissions')
+        fields = ('username', 'email', 'last_login', 'date_joined')
 

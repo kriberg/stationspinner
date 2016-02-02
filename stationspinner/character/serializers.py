@@ -1,10 +1,8 @@
 from rest_framework import serializers
 from stationspinner.character.models import CharacterSheet, Skill, \
     SkillInTraining, SkillQueue, Asset, CharacterImplant, \
-    JumpClone, JumpCloneImplant, Notification, MailMessage, WalletJournal, \
+    JumpClone, JumpCloneImplant, Notification, MailMessage, \
     WalletTransaction
-from stationspinner.sde.models import MapDenormalize
-from stationspinner.sde.serializers import RegionSerializer
 
 class SkillSerializer(serializers.ModelSerializer):
     class Meta(object):
@@ -142,8 +140,11 @@ class AssetSerializer(serializers.ModelSerializer):
             'rawQuantity',
             'item_value',
             'item_volume',
+            'item_name',
             'container_value',
             'container_volume',
+            'parent_list',
+            'owner',
             'category'
         )
 
