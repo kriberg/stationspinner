@@ -32,7 +32,8 @@ class ObtainAuthTokenView(views.APIView):
         return Response({
             'clientID': settings.CREST_CLIENTID,
             'callbackURL': settings.CREST_CALLBACK_URL,
-            'authToken': token
+            'authToken': token,
+            'scopes': ''
         })
 
 
@@ -61,9 +62,10 @@ class RefreshAuthTokenView(views.APIView):
     def get(self, request, *args, **kwargs):
         crest_auth = self.get_authenticators()[0]
         capsuler, token = crest_auth.authenticate(request)
-        token = refresh_token(token, capsuler)
+        token, expires = refresh_token(token, capsuler)
         return Response({
-            'token': token
+            'token': token,
+            'expires': expires
         })
 
 class APIKeyViewset(CapsulerViewset):

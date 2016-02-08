@@ -3,16 +3,15 @@ from rest_framework.authentication import BaseAuthentication, get_authorization_
 from django.core.cache import cache
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from datetime import datetime
+from datetime import datetime, timedelta
 from stationspinner.accounting.models import Capsuler
-import pytz, pycrest, hashlib, os
+import pytz, pycrest, hashlib, os, time
 
 def _set_crest_data(auth_con, capsuler):
     expires_in_seconds = (datetime.fromtimestamp(auth_con.expires, pytz.UTC) -
                           datetime.now(tz=pytz.UTC)).total_seconds()
     # This sets the token for communication between armada, stationspinner and
     # crest.
-    print auth_con.token, expires_in_seconds
     cache.set(auth_con.token,
               {
                   'username': capsuler.username,
@@ -89,10 +88,27 @@ def refresh_token(token, capsuler):
     eve_sso = pycrest.EVE(client_id=settings.CREST_CLIENTID,
                           api_key=settings.CREST_SECRET_KEY)
 
-    auth_con = eve_sso.refr_authorize(auth_data['refresh_token'])
     cache.delete(token)
-    new_token = _set_crest_data(auth_con, capsuler)
-    return new_token
+    # If we're using authentication only and no crest scopes,
+    # the refresh token will be empty. Generate a new non-crest
+    # token instead.
+    if auth_data['refresh_token'] is None:
+        new_token = hashlib.sha1(os.urandom(256)).hexdigest()
+        expires = datetime.now(tz=pytz.UTC) + timedelta(minutes=20)
+        cache.set(new_token,
+              {
+                  'username': auth_data['username'],
+                  'refresh_token': None,
+                  'expires': None
+              },
+              timeout=(expires - datetime.now(tz=pytz.UTC)).total_seconds()) # Use 20 minutes, same as crest
+        expires = time.mktime(expires.timetuple())
+    else:
+        auth_con = eve_sso.refr_authorize(auth_data['refresh_token'])
+        new_token = _set_crest_data(auth_con, capsuler)
+        expires = auth_con['expires']
+
+    return new_token, expires
 
 def get_authorization_token():
     token = hashlib.sha1(os.urandom(128)).hexdigest()
