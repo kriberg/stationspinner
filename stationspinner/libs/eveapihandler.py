@@ -171,9 +171,9 @@ class EveAPIHandler():
                 selectors[key] = value
 
             if immutable:
-                obj = objClass.objects.filter(**selectors)
-                if obj.count() == 1:
-                    overlap_obj.append(obj[0].pk)
+                objs = objClass.objects.filter(**selectors)
+                if objs.count() > 0:
+                    overlap_obj.extend([obj.pk for obj in objs])
                     continue
 
             defaults = self._create_defaults(entry,

@@ -750,12 +750,12 @@ class ContainerLog(models.Model):
     itemTypeID = models.IntegerField()
     actorName = models.CharField(max_length=255)
     flag = models.IntegerField()
-    locationID = models.IntegerField()
+    locationID = models.BigIntegerField()
     logTime = custom.DateTimeField()
     passwordType = models.CharField(max_length=9, default='', blank=True)
     action = models.CharField(max_length=50)
-    actorID = models.IntegerField()
-    quantity = models.IntegerField(null=True)
+    actorID = models.BigIntegerField()
+    quantity = models.BigIntegerField(null=True)
 
 
     owner = models.ForeignKey(CorporationSheet)
