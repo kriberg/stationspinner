@@ -1,4 +1,4 @@
-Django==1.8.8
+Django==1.8.9
 psycopg2
 django-redis
 django-extensions>=1.5.9
@@ -10,8 +10,6 @@ django-grappelli
 django-pgjson
 https://github.com/mher/flower/zipball/master
 git+https://github.com/eve-val/evelink
-django-registration-redux
-django-bootstrap-form
 beautifulsoup4
 pycrest
 pyopenssl
