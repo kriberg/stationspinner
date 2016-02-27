@@ -376,7 +376,7 @@ class WalletJournal(models.Model):
     reason = models.CharField(max_length=255, blank=True, null=True)
     date = custom.DateTimeField()
     refTypeID = models.IntegerField(null=True)
-    refID = models.BigIntegerField(null=True, db_index=True)
+    refID = models.BigIntegerField(db_index=True)
     ownerID2 = models.IntegerField(null=True)
     taxAmount = models.CharField(max_length=255, blank=True, null=True)
     ownerID1 = models.IntegerField(null=True)
@@ -387,7 +387,7 @@ class WalletJournal(models.Model):
     ownerName1 = models.CharField(max_length=255, blank=True, null=True)
     amount = models.DecimalField(max_digits=30, decimal_places=2, null=True)
     balance = models.DecimalField(max_digits=30, decimal_places=2, null=True)
-    accountKey = models.IntegerField(null=True)
+    accountKey = models.IntegerField()
 
     owner = models.ForeignKey(CorporationSheet)
 

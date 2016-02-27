@@ -453,13 +453,14 @@ def walk_walletjournal(apiupdate_pk, fromID, accountKey):
         return
 
     new_ids, overlap_ids = handler.autoparse_list(api_data.entries,
-                                       WalletJournal,
-                                       unique_together=['refID'],
-                                       extra_selectors={'owner': corporation,
-                                                        'accountKey': accountKey},
-                                       owner=corporation,
-                                       pre_save=True,
-                                       immutable=True)
+                                                  WalletJournal,
+                                                  unique_together=['refID'],
+                                                  extra_selectors={'owner': corporation,
+                                                                   'accountKey': accountKey},
+                                                  static_defaults={'accountKey': accountKey},
+                                                  owner=corporation,
+                                                  pre_save=True,
+                                                  immutable=True)
     log.info('Walked {0} wallet journal entries for corporation "{1}". {2} new entries, {3} already known'.format(
         len(new_ids)+len(overlap_ids),
         corporation,
