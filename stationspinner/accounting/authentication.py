@@ -5,7 +5,10 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from datetime import datetime, timedelta
 from stationspinner.accounting.models import Capsuler
-import pytz, pycrest, hashlib, os, time
+import pytz, pycrest, hashlib, os, time, logging
+
+log = logging.getLogger('crest')
+
 
 def _set_crest_data(auth_con, capsuler):
     expires_in_seconds = (datetime.fromtimestamp(auth_con.expires, pytz.UTC) -
@@ -60,6 +63,7 @@ def check_login(state_token):
         # token back to the user
         crest_token = auth_data
         cache.delete(state_token)
+        log.debug("".join((crest_data['username'], 'logged in, token: ', crest_token)))
         return {'token': crest_token,
                 'expires': crest_data['expires']}, 200
 
@@ -107,7 +111,7 @@ def refresh_token(token, capsuler):
         auth_con = eve_sso.refr_authorize(auth_data['refresh_token'])
         new_token = _set_crest_data(auth_con, capsuler)
         expires = auth_con['expires']
-
+    log.debug(" ".join(('Refreshed token for', auth_data['username'], new_token)))
     return new_token, expires
 
 def get_authorization_token():

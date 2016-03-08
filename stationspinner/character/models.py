@@ -31,9 +31,14 @@ class Skill(models.Model):
     owner = models.ForeignKey('CharacterSheet', related_name='skills')
 
     def update_from_api(self, data, handler):
-        skill = InvType.objects.get(pk=self.typeID)
-        self.typeName = skill.typeName
-        self.skill_group = skill.group.groupName
+        try:
+            skill = InvType.objects.get(pk=self.typeID)
+            self.typeName = skill.typeName
+            self.skill_group = skill.group.groupName
+        except InvType.DoesNotExist:
+            self.typeName = "Unknown skill {}".format(self.typeID)
+            self.skill_group = 'Unknown'
+
         self.save()
 
     class Meta(object):
