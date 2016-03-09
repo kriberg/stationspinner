@@ -511,6 +511,14 @@ class Asset(models.Model):
                 fitted = 'fitted'
             else:
                 fitted = 'unfitted'
+            try:
+                item_type = self.get_type()
+                group_name = item_type.group.groupName
+                category_name = item_type.group.category.categoryName
+            except InvType.DoesNotExist:
+                group_name = ''
+                category_name = ''
+
             cursor.execute('''
             UPDATE
                 corporation_asset
@@ -530,8 +538,8 @@ class Asset(models.Model):
                                    'typeName': self.typeName,
                                    'locationName': self.locationName,
                                    'itemName': self.item_name(),
-                                   'groupName': self.get_type().group.groupName,
-                                   'categoryName': self.get_type().group.category.categoryName,
+                                   'groupName': group_name,
+                                   'categoryName': category_name,
                                    'fitted': fitted,
                                    'owner': self.owner.corporationName
                                })
