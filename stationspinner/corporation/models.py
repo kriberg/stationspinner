@@ -612,7 +612,7 @@ class Asset(models.Model):
             try:
                 self.item_volume = get_item_packaged_volume(item.group.pk, item.pk) * self.quantity
             except UnknownPackagedItem:
-                pass
+                self.item_volume = 0.0
         else:
             self.item_volume = item.volume * self.quantity
 
