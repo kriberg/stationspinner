@@ -122,7 +122,12 @@ class CharacterSheetSerializer(serializers.ModelSerializer):
 class CharacterSheetShort(serializers.ModelSerializer):
     class Meta(object):
         model = CharacterSheet
-        fields = ('characterID', 'name', 'corporationName', 'allianceName')
+        fields = ('characterID',
+                  'name',
+                  'corporationName',
+                  'corporationID',
+                  'allianceName',
+                  'allianceID')
 
 
 class AssetSerializer(serializers.ModelSerializer):
