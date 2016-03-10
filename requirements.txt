@@ -1,14 +1,14 @@
-Django>=1.8.11
+Django>=1.8.11,<1.9
 psycopg2
 django-redis
 django-extensions>=1.6.1
 djangorestframework
 pyyaml
 django-filter
-celery>=3.1.22
+celery[librabbitmq,eventlet,redis]>=3.1.23
 django-grappelli
 django-pgjson
-https://github.com/mher/flower/zipball/master
+git+https://github.com/mher/flower
 git+https://github.com/eve-val/evelink
 beautifulsoup4
 pycrest

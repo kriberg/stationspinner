@@ -222,10 +222,17 @@ CACHES = {
 
 
 # Celery settings
-
+from kombu import Exchange, Queue
 BROKER_URL = "amqp://armada:password@localhost:5672/armada"
-CELERY_RESULT_BACKEND = "amqp"
+BROKER_POOL_LIMIT=512
+CELERY_RESULT_BACKEND = "redis://localhost/0"
 CELERY_TASK_RESULT_EXPIRES = 86400
+CELERY_QUEUES = (
+    Queue('celery', routing_key='celery'),
+    Queue('transient', routing_key='transient', delivery_mode=1)
+)
+CELERYD_PREFETCH_MULTIPLIER = 8
+
 AUTH_USER_MODEL = 'accounting.Capsuler'
 
 # Django rest framework settings

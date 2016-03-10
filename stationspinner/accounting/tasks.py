@@ -32,7 +32,7 @@ def update_capsuler_keys(*args, **kwargs):
     active_keys = APIKey.objects.filter(owner__in=capsulers)
     log.info('Validating {0} keys'.format(active_keys.count()))
     for key in active_keys:
-        validate_key.s(key.pk).apply_async()
+        validate_key.s(key.pk).apply_async(queue='transient')
 
 
 def queue_capsuler_keys(capsuler):
@@ -86,7 +86,7 @@ def update_apikey_sheets(apikey_pk):
             log.info('No corporation sheets need updating')
 
     if len(tasks) > 0:
-        group(tasks).apply_async()
+        group(tasks).apply_async(queue='transient')
 
 @app.task(name='accounting.update_all_sheets', max_retries=0)
 def update_all_sheets(*args, **kwargs):
@@ -128,7 +128,7 @@ def update_all_sheets(*args, **kwargs):
         log.info('No corporation sheets need updating')
 
     if len(tasks) > 0:
-        group(tasks).apply_async()
+        group(tasks).apply_async(queue='transient')
 
 @app.task(name='accounting.update_all_apidata', max_retries=0)
 def update_all_apidata(*args, **kwargs):
@@ -137,7 +137,7 @@ def update_all_apidata(*args, **kwargs):
     tasks = queue_character_tasks(character_keys) + queue_corporation_tasks(corpkeys)
 
     if len(tasks) > 0:
-        group(tasks).apply_async()
+        group(tasks).apply_async(queue='transient')
 
 @app.task(name='accounting.update_character_apidata')
 def update_character_apidata(character_pk, max_retries=0):
@@ -149,7 +149,7 @@ def update_character_apidata(character_pk, max_retries=0):
 
     tasks = queue_character_tasks(key_qs)
     if len(tasks) > 0:
-        group(tasks).apply_async()
+        group(tasks).apply_async(queue='transient')
 
 @app.task(name='accounting.update_corporation_apidata')
 def update_corporation_apidata(corporation_pk, max_retries=0):
@@ -160,7 +160,7 @@ def update_corporation_apidata(corporation_pk, max_retries=0):
     key_qs = APIKey.objects.filter(pk=corporation.owner_key.pk)
     tasks = queue_corporation_tasks(key_qs)
     if len(tasks) > 0:
-        group(tasks).apply_async()
+        group(tasks).apply_async(queue='transient')
 
 
 def queue_character_tasks(keys):
