@@ -63,7 +63,7 @@ def check_login(state_token):
         # token back to the user
         crest_token = auth_data
         cache.delete(state_token)
-        log.debug("".join((crest_data['username'], 'logged in, token: ', crest_token)))
+        log.debug("".join((crest_data['username'], ' logged in, token: ', crest_token)))
         return {'token': crest_token,
                 'expires': crest_data['expires']}, 200
 
@@ -110,7 +110,7 @@ def refresh_token(token, capsuler):
     else:
         auth_con = eve_sso.refr_authorize(auth_data['refresh_token'])
         new_token = _set_crest_data(auth_con, capsuler)
-        expires = auth_con['expires']
+        expires = auth_con.expires
     log.debug(" ".join(('Refreshed token for', auth_data['username'], new_token)))
     return new_token, expires
 
