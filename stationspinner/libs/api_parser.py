@@ -141,7 +141,11 @@ NOTIFICATION_CODES = {
     128: 'Character Application Accept Message',
     129: 'Character Application Reject Message',
     130: 'Character Application Withdraw Message',
-    137: 'Team Auction lost'
+    137: 'Team Auction lost',
+    147: 'Entosis Link started',
+    148: 'Entosis Link enabled module',
+    149: 'Entosis Link disabled module',
+    150: 'Entosis Link halfcaptured a module'
 }
 
 
