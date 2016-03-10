@@ -214,7 +214,7 @@ class JumpClone(models.Model):
             try:
                 location = ItemLocationName.objects.get(itemID=self.locationID)
             except ItemLocationName.DoesNotExist:
-                pass
+                return location
         return location
 
     def jumpCloneImplants(self):
@@ -750,7 +750,10 @@ class SkillQueue(models.Model):
     owner = models.ForeignKey('CharacterSheet', related_name='skillQueue')
 
     def update_from_api(self, sheet, handler):
-        self.typeName = InvType.objects.get(pk=self.typeID).typeName
+        try:
+            self.typeName = InvType.objects.get(pk=self.typeID).typeName
+        except InvType.DoesNotExist:
+            self.typeName = self.typeID
         self.save()
 
 
