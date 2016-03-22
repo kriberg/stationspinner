@@ -104,7 +104,7 @@ class MemberTracking(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('owner', 'characterID')
 
 

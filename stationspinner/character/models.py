@@ -247,7 +247,7 @@ class UpcomingCalendarEvent(models.Model):
     ownerTypeID = models.IntegerField()
     owner = models.ForeignKey('CharacterSheet')
 
-    class Meta:
+    class Meta(object):
         unique_together = ('owner', 'eventID')
 
 
@@ -283,7 +283,7 @@ class Contact(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
-    class Meta:
+    class Meta(object):
         unique_together = ('owner', 'listType', 'contactID')
 
 
@@ -296,7 +296,7 @@ class Research(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
-    class Meta:
+    class Meta(object):
         unique_together = ('owner', 'agentID')
 
 
@@ -606,7 +606,7 @@ class Medal(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
-    class Meta:
+    class Meta(object):
         unique_together = ('owner', 'medalID')
 
 
@@ -651,7 +651,7 @@ class WalletJournal(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
-    class Meta:
+    class Meta(object):
         unique_together = ('refID', 'owner')
 
 
@@ -730,7 +730,7 @@ class Contract(models.Model):
     def get_wanted_items(self):
         return self.get_items().filter(included=False)
 
-    class Meta:
+    class Meta(object):
         unique_together = ('owner', 'contractID')
 
 
@@ -781,7 +781,7 @@ class SkillQueue(models.Model):
             self.typeName = self.typeID
         self.save()
 
-    class Meta:
+    class Meta(object):
         unique_together = ('owner', 'typeID', 'level')
 
 
@@ -801,7 +801,7 @@ class ContactNotification(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
-    class Meta:
+    class Meta(object):
         unique_together = ('owner', 'notificationID')
 
 
@@ -866,7 +866,7 @@ class CorporationRole(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
-    class Meta:
+    class Meta(object):
         unique_together = ('owner', 'roleID', 'location')
 
 
@@ -876,7 +876,7 @@ class CorporationTitle(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
-    class Meta:
+    class Meta(object):
         unique_together = ('owner', 'titleID')
 
 
