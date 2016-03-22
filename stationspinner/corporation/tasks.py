@@ -1326,7 +1326,7 @@ API_MAP = {
     'AccountBalance': (fetch_accountbalance,),
     'MemberTrackingExtended': (fetch_membertracking,),
     'StarbaseList': (fetch_starbaselist,),
-    'StarbaseDetail': tuple(),
+    #'StarbaseDetail': tuple(),
     'WalletJournal': (fetch_walletjournal,),
     'ContainerLog': (fetch_containerlog, ),
     'IndustryJobs': (fetch_industryjobs, fetch_industryjobshistory),
@@ -1340,6 +1340,7 @@ API_MAP = {
     'WalletTransactions': (fetch_wallettransactions, ),
     'Contracts': (fetch_contracts, fetch_contractbids),
     'OutpostList': (fetch_outposts, ),
-    'OutpostServiceDetail': tuple(),
+    #'OutpostServiceDetail': tuple(),
     'Standings': (fetch_npcstandings, ),
 }
+2

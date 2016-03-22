@@ -290,6 +290,7 @@ class EveAPIHandler():
         group_cache = {}
         category_cache = {}
         itemIDs_to_names = []
+        store = {}
 
         def asset_with_name(asset):
             '''
@@ -331,6 +332,10 @@ class EveAPIHandler():
                     locationName = get_location_name(locationID)
                     location_cache[locationID] = locationName
 
+                group = None
+                category = None
+                typeName = None
+
                 if row.typeID in type_cache and row.typeID in group_cache and row.typeID in category_cache:
                     typeName = type_cache[row.typeID]
                     group = group_cache[row.typeID]
@@ -344,14 +349,10 @@ class EveAPIHandler():
                         type_cache[row.typeID] = typeName
                         group_cache[row.typeID] = group
                         category_cache[row.typeID] = category
-                    except InvType.DoesNotExist:
-                        typeName = None
                     except:
-                        group = None
-                        category = None
+                        pass
 
                 item = {
-                    'itemID': row.itemID,
                     'locationID': locationID,
                     'locationName': locationName,
                     'typeID': row.typeID,
@@ -361,18 +362,15 @@ class EveAPIHandler():
                     'groupID': group,
                     'categoryID': category,
                     'singleton': row.singleton,
-                    'parent': parent,
+                    'parent_id': parent,
                 }
 
                 if hasattr(row, 'rawQuantity'):
                     item['rawQuantity'] = row.rawQuantity
 
-                asset = AssetClass()
-                asset.from_item(item, path)
-                asset.owner = owner
-                if hasattr(asset, 'update_from_api'):
-                    asset.update_from_api(item, self)
-                asset.save()
+                asset, created = AssetClass.objects.update_or_create(owner=owner,
+                                                                     itemID=row.itemID,
+                                                                     defaults=item)
 
                 if asset_with_name(asset):
                     itemIDs_to_names.append(str(asset.itemID))
@@ -383,14 +381,17 @@ class EveAPIHandler():
                                                     parent=row.itemID,
                                                     path=path + (row.itemID,))
 
+                item["itemID"] = asset.itemID
+
+                asset.update_from_api(item, self)
                 asset.compute_container_volume()
                 asset.compute_container_value()
                 asset.save()
+
                 contents.append(item)
 
             return contents
 
-        store = {}
         AssetClass.objects.filter(owner=owner).delete()
 
         for container in parse_rowset(assets):

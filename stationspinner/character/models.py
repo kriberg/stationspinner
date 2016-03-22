@@ -247,6 +247,9 @@ class UpcomingCalendarEvent(models.Model):
     ownerTypeID = models.IntegerField()
     owner = models.ForeignKey('CharacterSheet')
 
+    class Meta:
+        unique_together = ('owner', 'eventID')
+
 
 class Blueprint(models.Model):
     itemID = models.BigIntegerField()
@@ -280,6 +283,9 @@ class Contact(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
+    class Meta:
+        unique_together = ('owner', 'listType', 'contactID')
+
 
 class Research(models.Model):
     pointsPerDay = models.DecimalField(max_digits=10, decimal_places=2)
@@ -289,6 +295,9 @@ class Research(models.Model):
     remainderPoints = models.DecimalField(max_digits=20, decimal_places=10)
 
     owner = models.ForeignKey('CharacterSheet')
+
+    class Meta:
+        unique_together = ('owner', 'agentID')
 
 
 class AssetList(models.Model):
@@ -391,10 +400,17 @@ class Asset(models.Model):
             else:
                 fitted = 'unfitted'
             try:
-                cursor.execute('''
-                UPDATE
-                    character_asset
-                SET
+                item_type = self.get_type()
+                group_name = item_type.group.groupName
+                category_name = item_type.group.category.categoryName
+            except InvType.DoesNotExist:
+                group_name = ''
+                category_name = ''
+
+            cursor.execute('''
+            UPDATE
+                corporation_asset
+            SET
                     search_tokens =
                         setweight(to_tsvector(unaccent(%(typeName)s)), 'B') ||
                         setweight(to_tsvector(unaccent(%(locationName)s)), 'B') ||
@@ -410,13 +426,11 @@ class Asset(models.Model):
                                    'typeName': self.typeName,
                                    'locationName': self.locationName,
                                    'itemName': self.item_name(),
-                                   'groupName': self.get_type().group.groupName,
-                                   'categoryName': self.get_type().group.category.categoryName,
+                                   'groupName': group_name,
+                                   'categoryName': category_name,
                                    'fitted': fitted,
                                    'owner': self.owner.name
                                })
-            except:
-                print cursor.query
 
     def item_name(self):
         try:
@@ -437,12 +451,11 @@ class Asset(models.Model):
         self.path = ".".join(map(str, path))
         self.groupID = item['groupID']
         self.categoryID = item['categoryID']
+        self.parent_id = item['parent_id']
 
         if 'rawQuantity' in item:
             self.rawQuantity = item['rawQuantity']
 
-        if 'parent' in item:
-            self.parent_id = item['parent']
 
     def categorize(self):
         self.groupID = self.get_type().group.pk
@@ -486,7 +499,7 @@ class Asset(models.Model):
             try:
                 self.item_volume = get_item_packaged_volume(item.group.pk, item.pk) * self.quantity
             except UnknownPackagedItem:
-                pass
+                self.item_volume = 0.0
         else:
             self.item_volume = item.volume * self.quantity
 
@@ -546,6 +559,7 @@ class Asset(models.Model):
 
     class Meta(object):
         managed = False
+        unique_together = ('itemID', 'owner')
 
 
 class MarketOrder(models.Model):
@@ -592,6 +606,10 @@ class Medal(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
+    class Meta:
+        unique_together = ('owner', 'medalID')
+
+
 
 class PlanetaryColony(models.Model):
     lastUpdate = custom.DateTimeField()
@@ -610,6 +628,7 @@ class PlanetaryColony(models.Model):
 
     class Meta(object):
         verbose_name_plural = "PlanetaryColonies"
+        unique_together = ('owner', 'planetID')
 
 
 class WalletJournal(models.Model):
@@ -617,8 +636,8 @@ class WalletJournal(models.Model):
     argName1 = models.CharField(max_length=255, blank=True, null=True)
     reason = models.CharField(max_length=255, blank=True, null=True)
     date = custom.DateTimeField()
-    refTypeID = models.IntegerField(null=True)
-    refID = models.BigIntegerField(null=True)
+    refTypeID = models.IntegerField(db_index=True)
+    refID = models.BigIntegerField()
     ownerID2 = models.IntegerField(null=True)
     taxAmount = models.CharField(max_length=255, blank=True, null=True)
     ownerID1 = models.IntegerField(null=True)
@@ -631,6 +650,9 @@ class WalletJournal(models.Model):
     balance = models.DecimalField(max_digits=30, decimal_places=2, null=True)
 
     owner = models.ForeignKey('CharacterSheet')
+
+    class Meta:
+        unique_together = ('refID', 'owner')
 
 
 class Notification(models.Model):
@@ -708,6 +730,9 @@ class Contract(models.Model):
     def get_wanted_items(self):
         return self.get_items().filter(included=False)
 
+    class Meta:
+        unique_together = ('owner', 'contractID')
+
 
 class ContractItem(models.Model):
     contract = models.ForeignKey(Contract)
@@ -756,6 +781,9 @@ class SkillQueue(models.Model):
             self.typeName = self.typeID
         self.save()
 
+    class Meta:
+        unique_together = ('owner', 'typeID', 'level')
+
 
 class MailingList(models.Model):
     listID = models.BigIntegerField(primary_key=True)
@@ -772,6 +800,9 @@ class ContactNotification(models.Model):
     sentDate = custom.DateTimeField()
 
     owner = models.ForeignKey('CharacterSheet')
+
+    class Meta:
+        unique_together = ('owner', 'notificationID')
 
 
 class WalletTransaction(models.Model):
@@ -835,12 +866,18 @@ class CorporationRole(models.Model):
 
     owner = models.ForeignKey('CharacterSheet')
 
+    class Meta:
+        unique_together = ('owner', 'roleID', 'location')
+
 
 class CorporationTitle(models.Model):
     titleID = models.IntegerField()
     titleName = models.CharField(max_length=255)
 
     owner = models.ForeignKey('CharacterSheet')
+
+    class Meta:
+        unique_together = ('owner', 'titleID')
 
 
 class Certificate(models.Model):

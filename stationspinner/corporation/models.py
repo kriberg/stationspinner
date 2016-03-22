@@ -104,6 +104,9 @@ class MemberTracking(models.Model):
 
     owner = models.ForeignKey(CorporationSheet)
 
+    class Meta:
+        unique_together = ('owner', 'characterID')
+
 
 class MemberMedal(models.Model):
     medalID = models.BigIntegerField()
@@ -563,12 +566,10 @@ class Asset(models.Model):
         self.path = ".".join(map(str, path))
         self.groupID = item['groupID']
         self.categoryID = item['categoryID']
+        self.parent_id = item['parent_id']
 
         if 'rawQuantity' in item:
             self.rawQuantity = item['rawQuantity']
-
-        if 'parent' in item:
-            self.parent_id = item['parent']
 
     def categorize(self):
         self.groupID = self.get_type().group.pk
@@ -642,6 +643,27 @@ class Asset(models.Model):
     def get_type(self):
         return InvType.objects.get(pk=self.typeID)
 
+    def get_parent(self):
+        if self.parent_id:
+            return Asset.objects.get(itemID=self.parent_id)
+        else:
+            return None
+
+    def parent_list(self):
+        parent = self.get_parent()
+        output = []
+        if parent:
+            output.append(
+                {
+                    'itemID': parent.itemID,
+                    'typeName': parent.typeName,
+                    'itemName': parent.item_name()
+                }
+            )
+            if parent.get_parent():
+                output.extend(parent.parent_list())
+        return output
+
     def __unicode__(self):
         name = self.item_name()
         if name:
@@ -651,6 +673,7 @@ class Asset(models.Model):
 
     class Meta(object):
         managed = False
+        unique_together = ('itemID', 'owner')
 
 
 class MarketOrder(models.Model):
