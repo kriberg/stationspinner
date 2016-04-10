@@ -1044,7 +1044,7 @@ class IndustryJobHistory(models.Model):
     jobID = models.BigIntegerField()
     teamID = models.IntegerField(null=True)
     productTypeName = models.CharField(max_length=255, blank=True, null=True)
-    blueprintLocationID = models.IntegerField(null=True)
+    blueprintLocationID = models.BigIntegerField(null=True)
     blueprintID = models.BigIntegerField(null=True)
     solarSystemID = models.IntegerField()
     licensedRuns = models.IntegerField(null=True)
