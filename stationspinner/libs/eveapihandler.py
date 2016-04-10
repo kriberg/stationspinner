@@ -386,7 +386,12 @@ class EveAPIHandler():
                 asset.update_from_api(item, self)
                 asset.compute_container_volume()
                 asset.compute_container_value()
-                asset.save()
+                asset.save(update_fields=['regionID',
+                                          'solarSystemID',
+                                          'item_value',
+                                          'item_volume',
+                                          'container_volume',
+                                          'container_value'])
 
                 contents.append(item)
 
