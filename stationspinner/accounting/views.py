@@ -33,7 +33,7 @@ class ObtainAuthTokenView(views.APIView):
             'clientID': settings.CREST_CLIENTID,
             'callbackURL': settings.CREST_CALLBACK_URL,
             'authToken': token,
-            'scopes': ''
+            'scopes': ' '.join(settings.CREST_SCOPES)
         })
 
 

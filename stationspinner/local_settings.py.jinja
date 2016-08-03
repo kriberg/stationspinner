@@ -97,3 +97,8 @@ MARKET_VALUE_SUPERS = {
 CREST_CLIENTID = '{{ stationspinner.crest.clientID}}'
 CREST_SECRET_KEY = '{{stationspinner.crest.secret_key}}'
 CREST_CALLBACK_URL = '{{stationspinner.crest.callback_url}}'
+CREST_SCOPES = [
+    {% for scope in stationspinner.crest.scopes %}
+    '{{scope}}',
+    {% endfor %}
+]
