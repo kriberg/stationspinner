@@ -18,9 +18,9 @@ class DBRouter(object):
            return False
         return None
 
-    def allow_migrate(self, db, model):
+    def allow_migrate(self, db, app_label, model_name=None, **hints):
         if db == 'sde':
-            return model._meta.app_label == 'sde'
-        elif model._meta.app_label == 'sde':
+            return app_label == 'sde'
+        elif app_label == 'sde':
             return False
         return None

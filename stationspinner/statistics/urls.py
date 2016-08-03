@@ -1,5 +1,5 @@
-from django.conf.urls import url, include
-from rest_framework import routers
+from django.conf.urls import url#, include
+#from rest_framework import routers
 from stationspinner.statistics.views import CharacterAssetSummaryView, \
     CorporationAssetSummaryView, \
     CharacterWalletBalanceView, \

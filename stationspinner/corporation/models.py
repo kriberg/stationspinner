@@ -1,6 +1,6 @@
 from decimal import Decimal
 from django.db import models
-from django_pgjson.fields import JsonField, JsonBField
+from django.contrib.postgres.fields import JSONField
 from stationspinner.accounting.models import APIKey, Capsuler
 from stationspinner.universe.models import EveName
 from stationspinner.libs import fields as custom
@@ -175,10 +175,10 @@ class Starbase(models.Model):
     #         0b00 == 0 --> 'Starbase Config' can unanchor
     #         0b01 == 1 --> 'Starbase Fuel Tech' can online
     #         0b00 == 0 --> 'Starbase Config' can offline
-    general_settings = JsonField(default={}, blank=True)
+    general_settings = JSONField(default={}, blank=True)
 
     # Combat settings
-    combat_settings = JsonField(default={}, blank=True)
+    combat_settings = JSONField(default={}, blank=True)
 
     owner = models.ForeignKey(CorporationSheet)
 
@@ -416,7 +416,7 @@ class Contact(models.Model):
 
 
 class AssetList(models.Model):
-    items = JsonBField()
+    items = JSONField()
     retrieved = custom.DateTimeField()
     owner = models.ForeignKey(CorporationSheet)
 
@@ -855,8 +855,8 @@ class MemberSecurityLog(models.Model):
     characterID = models.IntegerField()
     characterName = models.CharField(max_length=255)
     roleLocationType = models.CharField(max_length=255)
-    oldRoles = JsonField(default=[])
-    newRoles = JsonField(default=[])
+    oldRoles = JSONField(default=[])
+    newRoles = JSONField(default=[])
 
     owner = models.ForeignKey(CorporationSheet)
 

@@ -1,11 +1,11 @@
 from decimal import Decimal
 from django.db import models
 from django.db.models import Sum
+from django.contrib.postgres.fields import JSONField
 from stationspinner.accounting.models import APIKey, Capsuler
 from stationspinner.universe.models import EveName
 from stationspinner.libs import fields as custom, api_parser
 from stationspinner.libs.api_parser import parse_evemail
-from django_pgjson.fields import JsonBField
 from stationspinner.sde.models import InvType, InvGroup
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -301,7 +301,7 @@ class Research(models.Model):
 
 
 class AssetList(models.Model):
-    items = JsonBField()
+    items = JSONField()
     retrieved = custom.DateTimeField()
     owner = models.ForeignKey('CharacterSheet')
 
@@ -898,7 +898,7 @@ class MailMessage(models.Model):
     raw_message = models.TextField(null=True)
     parsed_message = models.TextField(null=True)
     broken = models.BooleanField(default=False)
-    receivers = JsonBField(default=[], null=True)
+    receivers = JSONField(default=[], null=True)
 
     owners = models.ManyToManyField(CharacterSheet)
 

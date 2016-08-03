@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import include, url
 from django.views.generic.base import RedirectView
 from django.contrib import admin
 from rest_framework.authtoken import views as authtoken
@@ -23,6 +23,6 @@ app_urls = [
 ]
 
 if DEBUG:
-    urlpatterns = patterns('', url(r'^api/', include(app_urls)))
+    urlpatterns = [url(r'^api/', include(app_urls))]
 else:
-    urlpatterns = patterns('', *app_urls)
+    urlpatterns = app_urls

@@ -1,6 +1,6 @@
 from django.db import models
 from stationspinner.character.models import MailMessage
-from django_pgjson.fields import JsonBField
+from django.contrib.postgres.fields import JSONField
 from stationspinner.accounting.models import Capsuler
 from stationspinner.libs import fields as custom
 from stationspinner.settings import EVEMAIL_SEARCH_LANGUAGES
@@ -146,7 +146,7 @@ class Mail(models.Model):
     parsed_message = models.TextField(null=True)
     read = models.BooleanField(default=False)
     owner = models.ForeignKey(Capsuler)
-    receivers = JsonBField(default=[], null=True)
+    receivers = JSONField(default=[], null=True)
     relevancy = models.FloatField(default=1.0)
 
     objects = MailManager()

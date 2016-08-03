@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django_pgjson.fields import JsonField
+from django.contrib.postgres.fields import JSONField
 from datetime import datetime
 from pytz import UTC
 from stationspinner.libs import fields as custom
@@ -11,7 +11,7 @@ from stationspinner.universe.models import APICall
 from stationspinner.celery import app
 
 class Capsuler(AbstractUser):
-    settings = JsonField(blank=True, default={})
+    settings = JSONField(blank=True, default={})
     owner_hash = models.CharField(max_length=255, null=True)
 
     def __unicode__(self):
@@ -44,7 +44,7 @@ class APIKey(models.Model):
     brokeness = models.IntegerField(default=0)
     characterID = models.BigIntegerField(null=True, blank=True)
     corporationID = models.BigIntegerField(null=True, blank=True)
-    characterIDs = JsonField(null=True, default=[])
+    characterIDs = JSONField(null=True, default=[])
 
     owner = models.ForeignKey(Capsuler)
 
