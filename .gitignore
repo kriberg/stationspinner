@@ -35,7 +35,8 @@ nosetests.xml
 .project
 .pydevproject
 .idea
-
-
+celerybeat-schedule
+celerybeat.pid
+venv
 stationspinner/local_settings.py
 static
